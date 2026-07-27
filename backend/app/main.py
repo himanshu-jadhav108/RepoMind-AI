@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.api_router import api_v1_router
 from app.core.config import settings
 from app.core.exceptions import RepoMindException
 from app.core.logging import logger
@@ -93,6 +94,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             }
         },
     )
+
+
+# Include API v1 Router
+app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["Health"])
