@@ -1,15 +1,49 @@
-export default function ReportPage({
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ReportExportView } from "@/features/report-export/ReportExportView";
+import { getFinalReport } from "@/lib/api-client";
+
+export default function StandaloneReportPage({
   params,
 }: {
   params: { runId: string };
 }) {
+  const runId = params.runId;
+  const [reportMd, setReportMd] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    async function fetchReport() {
+      try {
+        const data = await getFinalReport(runId);
+        setReportMd(data.report_markdown);
+      } catch (e) {
+        console.error("Error fetching report markdown:", e);
+      }
+    }
+    fetchReport();
+  }, [runId]);
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Final Engineering Audit Report</h1>
-      <p className="text-muted-foreground mb-6">Run ID: {params.runId}</p>
-      <div className="p-6 rounded-xl glass-card border border-border">
-        <p className="text-sm">Consolidated report viewer and export page placeholder.</p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-3">
+          <Link href={`/analyze/${runId}`}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+              <ArrowLeft className="w-4 h-4" /> Return to Workspace
+            </Button>
+          </Link>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <FileText className="w-5 h-5 text-emerald-400" />
+            <span>Audit Report & Export Center</span>
+          </h1>
+        </div>
       </div>
+
+      <ReportExportView runId={runId} reportMarkdown={reportMd} />
     </div>
   );
 }
