@@ -1,7 +1,10 @@
 from typing import Generator
+from app.db.supabase_client import get_supabase_client
 from app.providers.provider_router import ProviderRouter
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.repo_metadata_repository import RepoMetadataRepository
+from app.repositories.supabase_analysis_repository import SupabaseAnalysisRepository
+from app.repositories.supabase_repo_metadata_repository import SupabaseRepoMetadataRepository
 from app.services.analysis_service import AnalysisService
 from app.services.repo_ingestion_service import RepoIngestionService
 from app.services.report_service import ReportService
@@ -10,12 +13,19 @@ from app.services.report_service import ReportService
 class Container:
     """
     Dependency Injection Container for managing application singletons and dependencies.
+    Dynamically connects Supabase repositories when credentials are available, or falls back to in-memory repositories.
     """
 
     def __init__(self) -> None:
+        self.supabase_client = get_supabase_client()
+
         # Repositories
-        self.repo_metadata_repository = RepoMetadataRepository()
-        self.analysis_repository = AnalysisRepository()
+        if self.supabase_client:
+            self.repo_metadata_repository = SupabaseRepoMetadataRepository(self.supabase_client)
+            self.analysis_repository = SupabaseAnalysisRepository(self.supabase_client)
+        else:
+            self.repo_metadata_repository = RepoMetadataRepository()
+            self.analysis_repository = AnalysisRepository()
 
         # Providers
         self.provider_router = ProviderRouter()
