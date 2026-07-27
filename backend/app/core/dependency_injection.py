@@ -1,5 +1,10 @@
 from typing import Generator
 from app.db.supabase_client import get_supabase_client
+from app.providers.gemini_provider import GeminiProvider
+from app.providers.groq_provider import GroqProvider
+from app.providers.huggingface_provider import HuggingFaceProvider
+from app.providers.openai_provider import OpenAIProvider
+from app.providers.openrouter_provider import OpenRouterProvider
 from app.providers.provider_router import ProviderRouter
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.repo_metadata_repository import RepoMetadataRepository
@@ -13,7 +18,7 @@ from app.services.report_service import ReportService
 class Container:
     """
     Dependency Injection Container for managing application singletons and dependencies.
-    Dynamically connects Supabase repositories when credentials are available, or falls back to in-memory repositories.
+    Registers all 5 AI Provider Adapters into ProviderRouter.
     """
 
     def __init__(self) -> None:
@@ -27,8 +32,13 @@ class Container:
             self.repo_metadata_repository = RepoMetadataRepository()
             self.analysis_repository = AnalysisRepository()
 
-        # Providers
+        # Provider Router & Concrete Provider Adapters Initialization
         self.provider_router = ProviderRouter()
+        self.provider_router.register_provider(GeminiProvider())
+        self.provider_router.register_provider(GroqProvider())
+        self.provider_router.register_provider(OpenAIProvider())
+        self.provider_router.register_provider(OpenRouterProvider())
+        self.provider_router.register_provider(HuggingFaceProvider())
 
         # Services
         self.repo_ingestion_service = RepoIngestionService(
