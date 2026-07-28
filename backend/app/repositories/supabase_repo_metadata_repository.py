@@ -1,5 +1,7 @@
 from typing import Optional
+
 from supabase import Client
+
 from app.models.repo import RepoMetadata
 from app.repositories.base_repository import BaseRepository
 
@@ -14,18 +16,21 @@ class SupabaseRepoMetadataRepository(BaseRepository[RepoMetadata]):
         self.table = "repositories"
 
     async def get_by_id(self, item_id: str) -> Optional[RepoMetadata]:
-        res = self.client.table(self.table).select("*").eq("id", item_id).execute()
-        if res.data and len(res.data) > 0:
-            row = res.data[0]
-            return RepoMetadata(
-                repo_id=row["id"],
-                owner=row["owner"],
-                name=row["name"],
-                default_branch=row["default_branch"],
-                last_analyzed_commit=row.get("last_analyzed_commit"),
-                last_analyzed_at=row.get("last_analyzed_at"),
-            )
-        return None
+        try:
+            res = self.client.table(self.table).select("*").eq("id", item_id).execute()
+            if res.data and len(res.data) > 0:
+                row = res.data[0]
+                return RepoMetadata(
+                    repo_id=row["id"],
+                    owner=row["owner"],
+                    name=row["name"],
+                    default_branch=row["default_branch"],
+                    last_analyzed_commit=row.get("last_analyzed_commit"),
+                    last_analyzed_at=row.get("last_analyzed_at"),
+                )
+            return None
+        except Exception:
+            return None
 
     async def get_by_url(self, owner: str, name: str) -> Optional[RepoMetadata]:
         res = (
