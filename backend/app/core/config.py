@@ -1,4 +1,7 @@
+import json
 from typing import List, Optional
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +14,34 @@ class Settings(BaseSettings):
     # Server settings
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    # P0-6 FIX: CORS_ORIGINS is now fully configurable from the environment variable.
+    # Supported formats for the env var value:
+    #   JSON array:        CORS_ORIGINS=["https://repomind.vercel.app","http://localhost:3000"]
+    #   Comma-separated:   CORS_ORIGINS=https://repomind.vercel.app,http://localhost:3000
+    # The localhost defaults ensure local development works without any env setup.
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+    ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v) -> list:
+        """
+        Accepts CORS_ORIGINS as a JSON array string, a comma-separated string, or
+        an actual list (for programmatic/test usage). This allows production deployments
+        (Render + Vercel) to override the localhost default via a single env var.
+        """
+        if isinstance(v, str):
+            stripped = v.strip()
+            if stripped.startswith("["):
+                # JSON array: '["https://foo.vercel.app","http://localhost:3000"]'
+                return json.loads(stripped)
+            # Comma-separated: "https://foo.vercel.app,http://localhost:3000"
+            return [origin.strip() for origin in stripped.split(",") if origin.strip()]
+        return v
 
     # Supabase Settings
     SUPABASE_URL: Optional[str] = None
@@ -24,6 +54,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
+    HUGGINGFACE_API_KEY: Optional[str] = None  # P1-6: HuggingFace provider key
 
     model_config = SettingsConfigDict(
         env_file=".env",
