@@ -1,9 +1,7 @@
 import pytest
+
 from app.agents.architect_agent import ArchitectAgent
-from app.agents.planner_agent import PlannerAgent, DEFAULT_EXECUTION_PLAN
-from app.providers.gemini_provider import GeminiProvider
-from app.providers.groq_provider import GroqProvider
-from app.providers.openai_provider import OpenAIProvider
+from app.agents.planner_agent import DEFAULT_EXECUTION_PLAN, PlannerAgent
 from app.providers.provider_router import ProviderRouter
 
 
@@ -17,8 +15,10 @@ class FailingMockProvider:
     def name(self) -> str:
         return self._name
 
-    @property
     def is_available(self) -> bool:
+        # P0-4 FIX: Must be a regular method (not @property) because ProviderRouter
+        # calls provider.is_available() — a @property would return bool causing
+        # TypeError: 'bool' object is not callable.
         return True
 
     async def generate(self, prompt: str, **kwargs):

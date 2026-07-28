@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)
@@ -37,10 +37,10 @@ def test_repo_registration_and_get():
     assert repo_data["owner"] == "fastapi"
     repo_id = repo_data["repo_id"]
 
-    # 3. Duplicate registration (409 Conflict)
+    # 3. Duplicate registration (P0-3 FIX: returns 200/201 with existing repo_id instead of 409 error)
     res_dup = client.post("/api/v1/repos", json={"repo_url": "https://github.com/fastapi/fastapi"})
-    assert res_dup.status_code == 409
-    assert res_dup.json()["error"]["code"] == "REPO_ALREADY_EXISTS"
+    assert res_dup.status_code in (200, 201)
+    assert res_dup.json()["repo_id"] == repo_id
 
     # 4. Get repo metadata (200 OK)
     res_get = client.get(f"/api/v1/repos/{repo_id}")

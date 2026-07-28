@@ -1,17 +1,15 @@
 import pytest
-from app.core.exceptions import (
-    InvalidRepoUrlException,
-    RepositoryAlreadyExistsException,
-    RepositoryNotFoundException,
-)
+
 from app.core.dependency_injection import (
     get_analysis_service,
     get_provider_router,
     get_repo_ingestion_service,
-    get_report_service,
 )
-from app.models.repo import RepoCreate, RepoResponse
+from app.core.exceptions import (
+    InvalidRepoUrlException,
+)
 from app.models.analysis import AnalysisRunCreate, RunStatus
+from app.models.repo import RepoCreate, RepoResponse
 
 
 @pytest.mark.asyncio
@@ -38,9 +36,9 @@ async def test_repo_registration_flow():
     assert res.owner == "owner"
     assert res.name == "repo-test"
 
-    # Registering duplicate should raise RepositoryAlreadyExistsException
-    with pytest.raises(RepositoryAlreadyExistsException):
-        await service.register_repository(payload)
+    # Registering duplicate returns existing repo metadata (P0-3 FIX)
+    res_dup = await service.register_repository(payload)
+    assert res_dup.repo_id == res.repo_id
 
 
 @pytest.mark.asyncio
