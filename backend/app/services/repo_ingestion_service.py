@@ -2,7 +2,8 @@ import re
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
-from app.core.exceptions import InvalidRepoUrlException, RepositoryAlreadyExistsException
+
+from app.core.exceptions import InvalidRepoUrlException
 from app.models.repo import RepoCreate, RepoMetadata, RepoResponse
 from app.repositories.repo_metadata_repository import RepoMetadataRepository
 from app.services.base_service import BaseService
@@ -39,7 +40,16 @@ class RepoIngestionService(BaseService):
 
         existing = await self.repo_repository.get_by_url(owner, name)
         if existing:
-            raise RepositoryAlreadyExistsException(f"Repository '{owner}/{name}' is already registered.")
+            # P0-3 FIX: Return the existing repo metadata instead of raising 409.
+            # This allows repeat submissions (e.g. during demos or re-analysis) to
+            # proceed gracefully — the caller gets a valid repo_id to trigger a new run.
+            return RepoResponse(
+                repo_id=existing.repo_id,
+                owner=existing.owner,
+                name=existing.name,
+                default_branch=existing.default_branch,
+                created_at=existing.last_analyzed_at or datetime.now(timezone.utc),
+            )
 
         repo_id = str(uuid.uuid4())
         metadata = RepoMetadata(
