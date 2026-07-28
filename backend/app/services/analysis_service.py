@@ -1,7 +1,11 @@
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
-from app.core.exceptions import AnalysisRunNotFoundException, RepositoryNotFoundException
+from typing import Optional
+
+from app.core.exceptions import (
+    AnalysisRunNotFoundException,
+    RepositoryNotFoundException,
+)
 from app.models.analysis import (
     AgentStatus,
     AgentStatusEnum,
@@ -10,7 +14,6 @@ from app.models.analysis import (
     AnalysisRunResponse,
     RunStatus,
 )
-from app.models.finding import Finding
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.repo_metadata_repository import RepoMetadataRepository
 from app.services.base_service import BaseService

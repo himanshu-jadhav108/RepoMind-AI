@@ -1,6 +1,7 @@
 import json
-from typing import Any, Dict, Optional
-from app.core.logging import logger, log_agent_event
+from typing import Any, Dict
+
+from app.core.logging import log_agent_event, logger
 from app.providers.provider_router import ProviderRouter
 
 DEFAULT_EXECUTION_PLAN = {

@@ -1,7 +1,9 @@
 import tempfile
 from pathlib import Path
+
 import pytest
-from app.agents.planner_agent import PlannerAgent, DEFAULT_EXECUTION_PLAN
+
+from app.agents.planner_agent import DEFAULT_EXECUTION_PLAN, PlannerAgent
 from app.orchestration.graph import build_repomind_graph, repomind_app
 from app.orchestration.state import AnalysisState
 from app.providers.provider_router import ProviderRouter
@@ -37,7 +39,6 @@ def test_graph_compilation():
 
 @pytest.mark.asyncio
 async def test_langgraph_pipeline_execution(mock_repo_dir, monkeypatch):
-    from app.agents.repository_analyzer import RepositoryAnalyzer
     # Patch clone_repository to use local mock directory
     monkeypatch.setattr(
         "app.agents.repository_analyzer.GitIngestionService.clone_repository",

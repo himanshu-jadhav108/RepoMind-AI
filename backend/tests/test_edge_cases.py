@@ -1,4 +1,5 @@
 import pytest
+
 from app.analysis_toolkit.code_parser import CodeParser
 from app.analysis_toolkit.dependency_graph import DependencyGraphBuilder
 from app.core.dependency_injection import get_repo_ingestion_service

@@ -1,5 +1,5 @@
 import operator
-from typing import Annotated, Any, Dict, List, Optional, TypedDict
+from typing import Annotated, Any, Dict, List, TypedDict
 
 
 def merge_dicts(left: Dict[str, str], right: Dict[str, str]) -> Dict[str, str]:

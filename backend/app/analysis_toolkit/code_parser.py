@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
+
 from app.core.logging import logger
 
 # Regex fallback parsers for symbols and imports across languages

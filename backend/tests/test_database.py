@@ -1,9 +1,6 @@
-import pytest
 from pathlib import Path
-from app.db.supabase_client import get_supabase_client
+
 from app.core.dependency_injection import container
-from app.repositories.repo_metadata_repository import RepoMetadataRepository
-from app.repositories.analysis_repository import AnalysisRepository
 
 
 def test_migration_sql_exists():

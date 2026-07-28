@@ -1,4 +1,5 @@
 import pytest
+
 from app.agents.architect_agent import ArchitectAgent
 from app.agents.bug_hunter_agent import BugHunterAgent
 from app.agents.documentation_agent import DocumentationAgent

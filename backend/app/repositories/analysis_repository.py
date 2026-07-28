@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+
 from app.models.analysis import AnalysisRunDetail
 from app.models.finding import Finding
 from app.repositories.base_repository import BaseRepository

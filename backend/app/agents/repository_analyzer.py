@@ -1,9 +1,11 @@
 from typing import Dict, Tuple
+
 import networkx as nx
-from app.analysis_toolkit.git_ingestion import GitIngestionService
+
 from app.analysis_toolkit.code_parser import CodeParser
 from app.analysis_toolkit.dependency_graph import DependencyGraphBuilder
-from app.core.logging import logger, log_agent_event
+from app.analysis_toolkit.git_ingestion import GitIngestionService
+from app.core.logging import log_agent_event
 
 
 class RepositoryAnalyzer:

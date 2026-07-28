@@ -1,8 +1,9 @@
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict
+
 from app.agents.base_agent import BaseAgent
-from app.core.logging import logger, log_agent_event
+from app.core.logging import log_agent_event, logger
 from app.orchestration.state import AnalysisState
 
 
@@ -85,7 +86,7 @@ class ReportGeneratorAgent(BaseAgent):
             logger.warning(f"[{self.name}] Executive summary provider call failed: {str(e)}")
             exec_summary = f"Analysis pipeline completed with overall Health Score of {overall_score}/100."
 
-        report_md = f"# RepoMind AI Engineering Audit Report\n\n"
+        report_md = "# RepoMind AI Engineering Audit Report\n\n"
         report_md += f"**Run ID**: `{run_id}`  \n"
         report_md += f"**Overall Repository Health Score**: `{overall_score}/100`  \n\n"
         report_md += f"## Executive Summary\n{exec_summary}\n\n"

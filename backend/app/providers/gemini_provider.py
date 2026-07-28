@@ -1,11 +1,10 @@
-import asyncio
-import json
 import time
 from typing import AsyncGenerator, Optional
+
 import httpx
+
 from app.core.config import settings
 from app.core.exceptions import ProviderException, ProviderTimeoutException
-from app.core.logging import logger
 from app.providers.provider_interface import ProviderInterface, ProviderResponse
 
 

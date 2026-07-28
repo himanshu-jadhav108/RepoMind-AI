@@ -1,6 +1,7 @@
 from fastapi import APIRouter
-from app.api.v1.routes_repo import router as repo_router
+
 from app.api.v1.routes_analysis import router as analysis_router
+from app.api.v1.routes_repo import router as repo_router
 from app.api.v1.routes_reports import router as report_router
 from app.api.v1.routes_system import router as system_router
 

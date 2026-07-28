@@ -1,8 +1,7 @@
 import pytest
+
 from app.agents.bug_hunter_agent import BugHunterAgent
 from app.agents.reviewer_agent import ReviewerAgent
-from app.agents.security_agent import SecurityAgent
-from app.models.finding import FindingCategory, FindingSeverity, ReviewStatus
 from app.providers.provider_router import ProviderRouter
 
 

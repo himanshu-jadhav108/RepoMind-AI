@@ -1,7 +1,8 @@
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
+
 from app.agents.base_agent import BaseAgent
-from app.core.logging import logger, log_agent_event
+from app.core.logging import log_agent_event, logger
 from app.orchestration.state import AnalysisState
 
 

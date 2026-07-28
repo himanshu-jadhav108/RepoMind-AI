@@ -1,11 +1,12 @@
-import os
 import tempfile
 from pathlib import Path
+
 import pytest
-from app.analysis_toolkit.git_ingestion import GitIngestionService
+
+from app.agents.repository_analyzer import RepositoryAnalyzer
 from app.analysis_toolkit.code_parser import CodeParser
 from app.analysis_toolkit.dependency_graph import DependencyGraphBuilder
-from app.agents.repository_analyzer import RepositoryAnalyzer
+from app.analysis_toolkit.git_ingestion import GitIngestionService
 
 
 @pytest.fixture

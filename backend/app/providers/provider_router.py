@@ -1,8 +1,9 @@
 import asyncio
 import time
 from typing import Dict, List, Optional
+
 from app.core.exceptions import ProviderException, ProviderTimeoutException
-from app.core.logging import logger, log_provider_call
+from app.core.logging import log_provider_call, logger
 from app.providers.provider_interface import ProviderInterface, ProviderResponse
 
 

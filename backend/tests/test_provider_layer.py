@@ -1,6 +1,8 @@
 import asyncio
+
 import pytest
-from app.core.exceptions import ProviderException, ProviderTimeoutException
+
+from app.core.exceptions import ProviderException
 from app.providers.gemini_provider import GeminiProvider
 from app.providers.groq_provider import GroqProvider
 from app.providers.huggingface_provider import HuggingFaceProvider

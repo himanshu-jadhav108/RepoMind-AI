@@ -1,4 +1,3 @@
-from typing import Generator
 from app.core.config import settings
 from app.db.supabase_client import get_supabase_client
 from app.providers.gemini_provider import GeminiProvider
@@ -9,7 +8,9 @@ from app.providers.provider_router import ProviderRouter
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.repo_metadata_repository import RepoMetadataRepository
 from app.repositories.supabase_analysis_repository import SupabaseAnalysisRepository
-from app.repositories.supabase_repo_metadata_repository import SupabaseRepoMetadataRepository
+from app.repositories.supabase_repo_metadata_repository import (
+    SupabaseRepoMetadataRepository,
+)
 from app.services.analysis_service import AnalysisService
 from app.services.repo_ingestion_service import RepoIngestionService
 from app.services.report_service import ReportService

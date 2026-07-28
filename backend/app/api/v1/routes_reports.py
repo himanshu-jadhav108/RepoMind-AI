@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, Response, status
+
 from app.core.dependency_injection import get_report_service
 from app.core.exceptions import RepoMindException
 from app.models.report import ReportResponse
