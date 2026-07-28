@@ -20,9 +20,9 @@ class Settings(BaseSettings):
 
     # AI Provider API Keys
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY_2: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
-    HUGGINGFACE_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
 
     model_config = SettingsConfigDict(

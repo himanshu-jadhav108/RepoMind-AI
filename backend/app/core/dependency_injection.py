@@ -1,8 +1,8 @@
 from typing import Generator
+from app.core.config import settings
 from app.db.supabase_client import get_supabase_client
 from app.providers.gemini_provider import GeminiProvider
 from app.providers.groq_provider import GroqProvider
-from app.providers.huggingface_provider import HuggingFaceProvider
 from app.providers.openai_provider import OpenAIProvider
 from app.providers.openrouter_provider import OpenRouterProvider
 from app.providers.provider_router import ProviderRouter
@@ -18,7 +18,7 @@ from app.services.report_service import ReportService
 class Container:
     """
     Dependency Injection Container for managing application singletons and dependencies.
-    Registers all 5 AI Provider Adapters into ProviderRouter.
+    Registers AI Provider Adapters with priority failover routing.
     """
 
     def __init__(self) -> None:
@@ -34,11 +34,26 @@ class Container:
 
         # Provider Router & Concrete Provider Adapters Initialization
         self.provider_router = ProviderRouter()
-        self.provider_router.register_provider(GeminiProvider())
+
+        # Primary Gemini Key (Google AI Studio Free Tier)
+        self.provider_router.register_provider(
+            GeminiProvider(api_key=settings.GEMINI_API_KEY, name_override="gemini_primary")
+        )
+
+        # Secondary Gemini Key (Failover from 2nd Account - Free Tier)
+        if settings.GEMINI_API_KEY_2:
+            self.provider_router.register_provider(
+                GeminiProvider(api_key=settings.GEMINI_API_KEY_2, name_override="gemini_secondary")
+            )
+
+        # Groq Provider (100% Free Tier - LLaMA 3.3 70B)
         self.provider_router.register_provider(GroqProvider())
+
+        # OpenAI Provider (if configured)
         self.provider_router.register_provider(OpenAIProvider())
+
+        # OpenRouter Provider (Free Models)
         self.provider_router.register_provider(OpenRouterProvider())
-        self.provider_router.register_provider(HuggingFaceProvider())
 
         # Services
         self.repo_ingestion_service = RepoIngestionService(

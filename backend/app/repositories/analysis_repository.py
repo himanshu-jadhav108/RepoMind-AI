@@ -6,14 +6,15 @@ from app.repositories.base_repository import BaseRepository
 
 class AnalysisRepository(BaseRepository[AnalysisRunDetail]):
     """
-    Repository for managing analysis runs and results.
-    Provides in-memory fallback for testing until Supabase database layer is connected in Phase 3.
+    Repository for managing analysis runs, findings, and reports.
+    Provides in-memory fallback for testing until Supabase database layer is connected.
     """
 
     def __init__(self) -> None:
         self._runs: Dict[str, AnalysisRunDetail] = {}
         self._findings: Dict[str, List[Finding]] = {}
         self._results: Dict[str, Dict] = {}
+        self._reports: Dict[str, Dict] = {}
 
     async def get_by_id(self, item_id: str) -> Optional[AnalysisRunDetail]:
         return self._runs.get(item_id)
@@ -37,6 +38,7 @@ class AnalysisRepository(BaseRepository[AnalysisRunDetail]):
             del self._runs[item_id]
             self._findings.pop(item_id, None)
             self._results.pop(item_id, None)
+            self._reports.pop(item_id, None)
             return True
         return False
 
@@ -65,3 +67,9 @@ class AnalysisRepository(BaseRepository[AnalysisRunDetail]):
 
     async def get_agent_results(self, run_id: str) -> Dict:
         return self._results.get(run_id, {})
+
+    async def save_report(self, run_id: str, report_markdown: str, health_score: Dict) -> None:
+        self._reports[run_id] = {"report_markdown": report_markdown, "health_score": health_score}
+
+    async def get_report_data(self, run_id: str) -> Optional[Dict]:
+        return self._reports.get(run_id)

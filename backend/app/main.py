@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI, Request, status, HTTPException
+from fastapi import FastAPI, Request, status, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -98,6 +98,26 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Include API v1 Router
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    """
+    Root API welcome endpoint
+    """
+    return {
+        "name": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "status": "ok",
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.get("/health", tags=["Health"])

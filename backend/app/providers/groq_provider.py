@@ -8,10 +8,10 @@ from app.providers.provider_interface import ProviderInterface, ProviderResponse
 
 class GroqProvider(ProviderInterface):
     """
-    Groq AI Provider Adapter (LLaMA-3 / Mixtral) using OpenAI-compatible REST API.
+    Groq AI Provider Adapter (LLaMA-3.3-70B) using 100% free Groq Cloud API.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "llama3-70b-8192") -> None:
+    def __init__(self, api_key: Optional[str] = None, model_name: str = "llama-3.3-70b-versatile") -> None:
         self.api_key = api_key or settings.GROQ_API_KEY
         self.model_name = model_name
 

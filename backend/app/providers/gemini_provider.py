@@ -12,15 +12,22 @@ from app.providers.provider_interface import ProviderInterface, ProviderResponse
 class GeminiProvider(ProviderInterface):
     """
     Google Gemini AI Provider Adapter using direct HTTP REST API.
+    Defaults to 100% free model (gemini-1.5-flash).
     """
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-1.5-flash") -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model_name: str = "gemini-1.5-flash",
+        name_override: Optional[str] = None,
+    ) -> None:
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model_name = model_name
+        self._name = name_override or "gemini"
 
     @property
     def name(self) -> str:
-        return "gemini"
+        return self._name
 
     def is_available(self) -> bool:
         return bool(self.api_key and "your-gemini" not in self.api_key)
@@ -34,7 +41,7 @@ class GeminiProvider(ProviderInterface):
         max_tokens: Optional[int] = None,
     ) -> ProviderResponse:
         if not self.is_available():
-            raise ProviderException("Gemini API key is not configured.")
+            raise ProviderException(f"Gemini API key is not configured for {self.name}.")
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
 
@@ -65,7 +72,7 @@ class GeminiProvider(ProviderInterface):
             latency_ms = (time.time() - start_time) * 1000
             candidates = data.get("candidates", [])
             if not candidates:
-                raise ProviderException("Gemini returned empty response candidates.")
+                raise ProviderException(f"[{self.name}] Gemini returned empty response candidates.")
 
             text_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             usage = data.get("usageMetadata", {})
@@ -80,9 +87,9 @@ class GeminiProvider(ProviderInterface):
                 latency_ms=latency_ms,
             )
         except httpx.TimeoutException as e:
-            raise ProviderTimeoutException(f"Gemini API call timed out: {str(e)}")
+            raise ProviderTimeoutException(f"[{self.name}] Gemini API call timed out: {str(e)}")
         except Exception as e:
-            raise ProviderException(f"Gemini API call failed: {str(e)}")
+            raise ProviderException(f"[{self.name}] Gemini API call failed: {str(e)}")
 
     async def stream(
         self,

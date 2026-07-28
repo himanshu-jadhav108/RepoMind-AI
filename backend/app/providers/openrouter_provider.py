@@ -8,10 +8,10 @@ from app.providers.provider_interface import ProviderInterface, ProviderResponse
 
 class OpenRouterProvider(ProviderInterface):
     """
-    OpenRouter Provider Adapter (unified API gateway for open & commercial models).
+    OpenRouter Provider Adapter using 100% free model endpoint (google/gemma-2-9b-it:free).
     """
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "auto") -> None:
+    def __init__(self, api_key: Optional[str] = None, model_name: str = "google/gemma-2-9b-it:free") -> None:
         self.api_key = api_key or settings.OPENROUTER_API_KEY
         self.model_name = model_name
 

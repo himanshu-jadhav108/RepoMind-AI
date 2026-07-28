@@ -12,7 +12,7 @@ class HuggingFaceProvider(ProviderInterface):
     """
 
     def __init__(self, api_key: Optional[str] = None, model_name: str = "meta-llama/Meta-Llama-3-8B-Instruct") -> None:
-        self.api_key = api_key or settings.HUGGINGFACE_API_KEY
+        self.api_key = api_key or getattr(settings, "HUGGINGFACE_API_KEY", None)
         self.model_name = model_name
 
     @property
