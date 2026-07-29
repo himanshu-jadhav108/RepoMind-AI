@@ -10,10 +10,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/dagre": "^0.7.54",
     "@types/three": "^0.185.1",
     "3d-force-graph": "^1.80.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "d3-force": "^3.0.0",
+    "dagre": "^0.8.5",
+    "framer-motion": "^12.43.0",
     "lucide-react": "^0.368.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
