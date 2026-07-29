@@ -36,10 +36,16 @@ export default function StandaloneReportPage({
               <ArrowLeft className="w-4 h-4" /> Return to Workspace
             </Button>
           </Link>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-400" />
-            <span>Audit Report & Export Center</span>
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/RepoMind_AI_logo.jpeg"
+              alt="RepoMind AI Logo"
+              className="w-8 h-8 rounded-lg object-cover border border-purple-500/30 shadow"
+            />
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <span>Audit Report & Export Center</span>
+            </h1>
+          </div>
         </div>
       </div>
 

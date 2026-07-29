@@ -10,9 +10,11 @@ export default function HomePage() {
       <header className="w-full border-b border-border/80 glass-panel sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md shadow-purple-500/20">
-              R
-            </div>
+            <img
+              src="/RepoMind_AI_logo.jpeg"
+              alt="RepoMind AI Logo"
+              className="w-8 h-8 rounded-lg object-cover shadow-md shadow-purple-500/20 border border-purple-500/30"
+            />
             <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">
               RepoMind AI
             </span>

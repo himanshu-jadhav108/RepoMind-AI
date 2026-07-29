@@ -316,11 +316,61 @@ async def explain_code_region(
     file_path = payload.get("file", "source_file.py")
     line_start = payload.get("line_start", 1)
     line_end = payload.get("line_end", 10)
+    code_snippet = payload.get("code_snippet")
 
     if line_start > line_end or line_start < 0:
         from app.core.exceptions import RepoMindException
         raise RepoMindException("Invalid line range specified.", code="INVALID_LINE_RANGE", status_code=400)
 
+    if not code_snippet:
+        code_snippet = f"Code snippet from module {file_path} (lines {line_start} to {line_end})"
+
     provider_router = get_provider_router()
     learning_agent = LearningAgent(provider_router)
-    return await learning_agent.explain_code(file_path=file_path, code_snippet=f"Code region L{line_start}-L{line_end} in {file_path}", run_id=run_id)
+    return await learning_agent.explain_code(file_path=file_path, code_snippet=code_snippet, run_id=run_id)
+
+
+@router.get("/{run_id}/report", status_code=status.HTTP_200_OK)
+async def get_run_report(
+    run_id: str,
+    analysis_service: AnalysisService = Depends(get_analysis_service),
+):
+    """
+    Retrieve the consolidated engineering markdown audit report for a completed run per API.md.
+    """
+    await analysis_service.get_run_detail(run_id)
+    from app.core.dependency_injection import get_report_service
+    report_service = get_report_service()
+    report_res = await report_service.get_final_report(run_id)
+    return {"run_id": run_id, "report_markdown": report_res.report_markdown}
+
+
+@router.get("/{run_id}/report/export", status_code=status.HTTP_200_OK)
+async def export_run_report(
+    run_id: str,
+    format: str = Query("md", description="Export format: md or html"),
+    analysis_service: AnalysisService = Depends(get_analysis_service),
+):
+    """
+    Export the consolidated engineering audit report as a downloadable file attachment (.md or .html).
+    """
+    from fastapi.responses import Response
+    await analysis_service.get_run_detail(run_id)
+    from app.core.dependency_injection import get_report_service
+    report_service = get_report_service()
+    report_res = await report_service.get_final_report(run_id)
+    content = report_res.report_markdown
+
+    if format == "html":
+        media_type = "text/html"
+        filename = f"RepoMind_Audit_Report_{run_id}.html"
+        content = f"<html><body><h1>RepoMind AI Audit Report</h1><pre>{content}</pre></body></html>"
+    else:
+        media_type = "text/markdown"
+        filename = f"RepoMind_Audit_Report_{run_id}.md"
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

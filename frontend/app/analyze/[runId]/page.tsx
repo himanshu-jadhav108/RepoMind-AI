@@ -188,12 +188,18 @@ export default function AnalyzeWorkspacePage({
               <ArrowLeft className="w-4 h-4" /> Back to Search
             </Button>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <span>Live Engineering Workspace</span>
-            </h1>
-            <p className="text-xs text-muted-foreground font-mono">Run ID: {runId}</p>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/RepoMind_AI_logo.jpeg"
+              alt="RepoMind AI Logo"
+              className="w-8 h-8 rounded-lg object-cover border border-purple-500/30 shadow"
+            />
+            <div>
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <span>Live Engineering Workspace</span>
+              </h1>
+              <p className="text-xs text-muted-foreground font-mono">Run ID: {runId}</p>
+            </div>
           </div>
         </div>
 

@@ -66,11 +66,22 @@ export async function getFinalReport(runId: string): Promise<{ run_id: string; r
   return res.json();
 }
 
-export async function explainCodeSnippet(runId: string, file: string, lineStart: number, lineEnd: number) {
+export async function explainCodeSnippet(
+  runId: string,
+  file: string,
+  lineStart: number,
+  lineEnd: number,
+  codeSnippet?: string
+) {
   const res = await fetch(`${API_BASE}/api/v1/analysis/${runId}/explain`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ file, line_start: lineStart, line_end: lineEnd }),
+    body: JSON.stringify({
+      file,
+      line_start: lineStart,
+      line_end: lineEnd,
+      code_snippet: codeSnippet,
+    }),
   });
   if (!res.ok) throw new Error("Failed to generate code explanation.");
   return res.json();
