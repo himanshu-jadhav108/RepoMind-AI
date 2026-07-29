@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Folder, FileCode, Cpu, Box, Sparkles, Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen, ChevronRight } from "lucide-react";
+import { Folder, FileCode, Cpu, Box, Sparkles, Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen } from "lucide-react";
 
 interface KnowledgeGraph3DProps {
   graphData?: { nodes: any[]; edges: any[] } | null;
@@ -11,6 +11,7 @@ interface KnowledgeGraph3DProps {
 interface Node3D {
   id: string;
   label: string;
+  shortLabel: string;
   type: string;
   parentFolder?: string;
   x: number;
@@ -35,9 +36,9 @@ interface Edge3D {
 
 // Background starfield particles
 const STARFIELD = Array.from({ length: 95 }, () => ({
-  x: (Math.random() - 0.5) * 1300,
-  y: (Math.random() - 0.5) * 850,
-  z: Math.random() * 800 - 400,
+  x: (Math.random() - 0.5) * 1400,
+  y: (Math.random() - 0.5) * 900,
+  z: Math.random() * 900 - 450,
   size: Math.random() * 1.6 + 0.4,
   alpha: Math.random() * 0.7 + 0.3,
 }));
@@ -53,35 +54,37 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
   const targetZoomRef = useRef<number>(550);
   const currentZoomRef = useRef<number>(550);
 
-  // Folder Expansion State (Set of expanded folder IDs)
+  // Folder Expansion State
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["root_folder", "backend/app"]));
   const [hoveredNode, setHoveredNode] = useState<Node3D | null>(null);
 
   const isDragging = useRef<boolean>(false);
   const lastMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // 3D Nodes Initialization with Folder Hierarchy Grouping
+  // 3D Nodes Initialization with Expanded Orbit Radius (Fixes node overlap & text clutter)
   const nodes3D: Node3D[] = useMemo(() => {
     const rawNodes = graphData?.nodes || [];
 
     if (rawNodes.length === 0) {
       return [
-        { id: "root", label: "app/main.py", type: "file", x: 0, y: 0, z: 0, radius: 15, color: "#a855f7", glowColor: "rgba(168, 85, 247, 0.8)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "backend/services", label: "services/", type: "folder", x: -160, y: -70, z: 80, radius: 13, color: "#38bdf8", glowColor: "rgba(56, 189, 248, 0.7)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "services/analysis.py", label: "analysis.py", type: "file", parentFolder: "backend/services", x: -220, y: -110, z: 120, radius: 9, color: "#818cf8", glowColor: "rgba(129, 140, 248, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "services/repo.py", label: "repo.py", type: "file", parentFolder: "backend/services", x: -120, y: -120, z: 40, radius: 9, color: "#818cf8", glowColor: "rgba(129, 140, 248, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "backend/agents", label: "agents/", type: "folder", x: 170, y: 80, z: -90, radius: 13, color: "#38bdf8", glowColor: "rgba(56, 189, 248, 0.7)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "agents/architect.py", label: "architect.py", type: "file", parentFolder: "backend/agents", x: 230, y: 130, z: -140, radius: 9, color: "#fbbf24", glowColor: "rgba(251, 191, 36, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
-        { id: "agents/reviewer.py", label: "reviewer.py", type: "file", parentFolder: "backend/agents", x: 120, y: 140, z: -50, radius: 9, color: "#34d399", glowColor: "rgba(52, 211, 153, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "root", label: "backend/app/main.py", shortLabel: "main.py", type: "file", x: 0, y: 0, z: 0, radius: 16, color: "#a855f7", glowColor: "rgba(168, 85, 247, 0.8)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "backend/services", label: "services/", shortLabel: "services/", type: "folder", x: -220, y: -90, z: 120, radius: 13, color: "#38bdf8", glowColor: "rgba(56, 189, 248, 0.7)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "services/analysis.py", label: "analysis_service.py", shortLabel: "analysis_service.py", type: "file", parentFolder: "backend/services", x: -310, y: -150, z: 180, radius: 10, color: "#818cf8", glowColor: "rgba(129, 140, 248, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "services/repo.py", label: "repo_ingestion.py", shortLabel: "repo_ingestion.py", type: "file", parentFolder: "backend/services", x: -160, y: -160, z: 60, radius: 10, color: "#818cf8", glowColor: "rgba(129, 140, 248, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "backend/agents", label: "agents/", shortLabel: "agents/", type: "folder", x: 230, y: 110, z: -130, radius: 13, color: "#38bdf8", glowColor: "rgba(56, 189, 248, 0.7)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "agents/architect.py", label: "architect_agent.py", shortLabel: "architect_agent.py", type: "file", parentFolder: "backend/agents", x: 330, y: 170, z: -200, radius: 10, color: "#fbbf24", glowColor: "rgba(251, 191, 36, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
+        { id: "agents/reviewer.py", label: "reviewer_agent.py", shortLabel: "reviewer_agent.py", type: "file", parentFolder: "backend/agents", x: 170, y: 190, z: -70, radius: 10, color: "#34d399", glowColor: "rgba(52, 211, 153, 0.5)", px: 0, py: 0, pz: 0, scale: 1 },
       ];
     }
 
-    const cappedNodes = rawNodes.slice(0, 55);
+    const cappedNodes = rawNodes.slice(0, 50);
     const count = cappedNodes.length;
 
     return cappedNodes.map((n, idx) => {
       const type = n.type || "file";
       const label = n.data?.label || n.id;
+      const parts = label.split("/");
+      const shortLabel = parts[parts.length - 1] || label;
       const id = n.id;
       const isRoot = idx === 0 || label.includes("main.py") || label.includes("index.ts");
 
@@ -90,8 +93,8 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       let radius = 9;
 
       if (isRoot) {
-        color = "#a855f7"; // Vibrant Purple Core
-        glowColor = "rgba(168, 85, 247, 0.8)";
+        color = "#a855f7"; // Purple Core
+        glowColor = "rgba(168, 85, 247, 0.85)";
         radius = 16;
       } else if (type === "folder") {
         color = "#38bdf8"; // Cyan
@@ -108,13 +111,13 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       }
 
       if (isRoot) {
-        return { id, label, type, x: 0, y: 0, z: 0, radius, color, glowColor, px: 0, py: 0, pz: 0, scale: 1 };
+        return { id, label, shortLabel, type, x: 0, y: 0, z: 0, radius, color, glowColor, px: 0, py: 0, pz: 0, scale: 1 };
       }
 
-      // Spherical distribution
+      // Expanded Orbital Radius Spacing (220 to 440) for zero node collision
       const phi = Math.acos(1 - 2 * ((idx + 0.5) / count));
       const theta = Math.sqrt(count * Math.PI) * phi;
-      const orbitRadius = 135 + (idx % 3) * 75;
+      const orbitRadius = 210 + (idx % 3) * 105;
 
       const x = orbitRadius * Math.sin(phi) * Math.cos(theta);
       const y = orbitRadius * Math.sin(phi) * Math.sin(theta) * 0.75;
@@ -123,6 +126,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       return {
         id,
         label,
+        shortLabel,
         type,
         parentFolder: n.parentFolder,
         x,
@@ -139,7 +143,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
     });
   }, [graphData]);
 
-  // Containment & Import Edges
+  // Edges mapping
   const edges3D: Edge3D[] = useMemo(() => {
     const rawEdges = graphData?.edges || [];
     if (rawEdges.length === 0) {
@@ -153,10 +157,10 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       ];
     }
     const validIds = new Set(nodes3D.map((n) => n.id));
-    return rawEdges.filter((e) => validIds.has(e.source) && validIds.has(e.target)).slice(0, 80);
+    return rawEdges.filter((e) => validIds.has(e.source) && validIds.has(e.target)).slice(0, 75);
   }, [graphData, nodes3D]);
 
-  // 3D Render & Smooth Lerp Zoom Loop
+  // 3D Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -168,8 +172,8 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
     let particleOffset = 0;
 
     const render = () => {
-      // Smooth Lerp Zoom Calculation (Current Zoom -> Target Zoom)
-      currentZoomRef.current += (targetZoomRef.current - currentZoomRef.current) * 0.14;
+      // Smooth lerp zoom
+      currentZoomRef.current += (targetZoomRef.current - currentZoomRef.current) * 0.35;
 
       const rect = canvas.getBoundingClientRect();
       const width = rect.width;
@@ -202,7 +206,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         const y1 = star.y * cosX - z1 * sinX;
         const z2 = star.y * sinX + z1 * cosX;
 
-        const scale = FOV / (FOV + z2 + 400);
+        const scale = FOV / (FOV + z2 + 450);
         if (scale > 0) {
           const sx = cx + x1 * scale;
           const sy = cy + y1 * scale;
@@ -214,7 +218,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       });
 
       // 2. Draw Concentric 3D Orbital Rings
-      [135, 210, 285].forEach((ringRadius, idx) => {
+      [210, 315, 420].forEach((ringRadius, idx) => {
         ctx.beginPath();
         const steps = 60;
         for (let i = 0; i <= steps; i++) {
@@ -228,14 +232,14 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           const y1 = ry * cosX - z1 * sinX;
           const z2 = ry * sinX + z1 * cosX;
 
-          const scale = FOV / (FOV + z2 + 400);
+          const scale = FOV / (FOV + z2 + 450);
           const sx = cx + x1 * scale;
           const sy = cy + y1 * scale;
 
           if (i === 0) ctx.moveTo(sx, sy);
           else ctx.lineTo(sx, sy);
         }
-        ctx.strokeStyle = idx === 0 ? "rgba(99, 102, 241, 0.2)" : "rgba(56, 189, 248, 0.12)";
+        ctx.strokeStyle = idx === 0 ? "rgba(168, 85, 247, 0.22)" : "rgba(56, 189, 248, 0.14)";
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -250,7 +254,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         const y1 = node.y * cosX - z1 * sinX;
         const z2 = node.y * sinX + z1 * cosX;
 
-        const scale = FOV / (FOV + z2 + 400);
+        const scale = FOV / (FOV + z2 + 450);
         const screenX = cx + x1 * scale;
         const screenY = cy + y1 * scale;
 
@@ -259,10 +263,10 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         nodeMap.set(node.id, proj);
       });
 
-      // Sort nodes back-to-front by Z depth for realistic 3D layering
+      // Sort back-to-front by Z depth
       projectedNodes.sort((a, b) => b.screenZ - a.screenZ);
 
-      // 4. Render Glowing Folder Sub-Cluster Bounding Boxes (for expanded folders)
+      // 4. Render Glowing Folder Enclosure Boxes
       nodes3D
         .filter((n) => n.type === "folder")
         .forEach((folderNode) => {
@@ -270,7 +274,6 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           const projFolder = nodeMap.get(folderNode.id);
 
           if (projFolder) {
-            // Find child nodes contained in this folder
             const children = projectedNodes.filter(
               (cn) =>
                 cn.id.startsWith(folderNode.id) ||
@@ -279,52 +282,34 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
             );
 
             if (children.length > 0) {
-              // Calculate 2D bounding box around folder & its internal contents
               let minX = projFolder.screenX;
               let maxX = projFolder.screenX;
               let minY = projFolder.screenY;
               let maxY = projFolder.screenY;
 
               children.forEach((c) => {
-                minX = Math.min(minX, c.screenX - 25 * c.scale);
-                maxX = Math.max(maxX, c.screenX + 25 * c.scale);
-                minY = Math.min(minY, c.screenY - 25 * c.scale);
-                maxY = Math.max(maxY, c.screenY + 25 * c.scale);
+                minX = Math.min(minX, c.screenX - 30 * c.scale);
+                maxX = Math.max(maxX, c.screenX + 30 * c.scale);
+                minY = Math.min(minY, c.screenY - 30 * c.scale);
+                maxY = Math.max(maxY, c.screenY + 30 * c.scale);
               });
 
-              const pad = 18 * projFolder.scale;
+              const pad = 20 * projFolder.scale;
               const boxW = maxX - minX + pad * 2;
               const boxH = maxY - minY + pad * 2;
               const boxX = minX - pad;
               const boxY = minY - pad;
 
-              // Draw Glowing 3D Glass Folder Box Enclosure
               ctx.save();
-              ctx.fillStyle = isExpanded
-                ? "rgba(14, 165, 233, 0.08)"
-                : "rgba(15, 23, 42, 0.35)";
-              ctx.strokeStyle = isExpanded
-                ? "rgba(56, 189, 248, 0.6)"
-                : "rgba(56, 189, 248, 0.25)";
-              ctx.lineWidth = isExpanded ? 1.8 : 1;
+              ctx.fillStyle = isExpanded ? "rgba(14, 165, 233, 0.07)" : "rgba(15, 23, 42, 0.3)";
+              ctx.strokeStyle = isExpanded ? "rgba(56, 189, 248, 0.55)" : "rgba(56, 189, 248, 0.2)";
+              ctx.lineWidth = isExpanded ? 1.6 : 1;
               if (!isExpanded) ctx.setLineDash([4, 4]);
 
               ctx.beginPath();
               ctx.roundRect(boxX, boxY, boxW, boxH, 10 * projFolder.scale);
               ctx.fill();
               ctx.stroke();
-
-              // Folder Header Label Box Tag
-              ctx.fillStyle = isExpanded ? "rgba(14, 165, 233, 0.9)" : "rgba(30, 41, 59, 0.85)";
-              ctx.fillRect(boxX, boxY - 18 * projFolder.scale, Math.min(boxW, 140 * projFolder.scale), 18 * projFolder.scale);
-              ctx.fillStyle = "#ffffff";
-              ctx.font = `${Math.max(9, Math.round(10 * projFolder.scale))}px monospace`;
-              ctx.textAlign = "left";
-              ctx.fillText(
-                `📁 ${folderNode.label} (${children.length})`,
-                boxX + 6,
-                boxY - 5 * projFolder.scale
-              );
               ctx.restore();
             }
           }
@@ -342,14 +327,13 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           ctx.moveTo(src.screenX, src.screenY);
           ctx.lineTo(tgt.screenX, tgt.screenY);
           ctx.strokeStyle = isHighlighted
-            ? "#a855f7"
+            ? "#c084fc"
             : edge.animated
             ? "rgba(129, 140, 248, 0.35)"
-            : "rgba(71, 85, 105, 0.25)";
+            : "rgba(71, 85, 105, 0.22)";
           ctx.lineWidth = isHighlighted ? 2.5 : 1.2;
           ctx.stroke();
 
-          // Animated energy light particle
           if (edge.animated || isHighlighted) {
             const px = src.screenX + (tgt.screenX - src.screenX) * particleOffset;
             const py = src.screenY + (tgt.screenY - src.screenY) * particleOffset;
@@ -361,7 +345,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         }
       });
 
-      // 6. Render 3D Glowing Orbs & Labels
+      // 6. Render 3D Glowing Orbs & Smart Glass Background Text Pills (FIX: Eliminates text obscuring nodes)
       projectedNodes.forEach((node) => {
         const isHovered = hoveredNode?.id === node.id;
         const radius = (node.radius * node.scale) * (isHovered ? 1.35 : 1);
@@ -373,14 +357,14 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           0,
           node.screenX,
           node.screenY,
-          radius * 2.5
+          radius * 2.4
         );
         glow.addColorStop(0, node.glowColor);
         glow.addColorStop(1, "rgba(0, 0, 0, 0)");
 
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(node.screenX, node.screenY, radius * 2.5, 0, Math.PI * 2);
+        ctx.arc(node.screenX, node.screenY, radius * 2.4, 0, Math.PI * 2);
         ctx.fill();
 
         // Solid Node Sphere
@@ -389,12 +373,32 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         ctx.arc(node.screenX, node.screenY, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Node Label Tag
-        if (node.scale > 0.55 || isHovered || node.type === "folder") {
+        // SMART 3D GLASS PILL LABEL (FIX: Renders clean background pill behind label to prevent obscuring lower nodes)
+        const textToDraw = isHovered ? node.label : node.shortLabel;
+        const shouldShowLabel = isHovered || node.type === "folder" || node.id === "root" || node.scale > 0.75;
+
+        if (shouldShowLabel) {
           ctx.font = `${Math.max(10, Math.round(11 * node.scale))}px monospace`;
-          ctx.fillStyle = isHovered ? "#ffffff" : "rgba(241, 245, 249, 0.9)";
+          const textMetrics = ctx.measureText(textToDraw);
+          const textW = textMetrics.width + 12;
+          const textH = 18 * node.scale;
+          const pillX = node.screenX - textW / 2;
+          const pillY = node.screenY + radius + 6 * node.scale;
+
+          // Glass Pill Background (Occludes lower background objects cleanly)
+          ctx.fillStyle = isHovered ? "rgba(30, 27, 75, 0.95)" : "rgba(15, 23, 42, 0.85)";
+          ctx.strokeStyle = isHovered ? "rgba(168, 85, 247, 0.8)" : "rgba(99, 102, 241, 0.35)";
+          ctx.lineWidth = 1;
+
+          ctx.beginPath();
+          ctx.roundRect(pillX, pillY, textW, textH, 6);
+          ctx.fill();
+          ctx.stroke();
+
+          // Label Text
+          ctx.fillStyle = isHovered ? "#ffffff" : "rgba(241, 245, 249, 0.95)";
           ctx.textAlign = "center";
-          ctx.fillText(node.label, node.screenX, node.screenY + radius + 13 * node.scale);
+          ctx.fillText(textToDraw, node.screenX, pillY + textH - 5 * node.scale);
         }
       });
 
@@ -408,12 +412,10 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
     };
   }, [nodes3D, edges3D, rotX, rotY, hoveredNode, expandedFolders]);
 
-  // Smooth Zoom Trigger Helper
   const applySmoothZoom = (delta: number) => {
-    targetZoomRef.current = Math.max(260, Math.min(1100, targetZoomRef.current + delta));
+    targetZoomRef.current = Math.max(200, Math.min(1300, targetZoomRef.current + delta));
   };
 
-  // Mouse Handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     isDragging.current = true;
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -434,7 +436,6 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       return;
     }
 
-    // Raycast hit-test
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -456,7 +457,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       const y1 = node.y * cosX - z1 * sinX;
       const z2 = node.y * sinX + z1 * cosX;
 
-      const scale = FOV / (FOV + z2 + 400);
+      const scale = FOV / (FOV + z2 + 450);
       const sx = cx + x1 * scale;
       const sy = cy + y1 * scale;
 
@@ -477,7 +478,6 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
   const handleClick = () => {
     if (!hoveredNode) return;
 
-    // Folder Expansion Toggle Action
     if (hoveredNode.type === "folder") {
       setExpandedFolders((prev) => {
         const next = new Set(prev);
@@ -499,8 +499,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
 
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    // Smooth Lerp Zoom on Wheel Scroll
-    applySmoothZoom(-e.deltaY * 0.65);
+    applySmoothZoom(-e.deltaY * 2.2);
   };
 
   return (
@@ -516,17 +515,17 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         className="w-full h-full block"
       />
 
-      {/* Smooth 3D Controls overlay */}
+      {/* Controls */}
       <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg">
         <button
-          onClick={() => applySmoothZoom(120)}
+          onClick={() => applySmoothZoom(240)}
           className="p-1.5 rounded hover:bg-indigo-600/30 text-slate-200 transition"
           title="Smooth Zoom In"
         >
           <ZoomIn className="w-4 h-4 text-indigo-400" />
         </button>
         <button
-          onClick={() => applySmoothZoom(-120)}
+          onClick={() => applySmoothZoom(-240)}
           className="p-1.5 rounded hover:bg-indigo-600/30 text-slate-200 transition"
           title="Smooth Zoom Out"
         >
@@ -545,7 +544,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         </button>
       </div>
 
-      {/* Floating Hover HUD Card with Folder Expand Indicator */}
+      {/* Hover HUD */}
       {hoveredNode && (
         <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-slate-900/90 border border-indigo-500/30 backdrop-blur-md shadow-2xl text-xs text-slate-200 font-mono flex items-center gap-2.5 max-w-md animate-in fade-in duration-200">
           <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -559,7 +558,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
             {hoveredNode.type === "folder" ? (
               <p className="text-[11px] text-sky-300 mt-1 flex items-center gap-1 font-semibold">
                 <FolderOpen className="w-3.5 h-3.5 text-sky-400" />
-                <span>Click folder to {expandedFolders.has(hoveredNode.id) || expandedFolders.has(hoveredNode.label) ? "collapse" : "expand 3D internal subfolder box"}</span>
+                <span>Click folder to toggle 3D subfolder box</span>
               </p>
             ) : (
               <p className="text-[11px] text-slate-400 mt-0.5">Click to inspect file content in code viewer</p>
@@ -568,10 +567,10 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         </div>
       )}
 
-      {/* Navigation Legend HUD */}
+      {/* Drag & Zoom Instructions */}
       <div className="absolute bottom-3 right-3 p-2 rounded-md bg-slate-900/80 border border-slate-800 backdrop-blur-md text-[11px] text-slate-400 font-mono flex items-center gap-2 pointer-events-none">
         <Move className="w-3.5 h-3.5 text-indigo-400" />
-        <span>Smooth Scroll Zoom • Drag 360° • Click Folder to Expand Subfolder Box</span>
+        <span>Smooth Scroll Zoom • Drag 360° • Glass Tagging Enabled</span>
       </div>
     </div>
   );

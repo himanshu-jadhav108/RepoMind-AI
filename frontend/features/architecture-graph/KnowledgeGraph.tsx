@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useCallback } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -11,8 +11,23 @@ import ReactFlow, {
   Panel,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Layers, Folder, FileCode, Cpu, Box, Maximize2, Sparkles, Orbit } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Layers, Maximize2, Bot, Sparkles, SlidersHorizontal } from "lucide-react";
+
+import { useGraphStore } from "./store/useGraphStore";
+import { getDagreLayout } from "./layout-engine/dagreLayout";
+import { getForceLayout } from "./layout-engine/forceLayout";
+import { getRadialLayout } from "./layout-engine/radialLayout";
+
+import { FolderNode } from "./custom-nodes/FolderNode";
+import { FileNode } from "./custom-nodes/FileNode";
+import { SymbolNode } from "./custom-nodes/SymbolNode";
+
+import { GraphHeaderStats } from "./components/GraphHeaderStats";
+import { GraphToolbar } from "./components/GraphToolbar";
+import { NodeHoverCard } from "./components/NodeHoverCard";
+import { NodeInspectorSidebar } from "./components/NodeInspectorSidebar";
+import { AgentTraversalOverlay } from "./components/AgentTraversalOverlay";
 import { KnowledgeGraph3D } from "./KnowledgeGraph3D";
 
 interface KnowledgeGraphProps {
@@ -20,219 +35,210 @@ interface KnowledgeGraphProps {
   onNodeClick?: (nodeId: string) => void;
 }
 
-// Fallback demo graph when graphData is empty/loading
-const DEMO_NODES = [
-  { id: "root", type: "file", position: { x: 350, y: 40 }, data: { label: "backend/app/main.py", language: "Python" } },
-  { id: "orch", type: "file", position: { x: 150, y: 180 }, data: { label: "orchestration/graph.py", language: "Python" } },
-  { id: "ingest", type: "file", position: { x: 550, y: 180 }, data: { label: "services/repo_ingestion_service.py", language: "Python" } },
-  { id: "router", type: "file", position: { x: 150, y: 320 }, data: { label: "providers/provider_router.py", language: "Python" } },
-  { id: "agent", type: "file", position: { x: 550, y: 320 }, data: { label: "agents/architect_agent.py", language: "Python" } },
-];
+// Register custom node renderers
+const nodeTypes = {
+  folder: FolderNode,
+  file: FileNode,
+  class: SymbolNode,
+  function: SymbolNode,
+  default: FileNode,
+};
 
-const DEMO_EDGES = [
-  { id: "e1", source: "root", target: "orch", label: "imports", animated: true, type: "smoothstep", style: { stroke: "#818cf8" } },
-  { id: "e2", source: "root", target: "ingest", label: "imports", animated: true, type: "smoothstep", style: { stroke: "#818cf8" } },
-  { id: "e3", source: "orch", target: "router", label: "uses", animated: false, type: "smoothstep", style: { stroke: "#64748b" } },
-  { id: "e4", source: "ingest", target: "agent", label: "uses", animated: false, type: "smoothstep", style: { stroke: "#64748b" } },
-];
-
-/**
- * Assigns a hierarchical tier (level 0 to 3) to a node based on its type & path
- * to create a beautiful DAG tree architecture layout instead of a straight line grid.
- */
-function getNodeLevel(node: any): number {
-  const type = node.type || "file";
-  const id = (node.id || "").toLowerCase();
-  const label = (node.data?.label || id).toLowerCase();
-
-  if (id === "root" || label.includes("main.py") || label.includes("app.py") || label.includes("index.ts")) {
-    return 0; // Top entry point
-  }
-  if (type === "folder" || label.includes("folder")) {
-    return 1; // Top folder containers
-  }
-  if (type === "file" || label.endsWith(".py") || label.endsWith(".ts") || label.endsWith(".js")) {
-    return 2; // Services, agents, modules
-  }
-  return 3; // Classes, functions, symbols
-}
+// Fallback demo graph data
+const DEMO_GRAPH_DATA = {
+  nodes: [
+    { id: "root", type: "file", data: { label: "backend/app/main.py", language: "Python", health: "healthy", confidence: 0.96 } },
+    { id: "backend", type: "folder", data: { label: "backend/", child_count: 8 } },
+    { id: "frontend", type: "folder", data: { label: "frontend/", child_count: 12 } },
+    { id: "services", type: "folder", data: { label: "backend/app/services/", parent_id: "backend", child_count: 3 } },
+    { id: "agents", type: "folder", data: { label: "backend/app/agents/", parent_id: "backend", child_count: 10 } },
+    { id: "analysis_service", type: "file", data: { label: "analysis_service.py", language: "Python", parent_id: "services", health: "healthy", confidence: 0.94 } },
+    { id: "repo_service", type: "file", data: { label: "repo_ingestion_service.py", language: "Python", parent_id: "services", health: "warning", confidence: 0.88 } },
+    { id: "architect_agent", type: "file", data: { label: "architect_agent.py", language: "Python", parent_id: "agents", health: "healthy", confidence: 0.95 } },
+    { id: "reviewer_agent", type: "file", data: { label: "reviewer_agent.py", language: "Python", parent_id: "agents", health: "ai_generated", confidence: 0.97 } },
+  ],
+  edges: [
+    { id: "e1", source: "root", target: "backend", label: "contains", animated: false },
+    { id: "e2", source: "root", target: "frontend", label: "contains", animated: false },
+    { id: "e3", source: "backend", target: "services", label: "contains", animated: false },
+    { id: "e4", source: "backend", target: "agents", label: "contains", animated: false },
+    { id: "e5", source: "services", target: "analysis_service", label: "contains", animated: false },
+    { id: "e6", source: "services", target: "repo_service", label: "contains", animated: false },
+    { id: "e7", source: "agents", target: "architect_agent", label: "contains", animated: false },
+    { id: "e8", source: "agents", target: "reviewer_agent", label: "contains", animated: false },
+    { id: "e9", source: "analysis_service", target: "architect_agent", label: "imports", animated: true },
+  ],
+};
 
 export function KnowledgeGraph({ graphData, onNodeClick }: KnowledgeGraphProps) {
-  const [viewMode, setViewMode] = useState<"2D" | "3D">("2D");
-  const [maxNodesLimit, setMaxNodesLimit] = useState<number>(45);
+  // Read state from Zustand Graph Store
+  const drillLevel = useGraphStore((s) => s.drillLevel);
+  const expandedNodeIds = useGraphStore((s) => s.expandedNodeIds);
+  const layoutMode = useGraphStore((s) => s.layoutMode);
+  const selectedAgent = useGraphStore((s) => s.selectedAgent);
+  const searchQuery = useGraphStore((s) => s.searchQuery);
+  const selectedRisk = useGraphStore((s) => s.selectedRisk);
+  const setSelectedNodeId = useGraphStore((s) => s.setSelectedNodeId);
 
-  // Compute hierarchical tree positions for 2D nodes
-  const layoutNodes: Node[] = useMemo(() => {
-    const rawNodes = graphData?.nodes || [];
+  const rawData = graphData?.nodes && graphData.nodes.length > 0 ? graphData : DEMO_GRAPH_DATA;
 
-    if (rawNodes.length === 0) {
-      return DEMO_NODES.map((n) => ({
-        ...n,
-        style: getNodeStyle(n.type),
-      }));
+  // Filter & Drill-down Nodes (Level 1 to Level 5)
+  const filteredNodes: Node[] = useMemo(() => {
+    let nodes = rawData.nodes || [];
+
+    // Search Query Filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      nodes = nodes.filter(
+        (n: any) =>
+          n.id.toLowerCase().includes(q) ||
+          (n.data?.label || "").toLowerCase().includes(q) ||
+          (n.data?.language || "").toLowerCase().includes(q)
+      );
     }
 
-    const displayNodes = rawNodes.slice(0, maxNodesLimit);
+    // Risk Filter
+    if (selectedRisk !== "all") {
+      nodes = nodes.filter((n: any) => n.data?.health === selectedRisk || selectedRisk === "low");
+    }
 
-    const tiers: Record<number, any[]> = { 0: [], 1: [], 2: [], 3: [] };
-    displayNodes.forEach((n) => {
-      const lvl = getNodeLevel(n);
-      tiers[lvl].push(n);
-    });
-
-    const result: Node[] = [];
-    const LEVEL_HEIGHT = 160;
-    const NODE_WIDTH = 220;
-
-    Object.keys(tiers).forEach((tierKey) => {
-      const lvl = Number(tierKey);
-      const nodesInTier = tiers[lvl];
-      const count = nodesInTier.length;
-      if (count === 0) return;
-
-      const totalWidth = count * NODE_WIDTH;
-      const startX = Math.max(50, 400 - totalWidth / 2);
-
-      nodesInTier.forEach((n, idx) => {
-        const x = startX + idx * NODE_WIDTH;
-        const y = 50 + lvl * LEVEL_HEIGHT;
-        const nodeType = n.type || "file";
-        const label = n.data?.label || n.id;
-
-        result.push({
-          id: n.id,
-          position: { x, y },
-          data: {
-            label: (
-              <div className="flex items-center gap-2">
-                {getNodeIcon(nodeType)}
-                <span className="font-mono truncate max-w-[150px]">{label}</span>
-              </div>
-            ),
-          },
-          style: getNodeStyle(nodeType),
-        });
+    // Dynamic Interactive Folder Expansion (Click folder to reveal subfolders & files)
+    if (!expandedNodeIds.has("*")) {
+      nodes = nodes.filter((n: any) => {
+        const parentId = n.data?.parent_id || n.data?.parentFolder;
+        if (!parentId) return true; // Top-level nodes with no parent are always visible
+        return expandedNodeIds.has(parentId);
       });
-    });
+    }
 
-    return result;
-  }, [graphData, maxNodesLimit]);
+    return nodes.map((n: any) => ({
+      id: n.id,
+      type: n.type || "file",
+      data: n.data || { label: n.id },
+      position: { x: 0, y: 0 },
+    }));
+  }, [rawData, drillLevel, expandedNodeIds, searchQuery, selectedRisk]);
 
-  // Transform 2D edges
-  const layoutEdges: Edge[] = useMemo(() => {
-    const rawEdges = graphData?.edges || [];
-    if (rawEdges.length === 0) return DEMO_EDGES;
-
-    const validNodeIds = new Set(layoutNodes.map((n) => n.id));
+  // Edges Filter
+  const filteredEdges: Edge[] = useMemo(() => {
+    const validIds = new Set(filteredNodes.map((n) => n.id));
+    const rawEdges = rawData.edges || [];
 
     return rawEdges
-      .filter((e) => validNodeIds.has(e.source) && validNodeIds.has(e.target))
-      .slice(0, 80)
-      .map((e, idx) => {
+      .filter((e: any) => validIds.has(e.source) && validIds.has(e.target))
+      .slice(0, 100)
+      .map((e: any, idx: number) => {
         const isImport = e.label === "imports" || e.animated;
+        const isAgentPath = selectedAgent !== null;
+
         return {
           id: e.id || `edge-${idx}`,
           source: e.source,
           target: e.target,
           type: "smoothstep",
-          animated: isImport,
+          animated: isImport || isAgentPath,
           style: {
-            stroke: isImport ? "#818cf8" : "#475569",
-            strokeWidth: isImport ? 1.8 : 1.2,
+            stroke: isAgentPath ? "#c084fc" : isImport ? "#818cf8" : "#475569",
+            strokeWidth: isAgentPath ? 2.5 : isImport ? 1.8 : 1.2,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
             width: 12,
             height: 12,
-            color: isImport ? "#818cf8" : "#475569",
+            color: isAgentPath ? "#c084fc" : isImport ? "#818cf8" : "#475569",
           },
         };
       });
-  }, [graphData, layoutNodes]);
+  }, [rawData, filteredNodes, selectedAgent]);
+
+  // Apply Selected Layout Engine (Tree, Force, Radial, Architecture, etc.)
+  const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(() => {
+    if (layoutMode === "force" || layoutMode === "network" || layoutMode === "heatmap") {
+      return getForceLayout(filteredNodes, filteredEdges);
+    }
+    if (layoutMode === "circular" || layoutMode === "module") {
+      return getRadialLayout(filteredNodes, filteredEdges);
+    }
+    if (layoutMode === "architecture") {
+      return getDagreLayout(filteredNodes, filteredEdges, "LR");
+    }
+    // Default Tree & Folder Layouts
+    return getDagreLayout(filteredNodes, filteredEdges, "TB");
+  }, [filteredNodes, filteredEdges, layoutMode]);
+
+  // Handle Node Click
+  const handleNodeClickInternal = useCallback(
+    (e: any, node: Node) => {
+      if (e) {
+        if (typeof e.preventDefault === "function") e.preventDefault();
+        if (typeof e.stopPropagation === "function") e.stopPropagation();
+      }
+      setSelectedNodeId(node.id);
+      if (onNodeClick) {
+        onNodeClick(node.id);
+      }
+    },
+    [setSelectedNodeId, onNodeClick]
+  );
 
   return (
-    <Card className="w-full h-[540px] flex flex-col border border-border/80 shadow-lg">
-      <CardHeader className="py-3 border-b border-border/60 bg-slate-900/50">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Layers className="w-4 h-4 text-indigo-400" />
-            <span>Repository Knowledge Graph</span>
-          </CardTitle>
+    <Card className="w-full flex flex-col border border-border/80 shadow-2xl overflow-hidden bg-slate-950">
+      {/* 1. Top Repository AI Statistics Panel */}
+      <GraphHeaderStats />
 
-          {/* Mode Toggle & Legends */}
-          <div className="flex items-center gap-3 text-xs font-mono">
-            {/* 2D / 3D Mode Toggle Button Segment */}
-            <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800">
-              <button
-                onClick={() => setViewMode("2D")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition ${
-                  viewMode === "2D"
-                    ? "bg-indigo-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>2D Tree</span>
-              </button>
-              <button
-                onClick={() => setViewMode("3D")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition ${
-                  viewMode === "3D"
-                    ? "bg-purple-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Orbit className="w-3.5 h-3.5 text-purple-300" />
-                <span className="flex items-center gap-1">
-                  3D Galaxy <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
-                </span>
-              </button>
-            </div>
+      {/* 2. Interactive Search, Filters & Layout Switcher Toolbar */}
+      <GraphToolbar />
 
-            {viewMode === "2D" && (
-              <>
-                <span className="hidden sm:flex items-center gap-1 text-muted-foreground">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> Imports
-                </span>
-                {graphData?.nodes && graphData.nodes.length > maxNodesLimit && (
-                  <button
-                    onClick={() => setMaxNodesLimit((prev) => (prev === 45 ? 120 : 45))}
-                    className="px-2 py-0.5 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 transition"
-                  >
-                    {maxNodesLimit === 45 ? `Show All (${graphData.nodes.length})` : "Show Focused (45)"}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
+      {/* 3. Main Visualization Canvas (2D ReactFlow or 3D WebGL Galaxy) */}
+      <CardContent className="h-[540px] p-0 relative overflow-hidden bg-slate-950">
+        {/* Agent Reasoning Traversal Overlay Card */}
+        {selectedAgent && <AgentTraversalOverlay agentName={selectedAgent} />}
 
-      <CardContent className="flex-1 p-0 relative overflow-hidden rounded-b-xl bg-slate-950">
-        {viewMode === "3D" ? (
-          <KnowledgeGraph3D graphData={graphData} onNodeClick={onNodeClick} />
+        {/* Floating Glass Hover Inspector Tooltip */}
+        <NodeHoverCard />
+
+        {/* Right-Side Detailed Node Analytics Inspector Drawer */}
+        <NodeInspectorSidebar graphData={rawData} />
+
+        {/* Layout Render Condition */}
+        {layoutMode === "galaxy" ? (
+          <KnowledgeGraph3D graphData={rawData} onNodeClick={onNodeClick} />
         ) : (
           <ReactFlow
-            nodes={layoutNodes}
-            edges={layoutEdges}
-            onNodeClick={(_, node) => onNodeClick && onNodeClick(node.id)}
+            nodes={layoutedNodes}
+            edges={layoutedEdges}
+            nodeTypes={nodeTypes}
+            onNodeClick={handleNodeClickInternal}
             fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.2}
-            maxZoom={1.5}
-            onlyRenderVisibleElements={true}
+            fitViewOptions={{ padding: 0.25, duration: 300 }}
+            minZoom={0.1}
+            maxZoom={3.0}
+            panOnDrag={true}
+            nodesDraggable={true}
+            zoomOnScroll={true}
+            zoomOnPinch={true}
+            zoomOnDoubleClick={true}
           >
             <Background color="#1e293b" gap={20} size={1} />
-            <Controls className="bg-slate-900 border-slate-800 text-white fill-white rounded-lg shadow" />
+            <Controls className="bg-slate-900 border-slate-800 text-white fill-white rounded-lg shadow-xl" />
             <MiniMap
-              nodeColor={(n) => (n.style?.background as string) || "#1e293b"}
-              maskColor="rgba(15, 23, 42, 0.7)"
-              className="bg-slate-900 border-slate-800 rounded-lg hidden sm:block"
+              pannable={true}
+              zoomable={false} // Prevents scroll wheel over MiniMap from jumping viewport off-screen
+              nodeColor={(n) => {
+                if (n.type === "folder") return "#38bdf8";
+                if (n.type === "class") return "#fbbf24";
+                if (n.type === "function") return "#34d399";
+                return "#818cf8";
+              }}
+              maskColor="rgba(15, 23, 42, 0.75)"
+              className="bg-slate-900 border-slate-800 rounded-lg hidden sm:block shadow-lg cursor-grab active:cursor-grabbing"
             />
             <Panel position="bottom-left" className="m-3">
-              <div className="p-2 rounded-md bg-slate-900/80 border border-slate-800 backdrop-blur-md text-[11px] text-slate-300 font-mono flex items-center gap-2">
+              <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 backdrop-blur-md text-[11px] text-slate-300 font-mono flex items-center gap-2 shadow-lg">
                 <Maximize2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Hierarchical DAG Tree • Click node to inspect code</span>
+                <span>
+                  {layoutMode.toUpperCase()} Layout • Level {drillLevel} Drill-down • Click node to inspect
+                </span>
               </div>
             </Panel>
           </ReactFlow>
@@ -240,60 +246,4 @@ export function KnowledgeGraph({ graphData, onNodeClick }: KnowledgeGraphProps) 
       </CardContent>
     </Card>
   );
-}
-
-function getNodeIcon(type: string) {
-  switch (type) {
-    case "folder":
-      return <Folder className="w-3.5 h-3.5 text-sky-400 shrink-0" />;
-    case "class":
-      return <Box className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
-    case "function":
-      return <Cpu className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
-    default:
-      return <FileCode className="w-3.5 h-3.5 text-indigo-400 shrink-0" />;
-  }
-}
-
-function getNodeStyle(type: string): React.CSSProperties {
-  switch (type) {
-    case "folder":
-      return {
-        background: "rgba(14, 165, 233, 0.12)",
-        color: "#e0f2fe",
-        border: "1px solid rgba(56, 189, 248, 0.5)",
-        borderRadius: "8px",
-        padding: "8px 12px",
-        fontSize: "12px",
-        boxShadow: "0 0 12px rgba(56, 189, 248, 0.15)",
-      };
-    case "class":
-      return {
-        background: "rgba(245, 158, 11, 0.12)",
-        color: "#fef3c7",
-        border: "1px solid rgba(245, 158, 11, 0.5)",
-        borderRadius: "20px",
-        padding: "6px 12px",
-        fontSize: "11px",
-      };
-    case "function":
-      return {
-        background: "rgba(16, 185, 129, 0.12)",
-        color: "#d1fae5",
-        border: "1px solid rgba(16, 185, 129, 0.5)",
-        borderRadius: "20px",
-        padding: "6px 12px",
-        fontSize: "11px",
-      };
-    default:
-      return {
-        background: "rgba(30, 41, 59, 0.9)",
-        color: "#f8fafc",
-        border: "1px solid rgba(129, 140, 248, 0.4)",
-        borderRadius: "8px",
-        padding: "8px 12px",
-        fontSize: "12px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-      };
-  }
 }
