@@ -22,12 +22,22 @@ class BugHunterAgent(BaseAgent):
 
         repo_struct = state.get("repo_structure", {})
         top_files = repo_struct.get("top_central_modules", [])[:5]
+        file_contexts = repo_struct.get("file_contexts", {})
+
+        # Format source code context into prompt
+        code_blocks = []
+        for path, code in list(file_contexts.items())[:5]:
+            code_blocks.append(f"```python\n# File: {path}\n{code}\n```")
+        source_context = "\n\n".join(code_blocks) if code_blocks else "No source code available."
 
         prompt = f"""
         You are the Bug Hunter Agent for RepoMind AI.
-        Scan the target project modules for potential bugs, anti-patterns, or code smells.
+        Scan the target project modules and source code below for potential bugs, anti-patterns, or code smells.
 
         Modules to inspect: {json.dumps(top_files)}
+
+        Source Code Context:
+        {source_context}
 
         Return a JSON object containing a list of findings matching this exact schema:
         {{
@@ -43,7 +53,7 @@ class BugHunterAgent(BaseAgent):
                     "suggested_fix": "Concrete remediation guidance",
                     "reasoning": "Detailed explanation of why this pattern is problematic",
                     "confidence": 0.85,
-                    "evidence": "Code snippet or signal triggering this finding",
+                    "evidence": "Quote an actual line range and code snippet directly from the provided source code above (e.g. Lines 12-15 in path/to/file.py)",
                     "referenced_files": ["path/to/file.py"]
                 }}
             ]

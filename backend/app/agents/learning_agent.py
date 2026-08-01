@@ -24,21 +24,26 @@ class LearningAgent(BaseAgent):
 
         prompt = f"""
         You are the Learning Agent for RepoMind AI.
-        Explain the following code snippet from '{file_path}' in simple, plain language without heavy jargon.
+        Explain the code snippet from '{file_path}' in clear, jargon-free plain language.
 
         Code Snippet:
-        ```
+        ```python
         {code_snippet}
         ```
 
-        Return a JSON object:
+        Return a JSON object matching this exact schema:
         {{
-            "explanation": "Simple step-by-step plain language walkthrough of what this code does and why it's structured this way",
-            "related_concepts": ["Concept 1", "Concept 2"]
+            "summary": "A concise one-sentence high-level overview of what this file does",
+            "line_by_line": [
+                {{"lines": "1-15", "explanation": "Imports dependencies and initializes core service layer."}}
+            ],
+            "analogy": "A simple, intuitive real-world analogy describing the core logic",
+            "common_pitfalls": ["Common bug or pitfall developers might make when editing this file"],
+            "related_concepts": ["Clean Architecture", "Dependency Injection"]
         }}
         """
 
-        system_instruction = "You are a friendly Coding Mentor. Prefer analogies and clear explanations. Output valid JSON."
+        system_instruction = "You are a friendly Senior Software Architect and Coding Mentor. Output valid JSON only."
 
         try:
             res = await self.provider_router.generate(
@@ -49,10 +54,24 @@ class LearningAgent(BaseAgent):
                 agent_name=self.name,
             )
             parsed = json.loads(res.content)
+            # Guarantee schema fields exist
+            if "summary" not in parsed:
+                parsed["summary"] = f"Core module {file_path} handles key execution logic for the repository."
+            if "line_by_line" not in parsed or not isinstance(parsed["line_by_line"], list):
+                parsed["line_by_line"] = []
+            if "analogy" not in parsed:
+                parsed["analogy"] = "Functions like a central dispatcher routing requests to domain handlers."
+            if "common_pitfalls" not in parsed or not isinstance(parsed["common_pitfalls"], list):
+                parsed["common_pitfalls"] = []
+            if "related_concepts" not in parsed or not isinstance(parsed["related_concepts"], list):
+                parsed["related_concepts"] = ["Software Architecture", "Modular Design"]
             return parsed
         except Exception as e:
             logger.warning(f"[{self.name}] Explain code failed: {str(e)}")
             return {
-                "explanation": f"This code component in {file_path} handles key execution logic for the system.",
-                "related_concepts": ["Software Architecture", "Clean Code"],
+                "summary": f"Module '{file_path}' handles core structural logic for the application.",
+                "line_by_line": [],
+                "analogy": "Acts as an orchestration node connecting component layers.",
+                "common_pitfalls": [],
+                "related_concepts": ["Clean Architecture", "Modular Design"],
             }

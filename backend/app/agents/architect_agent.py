@@ -23,24 +23,34 @@ class ArchitectAgent(BaseAgent):
         repo_struct = state.get("repo_structure", {})
         kg_data = state.get("knowledge_graph_data", {})
         top_modules = repo_struct.get("top_central_modules", [])
+        file_contexts = repo_struct.get("file_contexts", {})
+
+        # Format source code context into prompt
+        code_blocks = []
+        for path, code in list(file_contexts.items())[:5]:
+            code_blocks.append(f"```python\n# File: {path}\n{code}\n```")
+        source_context = "\n\n".join(code_blocks) if code_blocks else "No source code available."
 
         prompt = f"""
         You are the Architect Agent for RepoMind AI.
-        Analyze the repository structure below and explain the system architecture.
+        Analyze the repository structure and real source code below to explain the system architecture.
 
         Repository Overview:
         - Primary Language: {repo_struct.get('primary_language', 'Unknown')}
         - Total Files: {repo_struct.get('total_files', 0)}
         - Top Central Modules: {', '.join(top_modules[:5])}
 
+        Source Code Context:
+        {source_context}
+
         Return a JSON object matching this exact schema:
         {{
             "summary": "Detailed narrative describing overall system architecture and design principles",
             "patterns": ["Clean Architecture", "Modular Strategy"],
             "anti_patterns": ["Potential circular dependency in module X"],
-            "reasoning": "Explanation of structural signals observed in dependency graph",
+            "reasoning": "Explanation of structural signals observed in source code and dependency graph",
             "confidence": 0.90,
-            "evidence": "NetworkX graph centrality metrics",
+            "evidence": "Quote an actual line range or code snippet from the provided source (e.g. Lines 15-30 in app/main.py)",
             "referenced_files": {json.dumps(top_modules[:3])}
         }}
         """

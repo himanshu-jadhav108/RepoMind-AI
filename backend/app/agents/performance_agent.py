@@ -21,12 +21,22 @@ class PerformanceAgent(BaseAgent):
 
         repo_struct = state.get("repo_structure", {})
         top_files = repo_struct.get("top_central_modules", [])[:5]
+        file_contexts = repo_struct.get("file_contexts", {})
+
+        # Format source code context into prompt
+        code_blocks = []
+        for path, code in list(file_contexts.items())[:5]:
+            code_blocks.append(f"```python\n# File: {path}\n{code}\n```")
+        source_context = "\n\n".join(code_blocks) if code_blocks else "No source code available."
 
         prompt = f"""
         You are the Performance Agent for RepoMind AI.
-        Inspect the central modules for algorithmic performance bottlenecks (e.g. N+1 queries, unbounded loops, blocking I/O on async loops).
+        Inspect the central modules and source code below for algorithmic performance bottlenecks (e.g. N+1 queries, unbounded loops, blocking I/O on async loops).
 
         Target Central Modules: {json.dumps(top_files)}
+
+        Source Code Context:
+        {source_context}
 
         Return a JSON object containing performance findings:
         {{
@@ -42,7 +52,7 @@ class PerformanceAgent(BaseAgent):
                     "suggested_fix": "Optimization guidance",
                     "reasoning": "Algorithmic complexity analysis (Big-O)",
                     "confidence": 0.85,
-                    "evidence": "Code loop or blocking call",
+                    "evidence": "Quote an actual line range and code snippet directly from the provided source code above (e.g. Lines 20-30 in path/to/file.py)",
                     "referenced_files": ["path/to/file.py"]
                 }}
             ]

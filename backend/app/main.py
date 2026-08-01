@@ -22,6 +22,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -121,6 +122,47 @@ async def favicon():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.on_event("startup")
+async def seed_demo_workspace():
+    """
+    Seed a complete demo workspace run on backend startup so demo mode requests always succeed.
+    """
+    try:
+        from app.core.dependency_injection import get_analysis_service
+        analysis_service = get_analysis_service()
+        demo_run_id = "demo-hackathon-workspace"
+
+        existing = await analysis_service.analysis_repository.get_by_id(demo_run_id)
+        if not existing:
+            from app.models.analysis import AnalysisRunDetail, RunStatus, AgentStatus, AgentStatusEnum
+            demo_run = AnalysisRunDetail(
+                run_id=demo_run_id,
+                repo_id="repo-repomind-ai",
+                repo_name="RepoMind-AI",
+                repo_owner="himanshu-jadhav108",
+                repo_url="https://github.com/himanshu-jadhav108/RepoMind-AI",
+                commit_sha="a7b8c9d0",
+                status=RunStatus.COMPLETED,
+                agents=[
+                    AgentStatus(name="planner_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="repository_analyzer", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="architect_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="bug_hunter_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="security_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="performance_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="documentation_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="reviewer_agent", status=AgentStatusEnum.COMPLETED),
+                    AgentStatus(name="report_generator", status=AgentStatusEnum.COMPLETED),
+                ],
+                started_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                completed_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            )
+            await analysis_service.analysis_repository.create(demo_run)
+            logger.info("Successfully seeded demo workspace 'demo-hackathon-workspace' on startup.")
+    except Exception as e:
+        logger.warning(f"Could not seed demo workspace: {e}")
+
+
 @app.get("/health", tags=["Health"])
 @app.get(f"{settings.API_V1_STR}/health", tags=["Health"])
 async def health_check():
@@ -131,6 +173,7 @@ async def health_check():
         "status": "ok",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+
 
 
 if __name__ == "__main__":
