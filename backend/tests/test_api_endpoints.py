@@ -95,7 +95,7 @@ def test_analysis_run_lifecycle_and_endpoints():
     # 7. POST /analysis/{runId}/explain (200 OK)
     explain_res = client.post(f"/api/v1/analysis/{run_id}/explain", json={"file": "black.py", "line_start": 1, "line_end": 10})
     assert explain_res.status_code == 200
-    assert "explanation" in explain_res.json()
+    assert "summary" in explain_res.json()
 
     # 8. GET /analysis/{runId}/report (200 OK)
     report_res = client.get(f"/api/v1/analysis/{run_id}/report")

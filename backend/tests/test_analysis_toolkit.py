@@ -48,6 +48,22 @@ def test_git_ingestion_scan(mock_repo_dir):
     assert results["primary_language"] in ["Python", "TypeScript"]
 
 
+def test_git_ingestion_url_validation():
+    from app.core.exceptions import UnprocessableRepoException
+    ingestion = GitIngestionService()
+
+    # Valid GitHub URLs
+    ingestion.validate_repo_url("https://github.com/owner/repo")
+    ingestion.validate_repo_url("https://github.com/owner/repo.git")
+
+    # Invalid URLs (SSRF protection)
+    with pytest.raises(UnprocessableRepoException):
+        ingestion.validate_repo_url("http://evil-site.com/malicious")
+
+    with pytest.raises(UnprocessableRepoException):
+        ingestion.validate_repo_url("file:///etc/passwd")
+
+
 def test_code_parser_symbols(mock_repo_dir):
     parser = CodeParser()
     py_file = str(Path(mock_repo_dir) / "main.py")
