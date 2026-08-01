@@ -11,7 +11,7 @@
   [![Backend](https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi)](https://github.com/himanshu-jadhav108/RepoMind-AI)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-  *Transform any GitHub repository into an interactive, 3D-visualized, fully audited engineering workspace powered by 10 autonomous AI agents.*
+  *Transform any GitHub repository into an interactive, 3D-visualized, fully audited engineering workspace — powered by 10 autonomous AI agents orchestrated via LangGraph.*
 
 </div>
 
@@ -21,7 +21,7 @@
 
 **RepoMind AI** is an enterprise-grade autonomous software engineering intelligence platform designed for the **ChatGPT Codex India Hackathon 2026**.
 
-When a user submits a GitHub repository, RepoMind AI deploys a team of **10 specialized AI agents** orchestrated via **LangGraph**. The platform parses AST symbols, builds a NetworkX dependency graph, runs parallel security, architecture, and performance audits, and renders an interactive **2D ER / 3D WebGL Galaxy Engineering Workspace**.
+When a user submits a GitHub repository, RepoMind AI deploys a team of **10 specialized AI agents** orchestrated via **LangGraph**. The platform extracts code symbols using a multi-language regex parser, builds a **NetworkX dependency graph**, runs parallel security, architecture, and performance audits, and renders an interactive **2D ER / 3D WebGL Galaxy Engineering Workspace**.
 
 ---
 
@@ -71,7 +71,7 @@ graph TD
 ```
 
 1. 📋 **Planner Agent**: Analyzes project metadata and creates a 10-stage execution plan.
-2. 🔍 **Repository Analyzer**: Runs Git cloning in thread workers and extracts NetworkX dependency graphs.
+2. 🔍 **Repository Analyzer**: Runs Git cloning in async thread workers, extracts symbols via multi-language regex parser, and builds NetworkX dependency graphs.
 3. 🏗️ **Architect Agent**: Validates Clean Architecture domain boundaries and design patterns.
 4. 🐛 **Bug Hunter Agent**: Scans exception boundaries and unhandled middleware error paths.
 5. 🛡️ **Security Agent**: Audits CORS origins, SQL injection vectors, and query parameter sanitization.

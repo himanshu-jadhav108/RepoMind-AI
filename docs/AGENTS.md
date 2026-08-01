@@ -57,7 +57,7 @@ No agent emits a bare claim without these four fields populated; the Report Gene
 **Internal Workflow**:
 1. Clone repo via GitPython.
 2. Walk file tree, classify files by language/type.
-3. Parse source files with Tree-sitter to extract symbols (functions, classes, imports).
+3. Parse source files using a multi-language regex-based symbol extractor (Python, TypeScript, JavaScript, Go, Java) to extract functions, classes, and import relationships.
 4. Build a module dependency graph with NetworkX.
 5. Emit a structured `RepoStructure` object into shared state.
 
