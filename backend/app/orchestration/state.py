@@ -37,8 +37,11 @@ class AnalysisState(TypedDict, total=False):
     documentation_markdown: Dict[str, Any]
     feature_suggestions: List[Dict[str, Any]]
 
-    # Reviewer Agent Loop Output
+    # Reviewer Agent Loop Output & Self-Correction State
     reviewed_findings: List[Dict[str, Any]]
+    reviewer_retry_count: int
+    review_passed: bool
+    review_feedback: str
 
     # Final Consolidated Output (Report Generator)
     health_score: Dict[str, Any]

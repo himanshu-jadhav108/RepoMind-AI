@@ -26,11 +26,44 @@ _run_live_statuses: Dict[str, Dict[str, str]] = {}
 
 
 def _set_agent_status(run_id: str, agent_name: str, status: str) -> None:
-    """Thread-safe (within asyncio event loop) update of live agent status."""
+    """Thread-safe update of live agent status + persistent repository sync."""
     if run_id not in _run_live_statuses:
         _run_live_statuses[run_id] = {}
     _run_live_statuses[run_id][agent_name] = status
     logger.debug(f"[LiveStatus] run={run_id} agent={agent_name} -> {status}")
+
+    # Synchronize status to AnalysisRepository persistent store
+    try:
+        from app.core.dependency_injection import get_analysis_repository
+        repo = get_analysis_repository()
+        if repo:
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(_async_persist_agent_status(repo, run_id, agent_name, status))
+            except RuntimeError:
+                pass
+    except Exception as e:
+        logger.debug(f"[LiveStatus] Persistence skip: {e}")
+
+
+async def _async_persist_agent_status(repo, run_id: str, agent_name: str, status: str) -> None:
+    """Helper coroutine for persisting agent status updates to repository."""
+    try:
+        run_detail = await repo.get_by_id(run_id)
+        if run_detail:
+            from app.models.analysis import AgentStatus, AgentStatusEnum
+            status_enum = AgentStatusEnum(status) if status in AgentStatusEnum.__members__.values() else AgentStatusEnum.COMPLETED
+            updated = False
+            for ag in run_detail.agents:
+                if ag.name == agent_name:
+                    ag.status = status_enum
+                    updated = True
+                    break
+            if not updated:
+                run_detail.agents.append(AgentStatus(name=agent_name, status=status_enum))
+            await repo.update(run_id, {"agents": [a.model_dump() for a in run_detail.agents]})
+    except Exception as e:
+        logger.debug(f"[LiveStatus] DB persist error: {e}")
 
 
 def _extract_agent_status(result: Dict[str, Any], agent_name: str) -> str:
@@ -158,12 +191,35 @@ async def feature_suggestion_node(state: AnalysisState) -> Dict[str, Any]:
 
 async def reviewer_loop_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
+    retry_count = state.get("reviewer_retry_count", 0)
     _set_agent_status(run_id, "reviewer_agent", "running")
     provider_router = get_provider_router()
     agent = ReviewerAgent(provider_router)
     result = await agent.run(state)
     _set_agent_status(run_id, "reviewer_agent", _extract_agent_status(result, "reviewer_agent"))
+
+    reviewed = result.get("reviewed_findings", [])
+    has_rejected = any(f.get("review_status") in ("rejected", "flagged_low_confidence") for f in reviewed)
+
+    if has_rejected and retry_count < 2:
+        result["review_passed"] = False
+        result["reviewer_retry_count"] = retry_count + 1
+        result["review_feedback"] = f"Retry {retry_count + 1}: Filter out low-confidence claims and refine evidence."
+    else:
+        result["review_passed"] = True
+        result["reviewer_retry_count"] = retry_count
+
     return result
+
+
+def route_after_reviewer(state: AnalysisState) -> str:
+    """Conditional router: loops back to bug_hunter_agent on rejection up to 2 retries."""
+    review_passed = state.get("review_passed", True)
+    retry_count = state.get("reviewer_retry_count", 0)
+    if not review_passed and retry_count <= 2:
+        logger.info(f"[ReviewerLoop] Rejection detected. Retrying branch (Attempt {retry_count}/2)...")
+        return "bug_hunter_agent"
+    return "report_generator"
 
 
 async def report_generator_node(state: AnalysisState) -> Dict[str, Any]:
@@ -183,7 +239,7 @@ async def report_generator_node(state: AnalysisState) -> Dict[str, Any]:
 def build_repomind_graph() -> StateGraph:
     """
     Constructs the LangGraph StateGraph defining agent nodes, sequential/parallel
-    branches, Reviewer Agent convergence, and Report Generator termination.
+    branches, Reviewer Agent convergence, self-correction retry loop, and Report Generator termination.
     """
     workflow = StateGraph(AnalysisState)
 
@@ -218,8 +274,15 @@ def build_repomind_graph() -> StateGraph:
     workflow.add_edge("performance_agent", "reviewer_agent_loop")
     workflow.add_edge("security_agent", "reviewer_agent_loop")
 
-    # Final join to Report Generator
-    workflow.add_edge("reviewer_agent_loop", "report_generator")
+    # Conditional Self-Correction Loop / Final join to Report Generator
+    workflow.add_conditional_edges(
+        "reviewer_agent_loop",
+        route_after_reviewer,
+        {
+            "bug_hunter_agent": "bug_hunter_agent",
+            "report_generator": "report_generator",
+        },
+    )
     workflow.add_edge("report_generator", END)
 
     return workflow
