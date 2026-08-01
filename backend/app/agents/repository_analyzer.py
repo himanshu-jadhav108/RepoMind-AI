@@ -47,7 +47,17 @@ class RepositoryAnalyzer:
 
             # Step 5: Compute centrality metrics and extract top modules
             top_central = self.graph_builder.get_top_central_modules(knowledge_graph, top_n=10)
-            scan_results["top_central_modules"] = [mod for mod, score in top_central]
+            top_modules = [mod for mod, score in top_central]
+            scan_results["top_central_modules"] = top_modules
+
+            # Step 5b: Build real source code file context for downstream LLM agents
+            from app.analysis_toolkit.context_builder import ContextBuilder
+            context_builder = ContextBuilder()
+            file_contexts, skipped_files = context_builder.build_file_context(
+                clone_path, top_modules, max_files=7
+            )
+            scan_results["file_contexts"] = file_contexts
+            scan_results["skipped_files"] = skipped_files
 
             # Step 6: Serialize to React Flow graph format
             react_flow_graph = self.graph_builder.to_react_flow_format(knowledge_graph)
