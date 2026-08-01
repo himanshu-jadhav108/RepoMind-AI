@@ -5,6 +5,10 @@ export type AgentStatusEnum = "queued" | "running" | "completed" | "failed" | "d
 export interface AgentStatus {
   name: string;
   status: AgentStatusEnum;
+  current_task?: string;
+  files_analyzed?: number;
+  progress?: number;
+  estimated_remaining_sec?: number;
   error?: string;
 }
 
@@ -12,7 +16,10 @@ export interface RepoMetadata {
   repo_id: string;
   owner: string;
   name: string;
+  repo_name?: string;
+  repo_url?: string;
   default_branch: string;
+  created_at?: string;
   last_analyzed_commit?: string;
   last_analyzed_at?: string;
 }
@@ -35,20 +42,31 @@ export interface Finding {
   evidence: string;
   referenced_files: string[];
   review_status: ReviewStatus;
+  why_recommendation_exists?: string;
+  potential_limitations?: string;
+}
+
+export interface HealthDimensionMetric {
+  score: number;
+  reasoning: string;
+  evidence: string;
 }
 
 export interface SubScores {
-  architecture?: number | null;
-  documentation?: number | null;
-  security?: number | null;
-  performance?: number | null;
-  maintainability?: number | null;
-  testing?: number | null;
+  architecture?: number | HealthDimensionMetric | null;
+  security?: number | HealthDimensionMetric | null;
+  performance?: number | HealthDimensionMetric | null;
+  documentation?: number | HealthDimensionMetric | null;
+  testing?: number | HealthDimensionMetric | null;
+  maintainability?: number | HealthDimensionMetric | null;
+  technical_debt?: number | HealthDimensionMetric | null;
 }
 
 export interface HealthScore {
   run_id: string;
   overall_score: number;
+  overall_reasoning?: string;
+  overall_evidence?: string;
   sub_scores: SubScores;
   generated_at: string;
 }
@@ -75,3 +93,70 @@ export interface KnowledgeGraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
 }
+
+export interface AgentPresentation {
+  agent_id?: string;
+  agent_name: string;
+  role?: string;
+  agent_role?: string;
+  avatar?: string;
+  avatar_color?: string;
+  speech?: string;
+  key_point?: string;
+  summary?: string;
+  reasoning?: string;
+  confidence?: number;
+  evidence?: string;
+  referenced_files?: string[];
+  code_reference?: string;
+  severity?: "low" | "medium" | "high" | "critical";
+  recommended_actions?: string[];
+}
+
+export interface ReviewMeetingData {
+  run_id: string;
+  meeting_title: string;
+  verdict: string;
+  verdict_reasoning: string;
+  overall_confidence: number;
+  presentations: AgentPresentation[];
+}
+
+export interface CopilotChatMessage {
+  sender: "user" | "copilot";
+  text: string;
+  timestamp: string;
+  referenced_files?: string[];
+  confidence?: number;
+}
+
+export interface PathStep {
+  node: string;
+  layer: string;
+  description: string;
+}
+
+export interface PathFinderResult {
+  run_id: string;
+  source: string;
+  target: string;
+  hop_count: number;
+  path_found: boolean;
+  steps: PathStep[];
+  summary: string;
+}
+
+export interface SmartLearningExplanation {
+  run_id: string;
+  file: string;
+  depth: "beginner" | "intermediate" | "advanced";
+  explanation: {
+    title: string;
+    overview: string;
+    tech_stack: string[];
+    key_concepts: string[];
+    best_practices: string[];
+    anti_patterns: string[];
+  };
+}
+

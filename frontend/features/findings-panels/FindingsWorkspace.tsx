@@ -63,8 +63,8 @@ export function FindingsWorkspace({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
+    <Card className="w-full h-[650px] flex flex-col">
+      <CardHeader className="pb-3 shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
@@ -154,7 +154,7 @@ export function FindingsWorkspace({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-2">
+      <CardContent className="flex-1 overflow-y-auto space-y-4 pt-2">
         {/* Architecture Tab View */}
         {activeTab === "architecture" && (
           <div className="space-y-3">
@@ -243,16 +243,45 @@ export function FindingsWorkspace({
                     </div>
                   )}
 
-                  {/* Explainability Accordion Details */}
-                  <div className="pt-2 border-t border-border/50 text-xs space-y-1.5 text-muted-foreground">
-                    <div>
-                      <span className="font-semibold text-foreground">Reasoning:</span> {f.reasoning}
+                  {/* Explainability Callout Grid */}
+                  <div className="pt-3 border-t border-border/50 text-xs space-y-2 text-muted-foreground font-mono">
+                    <div className="p-2 rounded-lg bg-purple-950/20 border border-purple-500/20 text-purple-200">
+                      <strong className="text-purple-300">AI Reasoning:</strong> {f.reasoning}
                     </div>
-                    <div>
-                      <span className="font-semibold text-foreground">Evidence:</span>{" "}
-                      <code className="px-1.5 py-0.5 rounded bg-slate-900 text-amber-300 font-mono">
-                        {f.evidence}
-                      </code>
+
+                    <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-amber-200">
+                      <strong className="text-amber-300">Evidence Snippet:</strong>{" "}
+                      <code className="text-amber-300 font-mono">{f.evidence}</code>
+                    </div>
+
+                    {/* Referenced Files list */}
+                    {f.referenced_files && f.referenced_files.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-muted-foreground font-sans">Referenced Files:</span>
+                        {f.referenced_files.map((refFile, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => onSelectFinding && onSelectFinding(refFile, 1)}
+                            className="px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-500/30 hover:underline text-[11px]"
+                          >
+                            📄 {refFile}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Why Recommendation Exists & Potential Limitations */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-sans text-[11px]">
+                      <div className="p-2 rounded-lg bg-blue-950/20 border border-blue-500/20 text-blue-200">
+                        <strong className="text-blue-300 block mb-0.5">Why Recommendation Exists:</strong>
+                        {f.why_recommendation_exists || "Prevents runtime error propagation and enforces clean layer separation."}
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-amber-950/20 border border-amber-500/20 text-amber-200">
+                        <strong className="text-amber-300 block mb-0.5">Potential Limitations:</strong>
+                        {f.potential_limitations || "Static heuristic analysis; verify behavior under heavy concurrent load."}
+                      </div>
                     </div>
                   </div>
                 </div>

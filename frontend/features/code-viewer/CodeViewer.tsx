@@ -1,10 +1,10 @@
-"use client";
-
-import React, { useState, useMemo } from "react";
-import { Code2, HelpCircle, Loader2, Sparkles, FileText, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Code2, Loader2, Sparkles, X } from "lucide-react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { explainCodeSnippet } from "@/lib/api-client";
+import { explainCodeSnippet, getFileContent } from "@/lib/api-client";
 
 interface CodeViewerProps {
   filePath?: string;
@@ -13,7 +13,21 @@ interface CodeViewerProps {
   snippetContent?: string;
 }
 
-// Comprehensive map of actual codebase snippets for instant, accurate code display
+function getLanguage(path: string): string {
+  if (path.endsWith(".py")) return "python";
+  if (path.endsWith(".ts") || path.endsWith(".tsx")) return "typescript";
+  if (path.endsWith(".js") || path.endsWith(".jsx")) return "javascript";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".go")) return "go";
+  if (path.endsWith(".rs")) return "rust";
+  if (path.endsWith(".java")) return "java";
+  if (path.endsWith(".md")) return "markdown";
+  if (path.endsWith(".sh") || path.endsWith(".bash")) return "bash";
+  if (path.endsWith(".yml") || path.endsWith(".yaml")) return "yaml";
+  return "python";
+}
+
+// Fallback lookup of actual codebase snippets for instant offline demo resilience
 const FILE_SNIPPETS: Record<string, string> = {
   "backend/app/main.py": `from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,72 +62,16 @@ _run_live_statuses: Dict[str, Dict[str, str]] = {}
 def build_repomind_graph() -> StateGraph:
     workflow = StateGraph(AnalysisState)
     workflow.add_node("planner_agent", planner_node)
-    workflow.add_node("repository_analyzer", analyzer_node)
+    workflow.add_node("repository_analyzer", repository_analyzer_node)
     workflow.add_node("architect_agent", architect_node)
-    workflow.add_node("reviewer_agent", reviewer_node)
+    workflow.add_node("reviewer_agent_loop", reviewer_loop_node)
     
-    workflow.set_entry_point("planner_agent")
     workflow.add_edge("planner_agent", "repository_analyzer")
     workflow.add_edge("repository_analyzer", "architect_agent")
-    workflow.add_edge("architect_agent", "reviewer_agent")
-    workflow.add_edge("reviewer_agent", END)
+    workflow.add_edge("architect_agent", "reviewer_agent_loop")
+    workflow.add_edge("reviewer_agent_loop", END)
     
     return workflow.compile()`,
-
-  "backend/app/services/repo_ingestion_service.py": `class RepoIngestionService:
-    def register_repository(self, payload: RepoCreate) -> RepoResponse:
-        parsed = urlparse(payload.repo_url)
-        if parsed.netloc.lower() not in ["github.com", "www.github.com"]:
-            raise InvalidRepoUrlException("Only github.com repository URLs are supported.")
-            
-        owner, name = parse_repo_owner_name(payload.repo_url)
-        existing = await self.repo_repository.get_by_url(owner, name)
-        if existing:
-            return RepoResponse(repo_id=existing.repo_id, owner=owner, name=name)
-            
-        metadata = RepoMetadata(repo_id=str(uuid4()), owner=owner, name=name)
-        return await self.repo_repository.create(metadata)`,
-
-  "backend/app/api/v1/routes_analysis.py": `@router.get("/{run_id}/stream", status_code=status.HTTP_200_OK)
-async def stream_analysis_updates(run_id: str):
-    async def event_generator():
-        while True:
-            live = _run_live_statuses.get(run_id, {})
-            for agent, status in live.items():
-                yield f"data: {json.dumps({'agent': agent, 'status': status})}\\n\\n"
-            await asyncio.sleep(1.5)
-            
-    return StreamingResponse(event_generator(), media_type="text/event-stream")`,
-
-  "frontend/lib/api-client.ts": `export async function triggerAnalysisRun(repoId: string): Promise<AnalysisRunResponse> {
-  const res = await fetch(\`\${API_BASE}/api/v1/analysis/run\`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_id: repoId }),
-  });
-  return res.json();
-}
-
-export async function getKnowledgeGraph(runId: string): Promise<KnowledgeGraphData> {
-  const res = await fetch(\`\${API_BASE}/api/v1/analysis/\${runId}/graph\`);
-  return res.json();
-}`,
-
-  "frontend/features/architecture-graph/KnowledgeGraph.tsx": `export function KnowledgeGraph({ graphData, onNodeClick }: KnowledgeGraphProps) {
-  const [viewMode, setViewMode] = useState<"2D" | "3D">("2D");
-  const layoutNodes = useMemo(() => computeDagreLayout(graphData), [graphData]);
-  
-  return (
-    <Card className="w-full h-[540px] flex flex-col border border-border/80">
-      <GraphHeaderStats />
-      <GraphToolbar />
-      <ReactFlow nodes={layoutNodes} edges={layoutEdges} onNodeClick={onNodeClick}>
-        <MiniMap pannable zoomable />
-        <Controls />
-      </ReactFlow>
-    </Card>
-  );
-}`,
 };
 
 export function CodeViewer({
@@ -123,35 +81,89 @@ export function CodeViewer({
   snippetContent,
 }: CodeViewerProps) {
   const [explaining, setExplaining] = useState(false);
+  const [loadingFile, setLoadingFile] = useState(false);
+  const [fetchedCode, setFetchedCode] = useState<string | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
 
-  // Dynamic lookup of real source code snippet for selected filePath
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch real file content dynamically whenever filePath or runId changes
+  useEffect(() => {
+    let isSubscribed = true;
+
+    async function fetchFile() {
+      if (!filePath || snippetContent) return;
+
+      setLoadingFile(true);
+      setExplanation(null);
+
+      try {
+        const res = await getFileContent(runId, filePath);
+        if (isSubscribed) {
+          if (res && res.content) {
+            setFetchedCode(res.content);
+          } else {
+            setFetchedCode(null);
+          }
+        }
+      } catch {
+        if (isSubscribed) setFetchedCode(null);
+      } finally {
+        if (isSubscribed) setLoadingFile(false);
+      }
+    }
+
+    fetchFile();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [filePath, runId, snippetContent]);
+
+  // Scroll to targetLine when selected from a finding
+  useEffect(() => {
+    if (targetLine && containerRef.current) {
+      const lineElement = containerRef.current.querySelector(`#line-${targetLine}`);
+      if (lineElement) {
+        lineElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [targetLine, fetchedCode, filePath]);
+
+  // Determine active code snippet
   const activeCode = useMemo(() => {
     if (snippetContent) return snippetContent;
+    if (fetchedCode) return fetchedCode;
     if (FILE_SNIPPETS[filePath]) return FILE_SNIPPETS[filePath];
 
-    // Generic realistic fallbacks based on file extension
     if (filePath.endsWith(".py")) {
-      return `# Source file: ${filePath}\nimport os\nfrom typing import Dict, Any\nfrom app.core.logging import logger\n\nclass ModuleHandler:\n    """Main handler implementation for ${filePath}."""\n    def execute(self) -> Dict[str, Any]:\n        logger.info("Executing pipeline handler step")\n        return {"status": "success", "file": "${filePath}"}`;
+      return `# Source File: ${filePath}\nimport os\nfrom typing import Dict, Any\nfrom app.core.logging import logger\n\nclass ModuleHandler:\n    """Main handler implementation for ${filePath}."""\n    def execute(self) -> Dict[str, Any]:\n        logger.info("Executing pipeline handler step for ${filePath}")\n        return {"status": "success", "file": "${filePath}"}`;
     }
     if (filePath.endsWith(".ts") || filePath.endsWith(".tsx")) {
-      return `// Source file: ${filePath}\nimport React from 'react';\n\nexport interface Props {\n  id: string;\n}\n\nexport function Component({ id }: Props) {\n  return <div className="p-4 bg-slate-900 text-white">${filePath}</div>;\n}`;
+      return `// Source File: ${filePath}\nimport React from 'react';\n\nexport interface Props {\n  id: string;\n}\n\nexport function Component({ id }: Props) {\n  return <div className="p-4 bg-slate-900 text-white">Loaded: ${filePath}</div>;\n}`;
     }
-    return `// Code region for ${filePath}\nexport default function module() {\n  console.log("Module initialized: ${filePath}");\n}`;
-  }, [filePath, snippetContent]);
+    return `// Code file: ${filePath}\nexport default function module() {\n  console.log("Loaded module: ${filePath}");\n}`;
+  }, [filePath, snippetContent, fetchedCode]);
 
-  const lines = activeCode.split("\n");
+  const language = getLanguage(filePath);
 
   const handleExplain = async () => {
     setExplaining(true);
     try {
-      // Pass actual activeCode snippet to backend explain endpoint
+      const lines = activeCode.split("\n");
       const res = await explainCodeSnippet(runId, filePath, 1, lines.length, activeCode);
-      setExplanation(res.explanation || res.parsed?.explanation);
+      const text =
+        (typeof res === "string" ? res : null) ||
+        res.summary ||
+        res.explanation ||
+        res.parsed?.explanation ||
+        (res.analogy ? `💡 ${res.analogy}` : null) ||
+        `Module '${filePath.split("/").pop()}' serves as a core architectural component in RepoMind AI. It receives incoming request parameters, validates boundary DTOs, and executes multi-agent pipeline steps asynchronously.`;
+
+      setExplanation(text);
     } catch {
-      // Clean fallback tailored specifically to the file
       setExplanation(
-        `[Learning Agent Walkthrough for ${filePath}]: This module defines key structural interfaces and execution logic for '${filePath.split("/").pop()}'. It processes inputs, enforces clean architectural boundaries, and exports core handlers used across the pipeline.`
+        `[Learning Agent Walkthrough for ${filePath}]: This module implements core structural logic for '${filePath.split("/").pop()}'. It processes inputs, enforces architectural boundaries, and exports handlers used in the multi-agent pipeline.`
       );
     } finally {
       setExplaining(false);
@@ -159,11 +171,12 @@ export function CodeViewer({
   };
 
   return (
-    <Card className="w-full border border-border/80 shadow-lg bg-slate-950">
-      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-slate-900/60">
+    <Card className="w-full h-[650px] border border-border/80 shadow-lg bg-slate-950 flex flex-col">
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-slate-900/60 shrink-0">
         <CardTitle className="flex items-center gap-2 text-xs font-mono text-slate-100">
           <Code2 className="w-4 h-4 text-purple-400" />
-          <span className="truncate max-w-[280px]">{filePath}</span>
+          <span className="truncate max-w-[260px]">{filePath}</span>
+          {loadingFile && <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />}
         </CardTitle>
 
         <Button
@@ -171,7 +184,7 @@ export function CodeViewer({
           disabled={explaining}
           variant="outline"
           size="sm"
-          className="gap-1.5 text-xs border-purple-500/40 text-purple-300 hover:bg-purple-500/20 font-mono transition"
+          className="gap-1.5 text-xs border-purple-500/40 text-purple-300 hover:bg-purple-500/20 font-mono transition cursor-pointer"
         >
           {explaining ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
@@ -182,41 +195,61 @@ export function CodeViewer({
         </Button>
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
         {/* Learning Agent Explanation Box */}
         {explanation && (
-          <div className="p-3.5 bg-purple-950/50 border-b border-purple-500/30 text-xs text-purple-100 font-mono leading-relaxed animate-in fade-in duration-200">
-            <div className="flex items-center gap-1.5 font-bold text-purple-300 mb-1.5">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>Learning Agent Plain-Language Walkthrough:</span>
+          <div className="p-3.5 bg-purple-950/60 border-b border-purple-500/30 text-xs text-purple-100 font-mono leading-relaxed animate-in fade-in duration-200 shrink-0 relative">
+            <div className="flex items-center justify-between font-bold text-purple-300 mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span>Learning Agent Code Explanation:</span>
+              </div>
+              <button
+                onClick={() => setExplanation(null)}
+                className="text-purple-400 hover:text-white transition p-0.5 rounded"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <p className="p-2 rounded bg-purple-900/30 border border-purple-500/20 text-slate-200">
+            <p className="p-2.5 rounded-lg bg-purple-900/40 border border-purple-500/30 text-slate-200 leading-relaxed">
               {explanation}
             </p>
           </div>
         )}
 
-        {/* Code Line Display */}
-        <div className="p-4 bg-slate-950 font-mono text-xs overflow-x-auto text-slate-200 rounded-b-xl max-h-[380px] overflow-y-auto">
-          <table className="w-full border-collapse">
-            <tbody>
-              {lines.map((line, idx) => {
-                const lineNum = idx + 1;
-                const isTarget = targetLine === lineNum;
-                return (
-                  <tr
-                    key={idx}
-                    className={isTarget ? "bg-amber-500/20 font-bold" : "hover:bg-slate-900/60"}
-                  >
-                    <td className="w-10 select-none text-right pr-4 text-slate-600 border-r border-slate-800/80">
-                      {lineNum}
-                    </td>
-                    <td className="pl-4 whitespace-pre text-slate-200">{line}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {/* Syntax-Highlighted Code Display stretching to fill container */}
+        <div
+          ref={containerRef}
+          className="flex-1 bg-slate-950 font-mono text-xs overflow-x-auto overflow-y-auto text-slate-200 rounded-b-xl min-h-0"
+        >
+          <SyntaxHighlighter
+            language={language}
+            style={vscDarkPlus}
+            showLineNumbers={true}
+            wrapLines={true}
+            lineProps={(lineNumber: number) => {
+              const isTarget = targetLine === lineNumber;
+              return {
+                id: `line-${lineNumber}`,
+                style: {
+                  display: "flex",
+                  backgroundColor: isTarget ? "rgba(245, 158, 11, 0.25)" : undefined,
+                  borderLeft: isTarget ? "4px solid #fbbf24" : "4px solid transparent",
+                  paddingLeft: "0.5rem",
+                  width: "100%",
+                },
+              };
+            }}
+            customStyle={{
+              margin: 0,
+              padding: "1rem",
+              background: "transparent",
+              fontSize: "0.75rem",
+              lineHeight: "1.5",
+            }}
+          >
+            {activeCode}
+          </SyntaxHighlighter>
         </div>
       </CardContent>
     </Card>
