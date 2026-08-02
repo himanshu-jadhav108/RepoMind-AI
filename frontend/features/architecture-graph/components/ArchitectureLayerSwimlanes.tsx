@@ -132,7 +132,8 @@ export function ArchitectureLayerSwimlanes({ graphData, onNodeClick }: Architect
   };
 
   return (
-    <div className="w-full h-full p-4 bg-slate-950 overflow-y-auto space-y-4 font-sans selection:bg-purple-500 selection:text-white">
+    <div className="w-full p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-4 font-sans selection:bg-purple-500 selection:text-white shadow-2xl">
+
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2 font-mono">

@@ -21,7 +21,9 @@ import {
   Terminal,
   Globe,
   Award,
+  GraduationCap,
 } from "lucide-react";
+
 import { RepoInputForm } from "@/features/repo-input/RepoInputForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,7 +101,26 @@ const AGENTS_LIST = [
     description: "Executes Review → Feedback → Rewrite → Validate → Approve loop, filtering low-confidence AI claims.",
     tools: ["Verification Loop", "Confidence Scorer", "Claim Validation"],
   },
+  {
+    id: "learning",
+    name: "Learning Agent",
+    icon: <GraduationCap className="w-5 h-5 text-indigo-400" />,
+    color: "from-indigo-500/20 to-purple-500/10 border-indigo-500/30",
+    role: "Codebase Mentor & Analogy Generator",
+    description: "Generates intuitive analogies, code walkthroughs, line-by-line breakdowns, and concept guides for onboarding developers.",
+    tools: ["Analogy Generator", "Line Breakdown Engine", "Concept Guide"],
+  },
+  {
+    id: "copilot",
+    name: "Repository Copilot",
+    icon: <Bot className="w-5 h-5 text-cyan-400" />,
+    color: "from-cyan-500/20 to-teal-500/10 border-cyan-500/30",
+    role: "Interactive Multi-Turn Query Agent",
+    description: "Answers natural language developer questions about codebase architecture, AST symbols, and refactoring plans in real-time.",
+    tools: ["Multi-Turn RAG", "AST Query Engine", "Refactor Assistant"],
+  },
 ];
+
 
 export default function HomePage() {
   const [selectedAgentId, setSelectedAgentId] = useState<string>("planner");
@@ -339,8 +360,13 @@ export default function HomePage() {
             </Badge>
           </div>
 
-          {/* Agent Selection Chips - Single Row Layout */}
-          <div className="flex flex-nowrap overflow-x-auto gap-1.5 pt-2 pb-1 scrollbar-none w-full items-center">
+          {/* Agent Selection Chips - Single Line Layout (Hidden Scrollbar) */}
+          <div
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex flex-nowrap overflow-x-auto gap-1.5 pt-2 pb-1 w-full items-center [::-webkit-scrollbar]:hidden"
+          >
+
+
             {AGENTS_LIST.map((agent) => {
               const isSelected = selectedAgentId === agent.id;
               return (
@@ -459,9 +485,11 @@ export default function HomePage() {
       <footer className="w-full border-t border-slate-800/80 py-8 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400">
           <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/RepoMind_AI_logo.jpeg" alt="Logo" className="w-5 h-5 rounded object-cover" />
             <span className="text-slate-300 font-bold">RepoMind AI</span> — Autonomous Software Engineering Workspace
           </div>
+
           <div className="flex items-center gap-3">
             <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">LangGraph</span>
             <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">FastAPI</span>

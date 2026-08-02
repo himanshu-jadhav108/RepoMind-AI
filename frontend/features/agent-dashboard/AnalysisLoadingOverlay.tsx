@@ -16,7 +16,11 @@ import {
   GitBranch,
 } from "lucide-react";
 
+import { getApiBase } from "@/lib/api-client";
+
 interface AnalysisLoadingOverlayProps {
+
+
   runId: string;
   repoUrl: string;
   onComplete: () => void;
@@ -146,8 +150,9 @@ export function AnalysisLoadingOverlay({
       return;
     }
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const API_BASE = getApiBase();
     const sseUrl = `${API_BASE}/api/v1/analysis/${runId}/stream`;
+
 
     try {
       const es = new EventSource(sseUrl);

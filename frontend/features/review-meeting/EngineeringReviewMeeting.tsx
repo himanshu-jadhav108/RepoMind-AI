@@ -475,7 +475,8 @@ export function EngineeringReviewMeeting({
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 font-mono mb-1">
                   Empirical Evidence
                 </h4>
-                <div className="bg-slate-900/90 p-3 rounded-lg border border-cyan-500/20 font-mono text-xs text-cyan-300 font-mono flex items-start gap-2">
+                <div className="bg-slate-900/90 p-3 rounded-lg border border-cyan-500/20 font-mono text-xs text-cyan-300 flex items-start gap-2">
+
                   <FileCode className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
                   <span className="truncate">{currentAgent.evidence || currentAgent.key_point || "AST evidence verified by quality gate."}</span>
                 </div>

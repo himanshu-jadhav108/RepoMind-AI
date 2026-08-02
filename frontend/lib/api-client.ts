@@ -1,6 +1,18 @@
 import { Finding, HealthScore, RepoMetadata, KnowledgeGraphData } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export function getApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    // Client-side: use empty string so requests hit Next.js rewrites transparently
+    return "";
+  }
+  return "http://localhost:8000";
+}
+
+const API_BASE = getApiBase();
+
 
 export async function registerRepository(repoUrl: string): Promise<RepoMetadata> {
   try {

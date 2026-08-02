@@ -23,6 +23,7 @@ interface NodeInspectorSidebarProps {
   graphData?: any;
   runId?: string;
   findings?: any[];
+  inline?: boolean;
 }
 
 interface LineBreakdown {
@@ -38,7 +39,7 @@ interface ExplanationData {
   related_concepts?: string[];
 }
 
-export function NodeInspectorSidebar({ graphData, runId, findings = [] }: NodeInspectorSidebarProps) {
+export function NodeInspectorSidebar({ graphData, runId, findings = [], inline = false }: NodeInspectorSidebarProps) {
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useGraphStore((s) => s.setSelectedNodeId);
 
@@ -74,7 +75,23 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [] }: NodeIn
     };
   }, [selectedNodeId, runId]);
 
-  if (!selectedNodeId) return null;
+  if (!selectedNodeId && !inline) return null;
+
+  if (!selectedNodeId && inline) {
+    return (
+      <div className="w-full h-full min-h-[420px] rounded-xl bg-slate-900/80 border border-slate-800 p-6 flex flex-col items-center justify-center text-center font-mono text-xs text-slate-400 gap-3">
+        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <BookOpen className="w-5 h-5" />
+        </div>
+        <div className="space-y-1 max-w-xs">
+          <span className="font-bold text-slate-200 block text-sm">Learning Agent Analysis</span>
+          <p className="text-slate-400 text-[11px] leading-relaxed">
+            Click any node in the Architecture Graph or select a file to view instant AI code explanations & line-by-line breakdowns.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const nodeData = graphData?.nodes?.find((n: any) => n.id === selectedNodeId) || {
     id: selectedNodeId,
@@ -91,15 +108,20 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [] }: NodeIn
       (Array.isArray(f.referenced_files) && f.referenced_files.includes(selectedNodeId))
   );
 
+  const containerClasses = inline
+    ? "w-full rounded-xl bg-slate-900/90 border border-slate-800 p-5 font-mono text-slate-100 shadow-xl overflow-y-auto max-h-[520px] flex flex-col space-y-4"
+    : "fixed top-0 right-0 h-full w-96 bg-slate-900/95 border-l border-indigo-500/30 backdrop-blur-2xl shadow-2xl z-[999] flex flex-col font-mono text-slate-100 p-5 overflow-y-auto";
+
   return (
     <AnimatePresence>
       <motion.aside
-        initial={{ x: "100%", opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: "100%", opacity: 0 }}
+        initial={inline ? { opacity: 0, y: 10 } : { x: "100%", opacity: 0 }}
+        animate={inline ? { opacity: 1, y: 0 } : { x: 0, opacity: 1 }}
+        exit={inline ? { opacity: 0, y: 10 } : { x: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 220 }}
-        className="fixed top-0 right-0 h-full w-96 bg-slate-900/95 border-l border-indigo-500/30 backdrop-blur-2xl shadow-2xl z-[999] flex flex-col font-mono text-slate-100 p-5 overflow-y-auto"
+        className={containerClasses}
       >
+
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">

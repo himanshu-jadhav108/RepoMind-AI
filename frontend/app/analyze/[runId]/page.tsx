@@ -15,7 +15,9 @@ import { RepoCopilotChat } from "@/features/copilot-chat/RepoCopilotChat";
 import { GuidedTourOverlay } from "@/features/architecture-graph/components/GuidedTourOverlay";
 import { PathFinderPanel } from "@/features/architecture-graph/components/PathFinderPanel";
 import { ArchitectureLayerSwimlanes } from "@/features/architecture-graph/components/ArchitectureLayerSwimlanes";
+import { NodeInspectorSidebar } from "@/features/architecture-graph/components/NodeInspectorSidebar";
 import { SmartLearningPanel } from "@/features/code-viewer/SmartLearningPanel";
+
 import {
   getAnalysisRunStatus,
   getAnalysisFindings,
@@ -299,11 +301,13 @@ export default function AnalyzeWorkspacePage({
             </Button>
           </Link>
           <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
               className="w-8 h-8 rounded-lg object-cover border border-purple-500/30 shadow"
             />
+
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <span>Autonomous Engineering Workspace</span>
@@ -375,7 +379,8 @@ export default function AnalyzeWorkspacePage({
 
       {/* Feature 5: Layer View */}
       {activeTab === "layers" && (
-        <div className="h-[600px]">
+        <div className="w-full">
+
           <ArchitectureLayerSwimlanes
             graphData={graphData}
             onNodeClick={(nodeId) => {
@@ -456,6 +461,8 @@ export default function AnalyzeWorkspacePage({
             />
             <CodeViewer filePath={selectedFile} runId={runId} targetLine={selectedLine} />
           </div>
+
+
         </>
       )}
 

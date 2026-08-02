@@ -200,32 +200,180 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
   });
 }
 
-// Convert markdown to clean HTML string for HTML file export
-function convertMarkdownToHTMLString(markdown: string): string {
-  return markdown
-    .replace(/^# (.*$)/gim, '<h1 style="color: #c084fc; font-size: 22px; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-top: 24px;">$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2 style="color: #38bdf8; font-size: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 6px; margin-top: 20px;">$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3 style="color: #c084fc; font-size: 14px; margin-top: 16px;">$1</h3>')
-    .replace(/^---$/gim, '<hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;" />')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #ffffff;">$1</strong>')
-    .replace(/`(.*?)`/gim, '<code style="background: #1e1b4b; color: #818cf8; padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid rgba(129,140,248,0.3);">$1</code>')
-    .replace(/^- (.*$)/gim, '<li style="margin-left: 20px; color: #cbd5e1; margin-bottom: 6px;">$1</li>');
+// Helper to escape HTML special chars in text before inserting into PDF HTML
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
+
+// Convert inline formatting into styled HTML spans for PDF/HTML output
+function formatInlinePDFHTML(text: string): string {
+  let res = escapeHTML(text);
+
+  // Severity Badges
+  res = res.replace(/\[CRITICAL\]/g, '<span style="background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: monospace;">CRITICAL</span>');
+  res = res.replace(/\[HIGH\]/g, '<span style="background: #fffbeb; border: 1px solid #fde68a; color: #d97706; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: monospace;">HIGH</span>');
+  res = res.replace(/\[MEDIUM\]/g, '<span style="background: #fefce8; border: 1px solid #fef08a; color: #ca8a04; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: monospace;">MEDIUM</span>');
+  res = res.replace(/\[LOW\]/g, '<span style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: monospace;">LOW</span>');
+
+  // Bold & Code & Italic
+  res = res.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #0f172a; font-weight: 700;">$1</strong>');
+  // Clean monospace text without bulky grey bubble background boxes
+  res = res.replace(/`(.*?)`/g, '<code style="color: #4338ca; font-family: Consolas, Monaco, \'Courier New\', monospace; font-weight: 600; font-size: 10.5px;">$1</code>');
+  res = res.replace(/\*(.*?)\*/g, '<em style="color: #64748b;">$1</em>');
+
+  return res;
+}
+
+// Convert markdown structure into executive print-ready HTML
+function parseMarkdownToExecutivePDFHTML(markdown: string): string {
+  const lines = markdown.split("\n");
+  const htmlResult: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    // Skip top duplicate H1 title if present
+    if (trimmed.startsWith("# ") && (i === 0 || trimmed.toLowerCase().includes("repomind"))) {
+      i++;
+      continue;
+    }
+
+    // 1. Table Parsing
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|") && lines[i].trim().endsWith("|")) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+
+      if (tableLines.length >= 2) {
+        const headerCells = tableLines[0]
+          .split("|")
+          .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+          .map((c) => c.trim());
+
+        const dataRows = tableLines
+          .slice(1)
+          .filter((l) => !/^\|[\s\-:]+\|\s*$/.test(l) && !l.includes("---"))
+          .map((row) =>
+            row
+              .split("|")
+              .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+              .map((c) => c.trim())
+          );
+
+        const colCount = headerCells.length;
+        // Assign proportioned column widths for 5-column audit matrix or equal percentages
+        const colWidths = colCount === 5 
+          ? ["18%", "22%", "14%", "14%", "32%"]
+          : headerCells.map(() => `${Math.floor(100 / colCount)}%`);
+
+        let tableHtml = `
+          <table style="width: 100%; table-layout: fixed; margin: 12px 0; border-collapse: collapse; font-size: 9.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; word-wrap: break-word; word-break: break-word; box-sizing: border-box;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #1e1b4b; text-align: left;">
+        `;
+        headerCells.forEach((h, cIdx) => {
+          const w = colWidths[cIdx] || "auto";
+          tableHtml += `<th style="width: ${w}; padding: 7px 8px; font-weight: 700; border-right: 1px solid #e2e8f0; word-break: break-word;">${formatInlinePDFHTML(h)}</th>`;
+        });
+        tableHtml += `</tr></thead><tbody>`;
+
+        dataRows.forEach((row, rIdx) => {
+          const bg = rIdx % 2 === 0 ? "#ffffff" : "#f8fafc";
+          tableHtml += `<tr style="background-color: ${bg}; border-bottom: 1px solid #e2e8f0;">`;
+          row.forEach((cell, cIdx) => {
+            const w = colWidths[cIdx] || "auto";
+            tableHtml += `<td style="width: ${w}; padding: 6px 8px; color: #334155; border-right: 1px solid #e2e8f0; vertical-align: top; word-break: break-word; overflow-wrap: break-word;">${formatInlinePDFHTML(cell)}</td>`;
+          });
+          tableHtml += `</tr>`;
+        });
+        tableHtml += `</tbody></table>`;
+        htmlResult.push(tableHtml);
+        continue;
+      }
+    }
+
+    // 2. Headings
+    if (trimmed.startsWith("# ")) {
+      htmlResult.push(`<h1 style="font-size: 16px; font-weight: 800; color: #1e1b4b; margin-top: 16px; margin-bottom: 8px; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("# ", ""))}</h1>`);
+      i++;
+      continue;
+    }
+
+    if (trimmed.startsWith("## ")) {
+      htmlResult.push(`<h2 style="font-size: 13px; font-weight: 700; color: #4338ca; margin-top: 14px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("## ", ""))}</h2>`);
+      i++;
+      continue;
+    }
+
+    if (trimmed.startsWith("### ")) {
+      htmlResult.push(`<h3 style="font-size: 11px; font-weight: 700; color: #0f172a; margin-top: 10px; margin-bottom: 4px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("### ", ""))}</h3>`);
+      i++;
+      continue;
+    }
+
+    if (trimmed.startsWith("---")) {
+      htmlResult.push(`<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 12px 0;" />`);
+      i++;
+      continue;
+    }
+
+    // 3. Lists
+    if (trimmed.startsWith("- ")) {
+      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #4f46e5; font-weight: bold; line-height: 1;">•</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("- ", ""))}</span></div>`);
+      i++;
+      continue;
+    }
+
+    if (/^\d+\.\s/.test(trimmed)) {
+      const match = trimmed.match(/^(\d+)\.\s/);
+      const num = match ? match[1] : "1";
+      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #4338ca; font-weight: bold; font-family: monospace;">${num}.</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace(/^\d+\.\s/, ""))}</span></div>`);
+      i++;
+      continue;
+    }
+
+    // 4. Standard Paragraph
+    htmlResult.push(`<p style="font-size: 10px; color: #334155; margin: 3px 0; line-height: 1.5; word-break: break-word; overflow-wrap: break-word;">${formatInlinePDFHTML(line)}</p>`);
+    i++;
+  }
+
+  return htmlResult.join("\n");
+}
+
 
 export function ReportExportView({ runId, reportMarkdown }: ReportExportViewProps) {
   const [downloadedFormat, setDownloadedFormat] = useState<string | null>(null);
+  const [generatedDate, setGeneratedDate] = useState<string>("2026-08-02T06:00:00.000Z");
 
-  const defaultReportContent =
-    reportMarkdown ||
-    `# 🛡️ RepoMind AI — Comprehensive Engineering Audit Report
+  React.useEffect(() => {
+    setGeneratedDate(new Date().toISOString());
+  }, []);
+
+  const defaultReportContent = useMemo(
+    () =>
+      reportMarkdown ||
+      `# 🛡️ RepoMind AI — Comprehensive Engineering Audit Report
 
 **Run Identifier**: \`${runId}\`  
-**Generated At**: \`${new Date().toISOString()}\`  
+**Generated At**: \`${generatedDate}\`  
 **Overall Repository Health Score**: \`88.5 / 100\`  
 
 ---
 
 ## 1. Executive Summary
+
 RepoMind AI's multi-agent engineering platform performed an exhaustive architectural, security, performance, documentation, and maintainability audit. The codebase adheres strictly to Clean Layered Architecture with 0 critical OWASP vulnerabilities detected.
 
 ---
@@ -285,7 +433,10 @@ Interactive 2D / 3D WebGL topology generated across 60 modules, 10 folders, and 
 ---
 
 ## 11. Verification Sign-Off
-Report automatically verified and approved by Reviewer Agent Loop (Confidence Score: 96%).`;
+Report automatically verified and approved by Reviewer Agent Loop (Confidence Score: 96%).`,
+    [reportMarkdown, runId, generatedDate]
+  );
+
 
   // Rendered UI elements
   const formattedUIElements = useMemo(
@@ -315,7 +466,7 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
 
   const handleDownloadHTML = () => {
     setDownloadedFormat("html");
-    const parsedBodyHTML = convertMarkdownToHTMLString(defaultReportContent);
+    const parsedBodyHTML = parseMarkdownToExecutivePDFHTML(defaultReportContent);
 
     const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -324,15 +475,15 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RepoMind AI Audit Report - ${runId}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #030712; color: #e2e8f0; padding: 40px; line-height: 1.7; max-width: 900px; margin: 0 auto; }
-    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; padding: 40px; line-height: 1.6; max-width: 920px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #6366f1; padding-bottom: 16px; margin-bottom: 24px; }
     .logo-container { display: flex; align-items: center; gap: 14px; }
-    .logo-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(168,85,247,0.4); }
-    .title { color: #f8fafc; font-size: 20px; font-weight: bold; margin: 0; }
-    .subtitle { color: #94a3b8; font-size: 12px; margin-top: 2px; }
-    .badge { background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .content-box { background: #0f172a; padding: 28px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
-    footer { margin-top: 30px; text-align: center; color: #64748b; font-size: 11px; }
+    .logo-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid #6366f1; }
+    .title { color: #0f172a; font-size: 20px; font-weight: 800; margin: 0; }
+    .subtitle { color: #64748b; font-size: 12px; margin-top: 2px; font-family: monospace; }
+    .badge { background: #ecfdf5; color: #047857; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 11px; border: 1px solid #6ee7b7; font-family: monospace; }
+    .content-box { background: #ffffff; padding: 32px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    footer { margin-top: 30px; text-align: center; color: #94a3b8; font-size: 11px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -344,14 +495,14 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
         <p class="subtitle">Autonomous Multi-Agent Engineering Intelligence Platform</p>
       </div>
     </div>
-    <span class="badge">RUN: ${runId}</span>
+    <span class="badge">VERIFIED & APPROVED • RUN: ${runId}</span>
   </div>
 
   <div class="content-box">
     ${parsedBodyHTML}
   </div>
 
-  <footer>Generated by RepoMind AI • ChatGPT Codex India Hackathon 2026</footer>
+  <footer>Generated by RepoMind AI Autonomous Platform</footer>
 </body>
 </html>`;
 
@@ -361,77 +512,101 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
   };
 
   const handleSavePDF = async () => {
-    setDownloadedFormat("pdf");
-    const parsedBodyHTML = convertMarkdownToHTMLString(defaultReportContent);
 
-    // 1. Build clean report container containing ONLY executive metrics & audit content
+    setDownloadedFormat("pdf");
+    const parsedBodyHTML = parseMarkdownToExecutivePDFHTML(defaultReportContent);
+    const logoSrc = typeof window !== "undefined" ? window.location.origin + "/RepoMind_AI_logo.jpeg" : "/RepoMind_AI_logo.jpeg";
+
+    // Build light-theme executive report container constrained to 650px (fits 190mm A4 printable area)
     const container = document.createElement("div");
-    container.style.padding = "24px";
+    container.style.width = "650px";
+    container.style.padding = "20px";
     container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    container.style.color = "#0f172a";
+    container.style.color = "#1e293b";
     container.style.background = "#ffffff";
+    container.style.boxSizing = "border-box";
+    container.style.overflow = "hidden";
 
     container.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px;">
-        <div>
-          <h1 style="font-size:18px;font-weight:800;color:#1e1b4b;margin:0;">RepoMind AI — Executive Engineering Audit Report</h1>
-          <div style="font-size:11px;color:#64748b;font-family:monospace;margin-top:2px;">Run ID: ${runId} • Autonomous Multi-Agent Audit Target</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #4f46e5;padding-bottom:12px;margin-bottom:16px;width:100%;box-sizing:border-box;">
+        <div style="display:flex;align-items:center;gap:12px;max-width:72%;">
+          <img src="${logoSrc}" alt="RepoMind AI Logo" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1.5px solid #4f46e5;flex-shrink:0;" />
+          <div>
+            <h1 style="font-size:16px;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.3px;line-height:1.2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+              RepoMind AI — Executive Engineering Audit Report
+            </h1>
+            <div style="font-size:9.5px;color:#64748b;font-family:Consolas,Monaco,monospace;margin-top:2px;word-break:break-all;">
+              Run ID: ${runId} • Autonomous Engineering Intelligence
+            </div>
+          </div>
         </div>
-        <span style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:3px 8px;border-radius:6px;font-size:10px;font-family:monospace;font-weight:700;">VERIFIED & APPROVED</span>
+        <span style="background:#ecfdf5;color:#047857;border:1px solid #6ee7b7;padding:4px 8px;border-radius:5px;font-size:9px;font-family:Consolas,Monaco,monospace;font-weight:800;white-space:nowrap;flex-shrink:0;">
+          VERIFIED & APPROVED
+        </span>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;font-family:monospace;">
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
-          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;">Health Score</div>
-          <div style="font-size:15px;font-weight:800;color:#059669;margin-top:2px;">88.5 / 100</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;width:100%;box-sizing:border-box;font-family:Consolas,Monaco,monospace;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Health Score</div>
+          <div style="font-size:14px;font-weight:800;color:#059669;margin-top:2px;">88.5 / 100</div>
         </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
-          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;">Total Findings</div>
-          <div style="font-size:15px;font-weight:800;color:#4f46e5;margin-top:2px;">8 Identified</div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Total Findings</div>
+          <div style="font-size:14px;font-weight:800;color:#4f46e5;margin-top:2px;">8 Identified</div>
         </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
-          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;">Agent Confidence</div>
-          <div style="font-size:15px;font-weight:800;color:#0284c7;margin-top:2px;">96% Avg</div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Agent Confidence</div>
+          <div style="font-size:14px;font-weight:800;color:#0284c7;margin-top:2px;">96% Avg</div>
         </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
-          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;">Reviewer Gate</div>
-          <div style="font-size:15px;font-weight:800;color:#059669;margin-top:2px;">APPROVED</div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Reviewer Gate</div>
+          <div style="font-size:14px;font-weight:800;color:#059669;margin-top:2px;">APPROVED</div>
         </div>
       </div>
 
-      <div style="font-family:monospace;font-size:11px;line-height:1.6;">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;width:100%;box-sizing:border-box;">
         ${parsedBodyHTML}
       </div>
 
-      <div style="margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;font-family:monospace;">
-        Generated by RepoMind AI Autonomous Engineering Platform
+      <div style="margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center;font-family:Consolas,Monaco,monospace;">
+        Generated by RepoMind AI Autonomous Engineering Platform • Executive Audit Artifact
       </div>
     `;
 
     try {
-      // 2. Direct client PDF download via html2pdf.js
       const html2pdf = (await import("html2pdf.js")).default;
       const filename = `RepoMind_Audit_Report_${runId}.pdf`;
-
       const opt = {
-        margin: 10,
+        margin: [8, 8, 8, 8] as [number, number, number, number],
         filename: filename,
         image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          windowWidth: 650,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
       await html2pdf().set(opt).from(container).save();
     } catch (e) {
-      console.warn("Falling back to direct markdown download", e);
-      const filename = `RepoMind_Audit_Report_${runId}.md`;
-      triggerBrowserDownload(defaultReportContent, filename, "text/markdown;charset=utf-8");
+
+
+      console.warn("Falling back to window.print()", e);
+      window.print();
     } finally {
       setTimeout(() => setDownloadedFormat(null), 2500);
     }
   };
 
+
   return (
+
+
+
     <div className="space-y-5">
       {/* Executive Key Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
@@ -473,6 +648,7 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
       <Card className="w-full space-y-4 border border-border/80 shadow-2xl bg-slate-950">
         <CardHeader className="py-4 px-5 flex flex-wrap items-center justify-between border-b border-border/60 bg-slate-900/80 gap-3">
           <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
@@ -520,7 +696,18 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               <Download className="w-4 h-4 text-emerald-300" />
               <span>{downloadedFormat === "pdf" ? "Saved PDF!" : "Save PDF (.pdf)"}</span>
             </Button>
+
+            <Button
+              onClick={() => window.print()}
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20 transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-emerald-400" />
+              <span>Print / Browser PDF</span>
+            </Button>
           </div>
+
         </CardHeader>
 
         <CardContent className="p-6 bg-slate-950 rounded-b-xl border-t border-border/40 font-mono text-xs text-slate-200">

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   async rewrites() {
     return [
       {
@@ -14,3 +15,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

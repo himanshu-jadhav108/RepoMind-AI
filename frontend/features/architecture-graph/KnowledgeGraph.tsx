@@ -362,6 +362,8 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
         <NodeInspectorSidebar graphData={rawData} runId={runId} findings={findings} />
 
         {/* Layout Render Condition */}
+
+
         {layoutMode === "galaxy" ? (
           <KnowledgeGraph3D graphData={rawData} onNodeClick={onNodeClick} />
         ) : (

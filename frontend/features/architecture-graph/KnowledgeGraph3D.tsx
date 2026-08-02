@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useMemo, useState, useRef, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Line, Html } from "@react-three/drei";
-import { Folder, FileCode, Cpu, Box, Sparkles, RefreshCw, ZoomIn, ZoomOut, FolderOpen, Layers } from "lucide-react";
+import { Folder, FileCode, Cpu, Box, Sparkles, RefreshCw, ZoomIn, ZoomOut, FolderOpen, Layers, X } from "lucide-react";
 import { useGraphStore } from "./store/useGraphStore";
 
 interface KnowledgeGraph3DProps {
@@ -49,11 +49,32 @@ function WebGLGraphScene({
   onNodeSelect: (id: string) => void;
   setHoveredNode: (node: Node3D | null) => void;
 }) {
+  const [camDist, setCamDist] = useState<number>(250);
+  const lastDistRef = useRef<number>(250);
+
+  useFrame(({ camera }) => {
+    const currentDist = camera.position.length();
+    if (Math.abs(currentDist - lastDistRef.current) > 12) {
+      lastDistRef.current = currentDist;
+      setCamDist(currentDist);
+    }
+  });
+
+  // Dynamic zoom text scaling:
+  // Zoomed OUT (camDist ~ 450-750): zoomFactor = 1.0 -> fontSize = 26px, scale = 2.0 (BIG readable text!)
+  // Zoomed IN (camDist ~ 40-100): zoomFactor = 0.0 -> fontSize = 12px, scale = 0.85 (Small compact text)
+  const zoomFactor = Math.min(Math.max((camDist - 50) / 400, 0), 1);
+  const dynamicFontSize = Math.round(12 + zoomFactor * 14); // 12px -> 26px
+  const dynamicPaddingY = Math.round(5 + zoomFactor * 6);   // 5px -> 11px
+  const dynamicPaddingX = Math.round(9 + zoomFactor * 10);  // 9px -> 19px
+  const dynamicScale = (0.85 + zoomFactor * 1.15).toFixed(2);
+
   const nodeMap = useMemo(() => {
     const map = new Map<string, Node3D>();
     nodes.forEach((n) => map.set(n.id, n));
     return map;
   }, [nodes]);
+
 
   return (
     <>
@@ -124,15 +145,37 @@ function WebGLGraphScene({
               />
             </mesh>
 
-            {/* Label Popover on Hover or Selection */}
+            {/* Prominent Inverse-Zoom Camera Distance Label Popover */}
             {(isSelected || isHovered) && (
-              <Html distanceFactor={160} zIndexRange={[100, 0]}>
-                <div className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-indigo-500/50 text-indigo-200 text-xs font-mono font-bold whitespace-nowrap shadow-xl pointer-events-none backdrop-blur-md flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-indigo-400" />
-                  <span>{node.shortLabel}</span>
+              <Html zIndexRange={[100, 0]} center>
+                <div
+                  style={{
+                    fontSize: `${dynamicFontSize}px`,
+                    padding: `${dynamicPaddingY}px ${dynamicPaddingX}px`,
+                    transform: `scale(${dynamicScale})`,
+                  }}
+                  className={`rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2.5 transition-all duration-150 pointer-events-none whitespace-nowrap select-none ${
+                    isSelected
+                      ? "bg-slate-950/95 border-2 border-indigo-400 text-white font-extrabold ring-4 ring-indigo-500/40"
+                      : "bg-slate-900/90 border border-slate-700 text-indigo-200 font-bold"
+                  }`}
+                >
+                  <Sparkles className={`w-4 h-4 ${isSelected ? "text-amber-400 animate-pulse" : "text-indigo-400"}`} />
+                  <span className="font-mono tracking-wide">
+                    {isSelected ? node.label : node.shortLabel}
+                  </span>
+                  {isSelected && (
+                    <span
+                      style={{ fontSize: `${Math.max(10, Math.round(dynamicFontSize * 0.65))}px` }}
+                      className="px-2 py-0.5 uppercase font-mono tracking-wider rounded-md bg-indigo-600 text-white font-extrabold ml-1"
+                    >
+                      {node.type}
+                    </span>
+                  )}
                 </div>
               </Html>
             )}
+
           </group>
         );
       })}
@@ -239,6 +282,10 @@ export default function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGr
     }));
   }, [graphData?.edges]);
 
+  const selectedNode = useMemo(() => {
+    return nodes3D.find((n) => n.id === selectedNodeId) || null;
+  }, [nodes3D, selectedNodeId]);
+
   const handleNodeSelect = (id: string) => {
     setSelectedNodeId(id);
     onNodeClick?.(id);
@@ -276,6 +323,48 @@ export default function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGr
         </div>
       </div>
 
+      {/* Selected Node Details Inspector Card */}
+      {selectedNode && (
+        <div className="absolute bottom-4 left-4 z-20 max-w-md p-4 rounded-xl bg-slate-900/95 border-2 border-indigo-500/70 shadow-2xl backdrop-blur-md font-sans text-slate-100 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                {selectedNode.type === "folder" ? (
+                  <FolderOpen className="w-5 h-5 text-sky-400" />
+                ) : selectedNode.label.includes("agent") ? (
+                  <Cpu className="w-5 h-5 text-amber-400" />
+                ) : (
+                  <FileCode className="w-5 h-5 text-indigo-400" />
+                )}
+              </div>
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase text-indigo-400 tracking-wider block">
+                  {selectedNode.type} Node Selected
+                </span>
+                <h3 className="text-base font-bold text-white font-mono break-all leading-tight">
+                  {selectedNode.label}
+                </h3>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedNodeId(null)}
+              className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors"
+              title="Deselect Node"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs font-mono text-slate-300">
+            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+              XYZ: ({Math.round(selectedNode.x)}, {Math.round(selectedNode.y)}, {Math.round(selectedNode.z)})
+            </span>
+            <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/60 font-bold">
+              AST NODE ACTIVE
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Footer Instructions Badge */}
       <div className="absolute bottom-4 right-4 z-10 text-right">
         <div className="px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 backdrop-blur-md shadow-lg flex items-center gap-2">
@@ -286,3 +375,4 @@ export default function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGr
     </div>
   );
 }
+
