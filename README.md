@@ -10,6 +10,7 @@
 
   <p align="center">
     <a href="https://repomind-ai-ten.vercel.app"><img src="https://img.shields.io/badge/Live_Demo-Vercel-6366f1?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo"></a>
+    <a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link"><img src="https://img.shields.io/badge/Demo_Video-Google_Drive-FF8800?style=for-the-badge&logo=googledrive&logoColor=white" alt="Demo Video"></a>
     <a href="https://repomind-ai-tktf.onrender.com/docs"><img src="https://img.shields.io/badge/API_Docs-Swagger-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Swagger Docs"></a>
     <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/ChatGPT_Codex_Hackathon-2026-purple?style=for-the-badge&logo=openai&logoColor=white" alt="Hackathon 2026"></a>
     <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/Pytest-38%2F38%20Passing-emerald?style=for-the-badge&logo=pytest&logoColor=white" alt="Test Suite"></a>
@@ -17,6 +18,7 @@
   </p>
 
   <p align="center">
+    <a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link" target="_blank"><b>🎥 Demo Video</b></a> •
     <a href="#-key-project-links"><b>🌐 Live Links</b></a> •
     <a href="#-key-feature-matrix"><b>🚀 Features</b></a> •
     <a href="#-system-architecture"><b>📐 Architecture</b></a> •
@@ -34,7 +36,12 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 ## 📸 Platform Demonstration
 
 <div align="center">
-  <img src="docs/screenshots/Live_Workspace.png" alt="RepoMind AI Live Platform Demo" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 40px rgba(0,0,0,0.6);" />
+  <video src="docs/Demo_Video/RepoMind_AI_Promo.mp4" width="100%" controls style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+    Your browser does not support the video tag. <a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link">Click here to watch the video on Google Drive</a>.
+  </video>
+  <p style="margin-top: 12px;">
+    ⚠️ <i>If the inline video does not play or load in your browser, <b><a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link" target="_blank">Watch Demonstration Video on Google Drive ↗</a></b></i>
+  </p>
   <p><i>Figure 1: RepoMind AI Live Workspace — 3D WebGL Galaxy Graph, Multi-Agent Execution, and Interactive Audit Center.</i></p>
 </div>
 
@@ -47,8 +54,7 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 | 🌐 **Live Website**             | [https://repomind-ai-ten.vercel.app](https://repomind-ai-ten.vercel.app)                 | Production Web Client hosted on Vercel Edge Network      |
 | ⚡ **Backend REST API**         | [https://repomind-ai-tktf.onrender.com](https://repomind-ai-tktf.onrender.com)           | FastAPI Microservices Backend hosted on Render Cloud     |
 | 📜 **Interactive Swagger Docs** | [https://repomind-ai-tktf.onrender.com/docs](https://repomind-ai-tktf.onrender.com/docs) | OpenAPI 3.0 Interactive API Explorer                     |
-| 🎥 **Demo Video**               | [Watch Demo Video (YouTube / Loom)](#) _(Link Placeholder)_                              | Full walkthrough of multi-agent state machine & 3D graph |
-| 📊 **Presentation Deck**        | [View Pitch Deck (Canva / PDF)](#) _(Link Placeholder)_                                  | Official ChatGPT Codex India Hackathon 2026 Slide Deck   |
+| 🎥 **Demo Video**               | [Watch Demo Video (Google Drive)](https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link) | Full walkthrough of multi-agent state machine & 3D graph |
 | 📐 **System Architecture Spec** | [View Technical Architecture Doc](docs/)                                                 | Exhaustive Domain Layer & State Graph Specification      |
 
 ---
