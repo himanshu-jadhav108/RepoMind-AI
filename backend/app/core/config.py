@@ -24,7 +24,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
+        "https://repomind-ai-ten.vercel.app",
     ]
+
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
