@@ -142,9 +142,10 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
         <div className="py-4 space-y-3 border-b border-slate-800">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400">Node Identifier:</span>
-            <span className="font-bold text-indigo-300 truncate max-w-[180px]" title={selectedNodeId}>
+            <span className="font-bold text-indigo-300 truncate max-w-[180px]" title={selectedNodeId || undefined}>
               {selectedNodeId}
             </span>
+
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400">Language / Type:</span>

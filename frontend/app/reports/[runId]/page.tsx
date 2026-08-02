@@ -39,11 +39,13 @@ export default function StandaloneReportPage({
             </Button>
           </Link>
           <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
               className="w-8 h-8 rounded-xl object-cover border border-purple-500/40 shadow"
             />
+
             <h1 className="text-xl font-bold flex items-center gap-2 font-sans text-white">
               <span>Executive Audit Report & Export Center</span>
             </h1>

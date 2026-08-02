@@ -48,3 +48,4 @@ build/
 .DS_Store
 Thumbs.db
 *.log
+error.txt
