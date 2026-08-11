@@ -30,11 +30,11 @@ export default function StandaloneReportPage({
   }, [runId]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col p-4 sm:p-6 space-y-6 max-w-6xl mx-auto selection:bg-purple-500 selection:text-white">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 sm:p-6 space-y-6 max-w-6xl mx-auto selection:bg-copper selection:text-white">
+      <div className="flex items-center justify-between border-b border-graphite-border pb-4">
         <div className="flex items-center gap-3">
           <Link href={`/analyze/${runId}`}>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono border-slate-800 text-slate-300 hover:text-white">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono border-graphite-border text-graphite-muted hover:text-white">
               <ArrowLeft className="w-4 h-4" /> Return to Workspace
             </Button>
           </Link>
@@ -43,7 +43,7 @@ export default function StandaloneReportPage({
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
-              className="w-8 h-8 rounded-xl object-cover border border-purple-500/40 shadow"
+              className="w-8 h-8 rounded-xl object-cover border border-graphite-border shadow"
             />
 
             <h1 className="text-xl font-bold flex items-center gap-2 font-sans text-white">

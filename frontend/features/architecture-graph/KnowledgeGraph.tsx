@@ -36,8 +36,8 @@ const KnowledgeGraph3D = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[650px] w-full flex flex-col items-center justify-center bg-slate-950 border border-slate-800 rounded-xl text-indigo-300 font-mono text-sm gap-3 select-none">
-        <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+      <div className="h-[650px] w-full flex flex-col items-center justify-center bg-graphite-canvas border border-graphite-border rounded-xl text-[#5B82A6] font-mono text-sm gap-3 select-none">
+        <div className="w-8 h-8 rounded-full border-2 border-[#5B82A6] border-t-transparent animate-spin" />
         <span>Initializing WebGL 3D Galaxy View...</span>
       </div>
     ),
@@ -293,14 +293,14 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
         type: "smoothstep",
         animated: isImport || isAgentPath || isSelectedEdge,
         style: {
-          stroke: isSelectedEdge ? "#a855f7" : isAgentPath ? "#c084fc" : isImport ? "#818cf8" : "#475569",
+          stroke: isSelectedEdge ? "#D97736" : isAgentPath ? "#5B82A6" : isImport ? "#5B82A6" : "#2A2B33",
           strokeWidth: isSelectedEdge ? 3 : isAgentPath ? 2.5 : isImport ? 1.8 : 1.2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 12,
           height: 12,
-          color: isSelectedEdge ? "#a855f7" : isAgentPath ? "#c084fc" : isImport ? "#818cf8" : "#475569",
+          color: isSelectedEdge ? "#D97736" : isAgentPath ? "#5B82A6" : isImport ? "#5B82A6" : "#2A2B33",
         },
       };
     });
@@ -342,7 +342,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
   );
 
   return (
-    <Card className="w-full flex flex-col border border-border/80 shadow-2xl overflow-hidden bg-slate-950">
+    <Card className="w-full flex flex-col border border-graphite-border shadow-2xl overflow-hidden bg-graphite-canvas font-sans">
       {/* 1. Top Repository AI Statistics Panel */}
       <GraphHeaderStats />
 
@@ -353,7 +353,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
       <AgentReplayController />
 
       {/* 4. Main Visualization Canvas (2D ReactFlow or 3D WebGL Galaxy) */}
-      <CardContent className="h-[540px] p-0 relative overflow-hidden bg-slate-950">
+      <CardContent className="h-[540px] p-0 relative overflow-hidden bg-graphite-canvas">
         {/* Agent Reasoning Traversal Overlay Card */}
         {selectedAgent && <AgentTraversalOverlay agentName={selectedAgent} />}
 
@@ -384,31 +384,31 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
             zoomOnPinch={true}
             zoomOnDoubleClick={true}
           >
-            <Background color="#1e293b" gap={20} size={1} />
-            <Controls className="bg-slate-900 border-slate-800 text-white fill-white rounded-lg shadow-xl" />
+            <Background color="#2A2B33" gap={20} size={1} />
+            <Controls className="bg-graphite-panel border-graphite-border text-white fill-white rounded-lg shadow-xl" />
             <MiniMap
               pannable={true}
               zoomable={false} // Prevents scroll wheel over MiniMap from jumping viewport off-screen
               nodeColor={(n) => {
                 if (n.type === "folder") return "#38bdf8";
-                if (n.type === "class") return "#fbbf24";
-                if (n.type === "function") return "#34d399";
-                return "#818cf8";
+                if (n.type === "class") return "#FFB000";
+                if (n.type === "function") return "#00E676";
+                return "#5B82A6";
               }}
-              maskColor="rgba(15, 23, 42, 0.75)"
-              className="bg-slate-900 border-slate-800 rounded-lg hidden sm:block shadow-lg cursor-grab active:cursor-grabbing"
+              maskColor="rgba(18, 19, 22, 0.75)"
+              className="bg-graphite-panel border-graphite-border rounded-lg hidden sm:block shadow-lg cursor-grab active:cursor-grabbing"
             />
             {isEdgeTruncated && (
               <Panel position="top-right" className="mr-3 mt-3">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs font-mono backdrop-blur-md shadow-xl">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-severity-warning/15 border border-severity-warning/30 text-severity-warning text-xs font-mono backdrop-blur-md shadow-xl">
+                  <Sparkles className="w-3.5 h-3.5 text-severity-warning" />
                   <span>Showing 100 of {totalEdgeCount} edges — refine with search or drill-down</span>
                 </div>
               </Panel>
             )}
             <Panel position="bottom-left" className="m-3">
-              <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 backdrop-blur-md text-[11px] text-slate-300 font-mono flex items-center gap-2 shadow-lg">
-                <Maximize2 className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="p-2.5 rounded-lg bg-graphite-panel border border-graphite-border text-[11px] text-graphite-muted font-mono flex items-center gap-2 shadow-lg">
+                <Maximize2 className="w-3.5 h-3.5 text-[#5B82A6]" />
                 <span>
                   {layoutMode.toUpperCase()} Layout • Level {drillLevel} Drill-down • Click node to inspect
                 </span>

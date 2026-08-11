@@ -198,7 +198,7 @@ function EdgeLine({
     <>
       <Line
         points={[from, to]}
-        color={highlighted ? "#c084fc" : animated ? "#818cf8" : "#475569"}
+        color={highlighted ? "#D97736" : animated ? "#5B82A6" : "#2A2B33"}
         transparent
         opacity={highlighted ? 0.9 : animated ? 0.45 : 0.22}
         lineWidth={highlighted ? 2 : 1}
@@ -206,7 +206,7 @@ function EdgeLine({
       {(animated || highlighted) && (
         <mesh ref={particleRef}>
           <sphereGeometry args={[highlighted ? 0.07 : 0.05, 8, 8]} />
-          <meshBasicMaterial color={highlighted ? "#f43f5e" : "#818cf8"} />
+          <meshBasicMaterial color={highlighted ? "#FF3B30" : "#5B82A6"} />
         </mesh>
       )}
     </>
@@ -256,7 +256,7 @@ function LabelOverlay({
   positions: Map<string, LabelPos>;
 }) {
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden font-mono">
       {nodes
         .filter((n) => n.type === "folder" || n.id === "root" || hoveredId === n.id)
         .map((n) => {
@@ -277,8 +277,8 @@ function LabelOverlay({
               <div
                 className={`px-2 py-0.5 rounded-md border text-[11px] whitespace-nowrap ${
                   isHovered
-                    ? "bg-indigo-950/95 border-purple-400/80 text-white"
-                    : "bg-slate-900/85 border-indigo-500/35 text-slate-100/95"
+                    ? "bg-graphite-panel border-[#5B82A6]/80 text-white"
+                    : "bg-graphite-canvas border-graphite-border text-foreground/90"
                 }`}
               >
                 {isHovered ? n.label : n.shortLabel}
@@ -310,8 +310,8 @@ function Scene({
   return (
     <>
       <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1.2} color="#a855f7" />
-      <pointLight position={[-10, -10, -10]} intensity={0.6} color="#38bdf8" />
+      <pointLight position={[10, 10, 10]} intensity={1.2} color="#D97736" />
+      <pointLight position={[-10, -10, -10]} intensity={0.6} color="#38BDF8" />
 
       <Stars radius={80} depth={50} count={1200} factor={2.2} fade speed={0.4} />
 
@@ -358,12 +358,12 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
   );
 
   return (
-    <div className="relative w-full h-full min-h-[440px] bg-slate-950 rounded-b-xl overflow-hidden">
+    <div className="relative w-full h-full min-h-[440px] bg-graphite-canvas rounded-b-xl overflow-hidden font-sans">
       <Canvas
         camera={{ position: [0, 2.5, 9], fov: 50 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: false }}
-        onCreated={({ gl }) => gl.setClearColor("#030712")}
+        onCreated={({ gl }) => gl.setClearColor("#121316")}
       >
         <Scene
           nodes={nodes}
@@ -379,48 +379,48 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       <LabelOverlay nodes={nodes} hoveredId={hoveredNode?.id ?? null} positions={labelPositions} />
 
       {/* Controls */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg pointer-events-auto">
-        <span className="p-1.5 text-slate-500" title="Scroll to zoom in">
-          <ZoomIn className="w-4 h-4 text-indigo-400" />
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-graphite-panel border border-graphite-border backdrop-blur-md shadow-lg pointer-events-auto">
+        <span className="p-1.5 text-graphite-muted" title="Scroll to zoom in">
+          <ZoomIn className="w-4 h-4 text-[#5B82A6]" />
         </span>
-        <span className="p-1.5 text-slate-500" title="Scroll to zoom out">
-          <ZoomOut className="w-4 h-4 text-indigo-400" />
+        <span className="p-1.5 text-graphite-muted" title="Scroll to zoom out">
+          <ZoomOut className="w-4 h-4 text-[#5B82A6]" />
         </span>
         <button
           onClick={() => orbitControlsRef.current?.reset()}
-          className="p-1.5 rounded hover:bg-indigo-600/30 text-slate-200 transition"
+          className="p-1.5 rounded hover:bg-copper/30 text-white transition"
           title="Reset 3D Camera"
         >
-          <RefreshCw className="w-4 h-4 text-slate-400 hover:rotate-180 transition-transform duration-300" />
+          <RefreshCw className="w-4 h-4 text-graphite-muted hover:rotate-180 transition-transform duration-300" />
         </button>
       </div>
 
       {/* Hover HUD */}
       {hoveredNode && (
-        <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-slate-900/90 border border-indigo-500/30 backdrop-blur-md shadow-2xl text-xs text-slate-200 font-mono flex items-center gap-2.5 max-w-md animate-in fade-in duration-200 pointer-events-none">
-          <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+        <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-graphite-panel border border-[#5B82A6]/30 backdrop-blur-md shadow-2xl text-xs text-white font-mono flex items-center gap-2.5 max-w-md animate-in fade-in duration-200 pointer-events-none">
+          <Sparkles className="w-4 h-4 text-[#5B82A6] shrink-0" />
           <div>
-            <div className="font-bold text-white flex items-center gap-1.5">
+            <div className="font-bold text-white flex items-center gap-1.5 font-display">
               <span>{hoveredNode.label}</span>
-              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/30">
                 {hoveredNode.type}
               </span>
             </div>
             {hoveredNode.type === "folder" ? (
-              <p className="text-[11px] text-sky-300 mt-1 flex items-center gap-1 font-semibold">
-                <FolderOpen className="w-3.5 h-3.5 text-sky-400" />
+              <p className="text-[11px] text-[#38BDF8] mt-1 flex items-center gap-1 font-semibold">
+                <FolderOpen className="w-3.5 h-3.5 text-[#38BDF8]" />
                 <span>Click folder to toggle expansion</span>
               </p>
             ) : (
-              <p className="text-[11px] text-slate-400 mt-0.5">Click to inspect file content in code viewer</p>
+              <p className="text-[11px] text-graphite-muted mt-0.5">Click to inspect file content in code viewer</p>
             )}
           </div>
         </div>
       )}
 
       {/* Drag & Zoom Instructions */}
-      <div className="absolute bottom-3 right-3 p-2 rounded-md bg-slate-900/80 border border-slate-800 backdrop-blur-md text-[11px] text-slate-400 font-mono flex items-center gap-2 pointer-events-none">
-        <Move className="w-3.5 h-3.5 text-indigo-400" />
+      <div className="absolute bottom-3 right-3 p-2 rounded-md bg-graphite-panel border border-graphite-border backdrop-blur-md text-[11px] text-graphite-muted font-mono flex items-center gap-2 pointer-events-none">
+        <Move className="w-3.5 h-3.5 text-[#5B82A6]" />
         <span>Drag to orbit • Scroll to zoom • Auto-rotates when idle</span>
       </div>
     </div>

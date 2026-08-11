@@ -9,11 +9,6 @@ import {
   X,
   Sparkles,
   CheckCircle2,
-  Layers,
-  FileCode,
-  ShieldAlert,
-  HelpCircle,
-  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -112,18 +107,18 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
       <motion.div
         initial={{ opacity: 0, y: -20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="rounded-2xl border border-purple-500/40 bg-slate-950/95 shadow-2xl p-4 backdrop-blur-2xl space-y-3 selection:bg-purple-500 selection:text-white"
+        className="rounded-xl border border-copper/40 bg-graphite-canvas shadow-2xl p-4 backdrop-blur-2xl space-y-3 selection:bg-copper selection:text-white"
       >
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <div className="flex items-center justify-between border-b border-graphite-border pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-purple-600 text-white shadow-md">
-              <Compass className="w-4 h-4 animate-spin-slow" />
+            <div className="p-1.5 rounded-lg bg-copper text-white shadow-md">
+              <Compass className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+              <h4 className="text-xs font-bold text-white font-display flex items-center gap-1.5">
                 <span>Guided Repository Tour</span>
-                <Badge className="bg-purple-950/80 text-purple-300 border-purple-500/40 text-[10px] font-mono">
+                <Badge className="bg-copper/10 text-copper border-copper/30 text-[10px] font-mono">
                   Step {activeStep.step} of 8
                 </Badge>
               </h4>
@@ -134,16 +129,16 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-7 w-7 p-0 text-slate-400 hover:text-white"
+            className="h-7 w-7 p-0 text-graphite-muted hover:text-white"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Step Progress Bar */}
-        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-graphite-border rounded-full h-1.5 overflow-hidden">
           <div
-            className="bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 h-full transition-all duration-300"
+            className="bg-gradient-to-r from-copper to-[#5B82A6] h-full transition-all duration-300"
             style={{ width: `${((currentStepIdx + 1) / TOUR_STEPS.length) * 100}%` }}
           />
         </div>
@@ -158,25 +153,25 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
             transition={{ duration: 0.2 }}
             className="space-y-2.5"
           >
-            <h5 className="text-sm font-bold text-purple-300 font-mono">{activeStep.title}</h5>
-            <p className="text-xs text-slate-200 leading-relaxed font-sans bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <h5 className="text-sm font-bold text-copper font-display">{activeStep.title}</h5>
+            <p className="text-xs text-foreground/90 leading-relaxed font-sans bg-graphite-panel p-2.5 rounded-lg border border-graphite-border">
               {activeStep.description}
             </p>
-            <div className="text-[11px] text-cyan-300 font-mono bg-cyan-950/40 p-2 rounded-lg border border-cyan-500/20 flex items-start gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+            <div className="text-[11px] text-[#38BDF8] font-mono bg-graphite-panel p-2 rounded-lg border border-graphite-border flex items-start gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#38BDF8] shrink-0 mt-0.5" />
               <span>Pro Tip: {activeStep.tip}</span>
             </div>
           </motion.div>
         </AnimatePresence>
 
         {/* Footer Stepper Controls */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-between pt-2 border-t border-graphite-border">
           <Button
             variant="outline"
             size="sm"
             onClick={handlePrev}
             disabled={currentStepIdx === 0}
-            className="h-7 text-xs font-mono gap-1 border-slate-800 text-slate-300"
+            className="h-7 text-xs font-mono gap-1 border-graphite-border text-graphite-muted"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Previous
           </Button>
@@ -185,7 +180,7 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
             <Button
               size="sm"
               onClick={handleNext}
-              className="h-7 text-xs font-mono gap-1 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30"
+              className="h-7 text-xs font-mono gap-1 bg-copper hover:bg-copper-hover text-white shadow-lg shadow-copper/20"
             >
               Next Step <ChevronRight className="w-3.5 h-3.5" />
             </Button>

@@ -317,7 +317,7 @@ export default function AnalyzeWorkspacePage({
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 sm:p-6 space-y-6 max-w-7xl mx-auto selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 sm:p-6 space-y-6 max-w-7xl mx-auto selection:bg-copper selection:text-white">
       {/* Top Action Bar */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">
@@ -331,13 +331,13 @@ export default function AnalyzeWorkspacePage({
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
-              className="w-8 h-8 rounded-lg object-cover border border-purple-500/30 shadow"
+              className="w-8 h-8 rounded-lg object-cover border border-graphite-border shadow"
             />
 
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <span>Autonomous Engineering Workspace</span>
-                <Badge className="bg-purple-950/80 text-purple-300 border-purple-500/40 text-xs font-mono">
+                <Badge className="bg-copper/10 text-copper border-copper/30 text-xs font-mono">
                   Multi-Agent Team
                 </Badge>
               </h1>
@@ -385,7 +385,7 @@ export default function AnalyzeWorkspacePage({
           </Button>
 
           <Link href={`/reports/${runId}`}>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono text-purple-300 border-purple-500/30">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono text-copper border-copper/30">
               Audit Report
             </Button>
           </Link>
@@ -426,14 +426,14 @@ export default function AnalyzeWorkspacePage({
       {activeTab === "workspace" && (
         <>
           {/* Feature Toolbar for Graph Additions */}
-          <div className="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 font-mono text-xs">
+          <div className="flex items-center justify-between bg-graphite-panel p-2.5 rounded-xl border border-graphite-border font-mono text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400">Interactive Tools:</span>
+              <span className="text-graphite-muted">Interactive Tools:</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGuidedTour(!showGuidedTour)}
-                className="h-7 text-[11px] gap-1.5 border-purple-500/30 text-purple-300 bg-purple-950/40"
+                className="h-7 text-[11px] gap-1.5 border-copper/30 text-copper bg-copper/10"
               >
                 <Compass className="w-3.5 h-3.5" /> {showGuidedTour ? "Close Tour" : "Start Guided Tour"}
               </Button>
@@ -442,7 +442,7 @@ export default function AnalyzeWorkspacePage({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPathFinder(!showPathFinder)}
-                className="h-7 text-[11px] gap-1.5 border-indigo-500/30 text-indigo-300 bg-indigo-950/40"
+                className="h-7 text-[11px] gap-1.5 border-[#5B82A6]/30 text-[#5B82A6] bg-[#5B82A6]/10"
               >
                 <GitBranch className="w-3.5 h-3.5" /> {showPathFinder ? "Close Path Finder" : "Dependency Path Finder"}
               </Button>

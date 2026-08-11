@@ -19,8 +19,6 @@ import {
 import { getApiBase } from "@/lib/api-client";
 
 interface AnalysisLoadingOverlayProps {
-
-
   runId: string;
   repoUrl: string;
   onComplete: () => void;
@@ -32,7 +30,7 @@ const AGENTS = [
     label: "Planner Agent",
     role: "Orchestration",
     icon: Sparkles,
-    color: "purple",
+    color: "copper",
     thought: "Mapping repository scope and scheduling 10-stage execution plan...",
   },
   {
@@ -40,7 +38,7 @@ const AGENTS = [
     label: "Repository Analyzer",
     role: "AST & Graph",
     icon: Layers,
-    color: "indigo",
+    color: "arch",
     thought: "Cloning repository and extracting symbols across all source files...",
   },
   {
@@ -48,7 +46,7 @@ const AGENTS = [
     label: "Architect Agent",
     role: "Architecture",
     icon: Cpu,
-    color: "blue",
+    color: "arch",
     thought: "Evaluating Clean Architecture boundaries and module coupling metrics...",
   },
   {
@@ -64,7 +62,7 @@ const AGENTS = [
     label: "Security Agent",
     role: "Vulnerability Audit",
     icon: ShieldCheck,
-    color: "emerald",
+    color: "crimson",
     thought: "Auditing CORS configs, env secrets, and OWASP Top 10 vectors...",
   },
   {
@@ -72,7 +70,7 @@ const AGENTS = [
     label: "Performance Agent",
     role: "I/O Profiling",
     icon: Zap,
-    color: "yellow",
+    color: "amber",
     thought: "Detecting blocking I/O, memory leaks, and async execution gaps...",
   },
   {
@@ -80,7 +78,7 @@ const AGENTS = [
     label: "Documentation Agent",
     role: "Coverage Check",
     icon: FileText,
-    color: "sky",
+    color: "emerald",
     thought: "Verifying docstring coverage and API schema compliance...",
   },
   {
@@ -88,7 +86,7 @@ const AGENTS = [
     label: "Reviewer Agent",
     role: "Quality Gate",
     icon: Users,
-    color: "violet",
+    color: "arch",
     thought: "Running Review → Feedback → Rewrite → Validate loop on all findings...",
   },
   {
@@ -96,7 +94,7 @@ const AGENTS = [
     label: "Feature Agent",
     role: "Suggestions",
     icon: Activity,
-    color: "pink",
+    color: "copper",
     thought: "Generating architecture enhancement recommendations...",
   },
   {
@@ -110,15 +108,11 @@ const AGENTS = [
 ];
 
 const COLOR_MAP: Record<string, { ring: string; bg: string; text: string; dot: string }> = {
-  purple: { ring: "ring-purple-500/60", bg: "bg-purple-500/20", text: "text-purple-300", dot: "bg-purple-400" },
-  indigo: { ring: "ring-indigo-500/60", bg: "bg-indigo-500/20", text: "text-indigo-300", dot: "bg-indigo-400" },
-  blue: { ring: "ring-blue-500/60", bg: "bg-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
-  amber: { ring: "ring-amber-500/60", bg: "bg-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
-  emerald: { ring: "ring-emerald-500/60", bg: "bg-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
-  yellow: { ring: "ring-yellow-500/60", bg: "bg-yellow-500/20", text: "text-yellow-300", dot: "bg-yellow-400" },
-  sky: { ring: "ring-sky-500/60", bg: "bg-sky-500/20", text: "text-sky-300", dot: "bg-sky-400" },
-  violet: { ring: "ring-violet-500/60", bg: "bg-violet-500/20", text: "text-violet-300", dot: "bg-violet-400" },
-  pink: { ring: "ring-pink-500/60", bg: "bg-pink-500/20", text: "text-pink-300", dot: "bg-pink-400" },
+  copper: { ring: "ring-copper/60", bg: "bg-copper/20", text: "text-copper", dot: "bg-copper" },
+  arch: { ring: "ring-[#5B82A6]/60", bg: "bg-[#5B82A6]/20", text: "text-[#5B82A6]", dot: "bg-[#5B82A6]" },
+  amber: { ring: "ring-severity-warning/60", bg: "bg-severity-warning/20", text: "text-severity-warning", dot: "bg-severity-warning" },
+  crimson: { ring: "ring-severity-critical/60", bg: "bg-severity-critical/20", text: "text-severity-critical", dot: "bg-severity-critical" },
+  emerald: { ring: "ring-emerald-500/60", bg: "bg-emerald-500/20", text: "text-emerald-400", dot: "bg-emerald-400" },
 };
 
 type AgentState = "queued" | "running" | "complete";
@@ -152,7 +146,6 @@ export function AnalysisLoadingOverlay({
 
     const API_BASE = getApiBase();
     const sseUrl = `${API_BASE}/api/v1/analysis/${runId}/stream`;
-
 
     try {
       const es = new EventSource(sseUrl);
@@ -254,21 +247,12 @@ export function AnalysisLoadingOverlay({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 overflow-hidden"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-graphite-canvas overflow-hidden font-sans"
       >
-        {/* Background radial glow */}
+        {/* Background ambient lighting */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/8 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-indigo-600/6 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-blue-600/6 rounded-full blur-3xl" />
-          {/* Grid */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: "linear-gradient(rgba(139,92,246,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.8) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
-            }}
-          />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-copper/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-[#5B82A6]/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 flex flex-col items-center w-full max-w-4xl px-4 gap-8">
@@ -280,21 +264,21 @@ export function AnalysisLoadingOverlay({
             className="flex flex-col items-center gap-3 text-center"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                <GitBranch className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-xl bg-copper/20 border border-copper/30 flex items-center justify-center">
+                <GitBranch className="w-5 h-5 text-copper" />
               </div>
               <div className="text-left">
-                <div className="text-xs font-mono text-slate-500 uppercase tracking-wider">Analyzing Repository</div>
-                <div className="text-sm font-mono text-purple-300 font-semibold">{repoName}</div>
+                <div className="text-xs font-mono text-graphite-muted uppercase tracking-wider">Analyzing Repository</div>
+                <div className="text-sm font-mono text-copper font-semibold">{repoName}</div>
               </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-display">
               Deploying Your{" "}
-              <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-copper to-[#5B82A6] bg-clip-text text-transparent">
                 Autonomous Engineering Team
               </span>
             </h1>
-            <p className="text-sm text-slate-400 font-mono">
+            <p className="text-sm text-graphite-muted font-mono">
               10 specialized AI agents are analyzing your codebase in real-time
             </p>
           </motion.div>
@@ -308,7 +292,7 @@ export function AnalysisLoadingOverlay({
           >
             {AGENTS.map((agent) => {
               const state = agentStates[agent.key];
-              const colors = COLOR_MAP[agent.color] || COLOR_MAP.purple;
+              const colors = COLOR_MAP[agent.color] || COLOR_MAP.copper;
               const Icon = agent.icon;
               const isRunning = state === "running";
               const isDone = state === "complete";
@@ -323,20 +307,20 @@ export function AnalysisLoadingOverlay({
                       ? "border-emerald-500/40 bg-emerald-500/10"
                       : isRunning
                       ? `border ring-2 ${colors.ring} ${colors.bg}`
-                      : "border-slate-800 bg-slate-900/40"
+                      : "border-graphite-border bg-graphite-panel"
                   }`}
                 >
-                  <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center ${isDone ? "bg-emerald-500/20" : isRunning ? colors.bg : "bg-slate-800"}`}>
+                  <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center ${isDone ? "bg-emerald-500/20" : isRunning ? colors.bg : "bg-graphite-canvas"}`}>
                     {isDone ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     ) : (
-                      <Icon className={`w-4 h-4 ${isRunning ? colors.text : "text-slate-500"}`} />
+                      <Icon className={`w-4 h-4 ${isRunning ? colors.text : "text-graphite-muted"}`} />
                     )}
                     {isRunning && (
                       <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${colors.dot} animate-ping`} />
                     )}
                   </div>
-                  <span className={`text-[9px] font-mono text-center leading-tight ${isDone ? "text-emerald-400" : isRunning ? colors.text : "text-slate-600"}`}>
+                  <span className={`text-[9px] font-mono text-center leading-tight ${isDone ? "text-emerald-400" : isRunning ? colors.text : "text-graphite-muted"}`}>
                     {agent.label.replace(" Agent", "").replace("Repository ", "Repo ")}
                   </span>
                 </motion.div>
@@ -352,11 +336,11 @@ export function AnalysisLoadingOverlay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="w-full max-w-2xl px-4 py-3 rounded-xl border border-purple-500/20 bg-purple-950/30 backdrop-blur-sm"
+              className="w-full max-w-2xl px-4 py-3 rounded-xl border border-copper/30 bg-graphite-panel backdrop-blur-sm"
             >
               <div className="flex items-start gap-2.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse mt-1.5 shrink-0" />
-                <p className="text-sm font-mono text-purple-200 leading-relaxed">
+                <div className="w-1.5 h-1.5 rounded-full bg-copper animate-pulse mt-1.5 shrink-0" />
+                <p className="text-sm font-mono text-white leading-relaxed">
                   {isAllDone
                     ? "✅ Analysis complete. Engineering workspace is ready."
                     : currentThought}
@@ -372,15 +356,15 @@ export function AnalysisLoadingOverlay({
             transition={{ delay: 0.4 }}
             className="w-full max-w-2xl space-y-2"
           >
-            <div className="flex justify-between text-xs font-mono text-slate-500">
+            <div className="flex justify-between text-xs font-mono text-graphite-muted">
               <span>Pipeline Progress</span>
-              <span className={isAllDone ? "text-emerald-400" : "text-purple-300"}>
+              <span className={isAllDone ? "text-emerald-400" : "text-copper"}>
                 {isAllDone ? "Complete" : `${completedCount} / ${AGENTS.length} agents`}
               </span>
             </div>
-            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-graphite-border rounded-full overflow-hidden">
               <motion.div
-                className={`h-full rounded-full ${isAllDone ? "bg-emerald-500" : "bg-gradient-to-r from-purple-500 to-indigo-500"}`}
+                className={`h-full rounded-full ${isAllDone ? "bg-emerald-500" : "bg-gradient-to-r from-copper to-[#5B82A6]"}`}
                 initial={{ width: "0%" }}
                 animate={{ width: `${progressPct}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}

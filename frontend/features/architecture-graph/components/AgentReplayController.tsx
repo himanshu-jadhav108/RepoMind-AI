@@ -140,7 +140,7 @@ export function AgentReplayController() {
   const progressPct = Math.round(((currentStepIndex + 1) / REPLAY_STEPS.length) * 100);
 
   return (
-    <div className="w-full bg-slate-900/90 border-b border-indigo-500/30 p-3 backdrop-blur-xl font-mono text-xs text-slate-100 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+    <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 font-mono text-xs text-white flex flex-wrap items-center justify-between gap-3 shadow-lg">
       <div className="flex items-center gap-2">
         <Button
           variant="gradient"
@@ -153,45 +153,45 @@ export function AgentReplayController() {
         </Button>
 
         {isPlaying ? (
-          <Button variant="outline" size="sm" onClick={handleTogglePause} className="gap-1 text-xs">
-            <Pause className="w-3.5 h-3.5 text-amber-400" /> Pause
+          <Button variant="outline" size="sm" onClick={handleTogglePause} className="gap-1 text-xs border-graphite-border">
+            <Pause className="w-3.5 h-3.5 text-severity-warning" /> Pause
           </Button>
         ) : currentStepIndex > 0 ? (
-          <Button variant="outline" size="sm" onClick={() => setIsPlaying(true)} className="gap-1 text-xs">
+          <Button variant="outline" size="sm" onClick={() => setIsPlaying(true)} className="gap-1 text-xs border-graphite-border">
             <Play className="w-3.5 h-3.5 text-emerald-400" /> Resume
           </Button>
         ) : null}
 
-        <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 text-xs text-slate-400">
+        <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 text-xs text-graphite-muted">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
         </Button>
       </div>
 
-      <div className="flex-1 min-w-[260px] bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3">
+      <div className="flex-1 min-w-[260px] bg-graphite-canvas px-3 py-1.5 rounded-lg border border-graphite-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 truncate">
           <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-purple-400" : "bg-slate-500"} opacity-75`}></span>
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPlaying ? "bg-purple-500" : "bg-slate-500"}`}></span>
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-copper" : "bg-graphite-muted"} opacity-75`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPlaying ? "bg-copper" : "bg-graphite-muted"}`}></span>
           </span>
-          <span className="font-bold text-purple-300 truncate">{activeStep.title}:</span>
-          <span className="text-slate-300 text-[11px] truncate">{activeStep.description}</span>
+          <span className="font-bold text-copper truncate">{activeStep.title}:</span>
+          <span className="text-graphite-muted text-[11px] truncate">{activeStep.description}</span>
         </div>
-        <Badge variant="outline" className="text-[10px] shrink-0 border-purple-500/30 text-purple-300">
+        <Badge variant="outline" className="text-[10px] shrink-0 border-copper/30 text-copper bg-copper/10">
           {progressPct}%
         </Badge>
       </div>
 
       <div className="flex items-center gap-1.5">
-        <FastForward className="w-3.5 h-3.5 text-indigo-400" />
-        <span className="text-slate-400 text-[11px]">Speed:</span>
+        <FastForward className="w-3.5 h-3.5 text-[#5B82A6]" />
+        <span className="text-graphite-muted text-[11px]">Speed:</span>
         {[1, 1.5, 2].map((spd) => (
           <button
             key={spd}
             onClick={() => setPlaybackSpeed(spd)}
             className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
               playbackSpeed === spd
-                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
-                : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                ? "bg-[#5B82A6]/20 text-[#5B82A6] border-[#5B82A6]/40"
+                : "bg-graphite-canvas text-graphite-muted border-graphite-border hover:text-white"
             }`}
           >
             {spd}x

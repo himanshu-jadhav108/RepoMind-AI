@@ -68,10 +68,10 @@ const config: Config = {
           muted: "#6E707E",
         },
         category: {
-          arch: "#5B82A6",      // Category A: Steel Slate Blue
-          security: "#FF3B30",  // Category B: High-Voltage Crimson
-          perf: "#FFB000",      // Category C: Amber Alert
-          qa: "#00E676",        // Category D: Terminal Green
+          arch: "hsl(var(--category-arch) / <alpha-value>)",
+          security: "hsl(var(--category-security) / <alpha-value>)",
+          performance: "hsl(var(--category-performance) / <alpha-value>)",
+          qa: "hsl(var(--category-qa) / <alpha-value>)",
         },
         severity: {
           critical: "#FF3B30",

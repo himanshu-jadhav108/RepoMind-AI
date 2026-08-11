@@ -33,6 +33,12 @@
     --ring: 24 67% 53%;
 
     --radius: 0.5rem;
+
+    /* Semantic Agent Category Tokens */
+    --category-arch: 212 29% 50%;
+    --category-security: 3 100% 60%;
+    --category-performance: 41 100% 50%;
+    --category-qa: 151 100% 45%;
   }
 }
 

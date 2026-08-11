@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bot, Sparkles, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Bot, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useGraphStore, AgentName } from "../store/useGraphStore";
 
 interface AgentTraversalOverlayProps {
@@ -66,42 +66,42 @@ export function AgentTraversalOverlay({ agentName }: AgentTraversalOverlayProps)
   const data = AGENT_TRAVERSALS[agentName] || AGENT_TRAVERSALS.architect_agent;
 
   return (
-    <div className="absolute top-16 left-3 z-30 max-w-sm p-3.5 rounded-xl bg-purple-950/90 border border-purple-500/40 backdrop-blur-xl shadow-2xl text-xs font-mono text-purple-100 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between border-b border-purple-800/80 pb-2 mb-2">
+    <div className="absolute top-16 left-3 z-30 max-w-sm p-3.5 rounded-xl bg-graphite-panel border border-[#5B82A6]/40 backdrop-blur-xl shadow-2xl text-xs font-mono text-white animate-in fade-in duration-300">
+      <div className="flex items-center justify-between border-b border-graphite-border pb-2 mb-2">
         <div className="flex items-center gap-2">
-          <Bot className="w-4 h-4 text-purple-300 animate-bounce" />
-          <span className="font-bold text-white uppercase tracking-wider">{agentName.replace("_", " ")}</span>
+          <Bot className="w-4 h-4 text-[#5B82A6] animate-bounce" />
+          <span className="font-bold text-white uppercase tracking-wider font-display">{agentName.replace("_", " ")}</span>
         </div>
         <button
           onClick={() => setSelectedAgent(null)}
-          className="text-purple-400 hover:text-white transition text-[10px]"
+          className="text-graphite-muted hover:text-white transition text-[10px]"
         >
           Close
         </button>
       </div>
 
-      <p className="text-[11px] text-purple-200 leading-relaxed mb-2.5">
+      <p className="text-[11px] text-graphite-muted leading-relaxed mb-2.5 font-sans">
         {data.reasoning}
       </p>
 
       {/* Traversal Path */}
-      <div className="p-2 rounded-lg bg-slate-950/80 border border-purple-900/60 mb-2">
-        <span className="text-[10px] text-purple-400 font-semibold block mb-1">Inspected Reasoning Path:</span>
+      <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border mb-2 font-mono">
+        <span className="text-[10px] text-[#5B82A6] font-semibold block mb-1">Inspected Reasoning Path:</span>
         <div className="flex flex-wrap items-center gap-1 text-[10.5px]">
           {data.path.map((node, i) => (
             <React.Fragment key={node}>
-              <span className="px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-200 border border-purple-700/50">
+              <span className="px-1.5 py-0.5 rounded bg-graphite-panel text-white border border-[#5B82A6]/30">
                 {node}
               </span>
-              {i < data.path.length - 1 && <ArrowRight className="w-3 h-3 text-purple-400 shrink-0" />}
+              {i < data.path.length - 1 && <ArrowRight className="w-3 h-3 text-[#5B82A6] shrink-0" />}
             </React.Fragment>
           ))}
         </div>
       </div>
 
       {/* Confidence */}
-      <div className="flex items-center justify-between text-[11px] font-bold text-emerald-400">
-        <span className="flex items-center gap-1 text-purple-300">
+      <div className="flex items-center justify-between text-[11px] font-bold text-emerald-400 font-mono">
+        <span className="flex items-center gap-1 text-[#5B82A6]">
           <ShieldCheck className="w-3.5 h-3.5" /> Verification Status:
         </span>
         <span className="flex items-center gap-1">

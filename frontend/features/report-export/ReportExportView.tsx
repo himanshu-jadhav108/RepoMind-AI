@@ -41,22 +41,22 @@ function renderFormattedMarkdown(markdown: string) {
         );
 
         elements.push(
-          <div key={`table-${i}`} className="my-4 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl">
+          <div key={`table-${i}`} className="my-4 overflow-x-auto rounded-xl border border-graphite-border bg-graphite-panel shadow-xl">
             <table className="w-full text-xs font-mono text-left border-collapse">
-              <thead className="bg-slate-900 border-b border-slate-800 text-slate-200">
+              <thead className="bg-graphite-canvas border-b border-graphite-border text-white">
                 <tr>
                   {headerRow.map((cell, cIdx) => (
-                    <th key={cIdx} className="px-3.5 py-2.5 font-bold text-indigo-300">
+                    <th key={cIdx} className="px-3.5 py-2.5 font-bold text-[#5B82A6]">
                       {parseInlineFormatting(cell)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-graphite-border">
                 {dataRows.map((r, rIdx) => (
-                  <tr key={rIdx} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={rIdx} className="hover:bg-graphite-panel/60 transition-colors">
                     {r.map((cell, cIdx) => (
-                      <td key={cIdx} className="px-3.5 py-2 text-slate-300">
+                      <td key={cIdx} className="px-3.5 py-2 text-foreground/90">
                         {parseInlineFormatting(cell)}
                       </td>
                     ))}
@@ -73,7 +73,7 @@ function renderFormattedMarkdown(markdown: string) {
     // 2. Headings
     if (trimmed.startsWith("# ")) {
       elements.push(
-        <h1 key={`h1-${i}`} className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-sky-400 border-b border-slate-800 pb-3 mt-6 mb-4 flex items-center gap-2">
+        <h1 key={`h1-${i}`} className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-copper to-[#5B82A6] border-b border-graphite-border pb-3 mt-6 mb-4 flex items-center gap-2 font-display">
           <span>{trimmed.replace("# ", "")}</span>
         </h1>
       );
@@ -83,7 +83,7 @@ function renderFormattedMarkdown(markdown: string) {
 
     if (trimmed.startsWith("## ")) {
       elements.push(
-        <h2 key={`h2-${i}`} className="text-lg font-bold text-sky-400 border-b border-slate-800/80 pb-2 mt-6 mb-3 flex items-center gap-2">
+        <h2 key={`h2-${i}`} className="text-lg font-bold text-[#5B82A6] border-b border-graphite-border pb-2 mt-6 mb-3 flex items-center gap-2 font-display">
           <span>{trimmed.replace("## ", "")}</span>
         </h2>
       );
@@ -93,7 +93,7 @@ function renderFormattedMarkdown(markdown: string) {
 
     if (trimmed.startsWith("### ")) {
       elements.push(
-        <h3 key={`h3-${i}`} className="text-sm font-bold text-purple-300 mt-4 mb-2 flex items-center gap-2">
+        <h3 key={`h3-${i}`} className="text-sm font-bold text-copper mt-4 mb-2 flex items-center gap-2 font-display">
           <span>{trimmed.replace("### ", "")}</span>
         </h3>
       );
@@ -102,7 +102,7 @@ function renderFormattedMarkdown(markdown: string) {
     }
 
     if (trimmed.startsWith("---")) {
-      elements.push(<hr key={`hr-${i}`} className="border-slate-800 my-5" />);
+      elements.push(<hr key={`hr-${i}`} className="border-graphite-border my-5" />);
       i++;
       continue;
     }
@@ -111,7 +111,7 @@ function renderFormattedMarkdown(markdown: string) {
     if (trimmed.startsWith("- ")) {
       const content = parseInlineFormatting(trimmed.replace("- ", ""));
       elements.push(
-        <li key={`li-${i}`} className="ml-5 list-disc text-slate-300 my-1 text-xs font-mono leading-relaxed">
+        <li key={`li-${i}`} className="ml-5 list-disc text-foreground/90 my-1 text-xs font-mono leading-relaxed">
           {content}
         </li>
       );
@@ -122,7 +122,7 @@ function renderFormattedMarkdown(markdown: string) {
     if (/^\d+\.\s/.test(trimmed)) {
       const content = parseInlineFormatting(trimmed.replace(/^\d+\.\s/, ""));
       elements.push(
-        <li key={`oli-${i}`} className="ml-5 list-decimal text-slate-300 my-1 text-xs font-mono leading-relaxed">
+        <li key={`oli-${i}`} className="ml-5 list-decimal text-foreground/90 my-1 text-xs font-mono leading-relaxed">
           {content}
         </li>
       );
@@ -133,7 +133,7 @@ function renderFormattedMarkdown(markdown: string) {
     // 4. Standard Paragraph
     const content = parseInlineFormatting(line);
     elements.push(
-      <p key={`p-${i}`} className="text-xs text-slate-300 leading-relaxed font-mono my-1">
+      <p key={`p-${i}`} className="text-xs text-foreground/90 leading-relaxed font-mono my-1">
         {content}
       </p>
     );
@@ -149,28 +149,28 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
   return parts.map((part, i) => {
     if (part === "[CRITICAL]") {
       return (
-        <span key={i} className="px-2 py-0.5 rounded bg-red-950 border border-red-500/50 text-red-400 text-[10px] font-bold">
+        <span key={i} className="px-2 py-0.5 rounded bg-severity-critical/15 border border-severity-critical/30 text-severity-critical text-[10px] font-bold">
           CRITICAL
         </span>
       );
     }
     if (part === "[HIGH]") {
       return (
-        <span key={i} className="px-2 py-0.5 rounded bg-amber-950 border border-amber-500/50 text-amber-300 text-[10px] font-bold">
+        <span key={i} className="px-2 py-0.5 rounded bg-severity-critical/15 border border-severity-critical/30 text-severity-critical text-[10px] font-bold">
           HIGH
         </span>
       );
     }
     if (part === "[MEDIUM]") {
       return (
-        <span key={i} className="px-2 py-0.5 rounded bg-yellow-950 border border-yellow-500/50 text-yellow-300 text-[10px] font-bold">
+        <span key={i} className="px-2 py-0.5 rounded bg-severity-warning/15 border border-severity-warning/30 text-severity-warning text-[10px] font-bold">
           MEDIUM
         </span>
       );
     }
     if (part === "[LOW]") {
       return (
-        <span key={i} className="px-2 py-0.5 rounded bg-blue-950 border border-blue-500/50 text-blue-300 text-[10px] font-bold">
+        <span key={i} className="px-2 py-0.5 rounded bg-[#5B82A6]/15 border border-[#5B82A6]/30 text-[#5B82A6] text-[10px] font-bold">
           LOW
         </span>
       );
@@ -184,14 +184,14 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="px-1.5 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-500/30 font-mono text-[11px]">
+        <code key={i} className="px-1.5 py-0.5 rounded bg-graphite-panel text-copper border border-graphite-border font-mono text-[11px]">
           {part.slice(1, -1)}
         </code>
       );
     }
     if (part.startsWith("*") && part.endsWith("*")) {
       return (
-        <em key={i} className="text-slate-400 italic">
+        <em key={i} className="text-graphite-muted italic">
           {part.slice(1, -1)}
         </em>
       );
@@ -221,7 +221,7 @@ function formatInlinePDFHTML(text: string): string {
   // Bold & Code & Italic
   res = res.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #0f172a; font-weight: 700;">$1</strong>');
   // Clean monospace text without bulky grey bubble background boxes
-  res = res.replace(/`(.*?)`/g, '<code style="color: #4338ca; font-family: Consolas, Monaco, \'Courier New\', monospace; font-weight: 600; font-size: 10.5px;">$1</code>');
+  res = res.replace(/`(.*?)`/g, '<code style="color: #D97736; font-family: Consolas, Monaco, \'Courier New\', monospace; font-weight: 600; font-size: 10.5px;">$1</code>');
   res = res.replace(/\*(.*?)\*/g, '<em style="color: #64748b;">$1</em>');
 
   return res;
@@ -306,13 +306,13 @@ function parseMarkdownToExecutivePDFHTML(markdown: string): string {
 
     // 2. Headings
     if (trimmed.startsWith("# ")) {
-      htmlResult.push(`<h1 style="font-size: 16px; font-weight: 800; color: #1e1b4b; margin-top: 16px; margin-bottom: 8px; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("# ", ""))}</h1>`);
+      htmlResult.push(`<h1 style="font-size: 16px; font-weight: 800; color: #D97736; margin-top: 16px; margin-bottom: 8px; border-bottom: 2px solid #D97736; padding-bottom: 4px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("# ", ""))}</h1>`);
       i++;
       continue;
     }
 
     if (trimmed.startsWith("## ")) {
-      htmlResult.push(`<h2 style="font-size: 13px; font-weight: 700; color: #4338ca; margin-top: 14px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("## ", ""))}</h2>`);
+      htmlResult.push(`<h2 style="font-size: 13px; font-weight: 700; color: #5B82A6; margin-top: 14px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; page-break-after: avoid; word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("## ", ""))}</h2>`);
       i++;
       continue;
     }
@@ -331,7 +331,7 @@ function parseMarkdownToExecutivePDFHTML(markdown: string): string {
 
     // 3. Lists
     if (trimmed.startsWith("- ")) {
-      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #4f46e5; font-weight: bold; line-height: 1;">•</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("- ", ""))}</span></div>`);
+      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #D97736; font-weight: bold; line-height: 1;">•</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace("- ", ""))}</span></div>`);
       i++;
       continue;
     }
@@ -339,7 +339,7 @@ function parseMarkdownToExecutivePDFHTML(markdown: string): string {
     if (/^\d+\.\s/.test(trimmed)) {
       const match = trimmed.match(/^(\d+)\.\s/);
       const num = match ? match[1] : "1";
-      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #4338ca; font-weight: bold; font-family: monospace;">${num}.</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace(/^\d+\.\s/, ""))}</span></div>`);
+      htmlResult.push(`<div style="margin-left: 10px; margin-bottom: 3px; color: #334155; font-size: 10px; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; word-break: break-word;"><span style="color: #5B82A6; font-weight: bold; font-family: monospace;">${num}.</span> <span style="word-break: break-word;">${formatInlinePDFHTML(trimmed.replace(/^\d+\.\s/, ""))}</span></div>`);
       i++;
       continue;
     }
@@ -475,15 +475,15 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RepoMind AI Audit Report - ${runId}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; padding: 40px; line-height: 1.6; max-width: 920px; margin: 0 auto; }
-    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #6366f1; padding-bottom: 16px; margin-bottom: 24px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121316; color: #F1F2F6; padding: 40px; line-height: 1.6; max-width: 920px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #D97736; padding-bottom: 16px; margin-bottom: 24px; }
     .logo-container { display: flex; align-items: center; gap: 14px; }
-    .logo-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid #6366f1; }
-    .title { color: #0f172a; font-size: 20px; font-weight: 800; margin: 0; }
-    .subtitle { color: #64748b; font-size: 12px; margin-top: 2px; font-family: monospace; }
-    .badge { background: #ecfdf5; color: #047857; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 11px; border: 1px solid #6ee7b7; font-family: monospace; }
-    .content-box { background: #ffffff; padding: 32px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
-    footer { margin-top: 30px; text-align: center; color: #94a3b8; font-size: 11px; font-family: monospace; }
+    .logo-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid #D97736; }
+    .title { color: #ffffff; font-size: 20px; font-weight: 800; margin: 0; }
+    .subtitle { color: #6E707E; font-size: 12px; margin-top: 2px; font-family: monospace; }
+    .badge { background: rgba(0, 230, 118, 0.1); color: #00E676; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 11px; border: 1px solid rgba(0, 230, 118, 0.3); font-family: monospace; }
+    .content-box { background: #1B1C22; padding: 32px; border-radius: 14px; border: 1px solid #2A2B33; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
+    footer { margin-top: 30px; text-align: center; color: #6E707E; font-size: 11px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -528,9 +528,9 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
     container.style.overflow = "hidden";
 
     container.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #4f46e5;padding-bottom:12px;margin-bottom:16px;width:100%;box-sizing:border-box;">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #D97736;padding-bottom:12px;margin-bottom:16px;width:100%;box-sizing:border-box;">
         <div style="display:flex;align-items:center;gap:12px;max-width:72%;">
-          <img src="${logoSrc}" alt="RepoMind AI Logo" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1.5px solid #4f46e5;flex-shrink:0;" />
+          <img src="${logoSrc}" alt="RepoMind AI Logo" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1.5px solid #D97736;flex-shrink:0;" />
           <div>
             <h1 style="font-size:16px;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.3px;line-height:1.2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
               RepoMind AI — Executive Engineering Audit Report
@@ -552,11 +552,11 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
         </div>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
           <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Total Findings</div>
-          <div style="font-size:14px;font-weight:800;color:#4f46e5;margin-top:2px;">8 Identified</div>
+          <div style="font-size:14px;font-weight:800;color:#D97736;margin-top:2px;">8 Identified</div>
         </div>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
           <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Agent Confidence</div>
-          <div style="font-size:14px;font-weight:800;color:#0284c7;margin-top:2px;">96% Avg</div>
+          <div style="font-size:14px;font-weight:800;color:#5B82A6;margin-top:2px;">96% Avg</div>
         </div>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
           <div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;">Reviewer Gate</div>
@@ -593,8 +593,6 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
 
       await html2pdf().set(opt).from(container).save();
     } catch (e) {
-
-
       console.warn("Falling back to window.print()", e);
       window.print();
     } finally {
@@ -602,17 +600,13 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
     }
   };
 
-
   return (
-
-
-
-    <div className="space-y-5">
+    <div className="space-y-5 font-sans">
       {/* Executive Key Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-purple-500/30 flex items-center justify-between">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+        <div className="p-4 rounded-xl bg-graphite-panel border border-graphite-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Health Score</span>
+            <span className="text-[10px] text-graphite-muted uppercase tracking-wider block">Health Score</span>
             <span className="text-xl font-extrabold text-emerald-400">88.5 / 100</span>
           </div>
           <div className="w-9 h-9 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs">
@@ -620,48 +614,48 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-indigo-500/30 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-graphite-panel border border-graphite-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Findings</span>
-            <span className="text-xl font-extrabold text-indigo-300">8 Identified</span>
+            <span className="text-[10px] text-graphite-muted uppercase tracking-wider block">Total Findings</span>
+            <span className="text-xl font-extrabold text-copper">8 Identified</span>
           </div>
-          <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          <ShieldCheck className="w-5 h-5 text-copper" />
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-graphite-panel border border-graphite-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Agent Confidence</span>
-            <span className="text-xl font-extrabold text-cyan-300">96% Avg</span>
+            <span className="text-[10px] text-graphite-muted uppercase tracking-wider block">Agent Confidence</span>
+            <span className="text-xl font-extrabold text-[#5B82A6]">96% Avg</span>
           </div>
-          <Sparkles className="w-5 h-5 text-cyan-400" />
+          <Sparkles className="w-5 h-5 text-[#5B82A6]" />
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-graphite-panel border border-graphite-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Reviewer Gate</span>
+            <span className="text-[10px] text-graphite-muted uppercase tracking-wider block">Reviewer Gate</span>
             <span className="text-sm font-bold text-emerald-400">APPROVED</span>
           </div>
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
         </div>
       </div>
 
-      <Card className="w-full space-y-4 border border-border/80 shadow-2xl bg-slate-950">
-        <CardHeader className="py-4 px-5 flex flex-wrap items-center justify-between border-b border-border/60 bg-slate-900/80 gap-3">
+      <Card className="w-full space-y-4 border border-graphite-border shadow-2xl bg-graphite-canvas">
+        <CardHeader className="py-4 px-5 flex flex-wrap items-center justify-between border-b border-graphite-border bg-graphite-panel gap-3">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
-              className="w-9 h-9 rounded-xl object-cover border border-purple-500/40 shadow-lg"
+              className="w-9 h-9 rounded-xl object-cover border border-copper/40 shadow-lg"
             />
             <div>
-              <CardTitle className="text-sm font-bold font-mono text-white flex items-center gap-2">
+              <CardTitle className="text-sm font-bold font-display text-white flex items-center gap-2">
                 <span>Exportable Engineering Audit Report</span>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
                   Verified & Approved
                 </span>
               </CardTitle>
-              <p className="text-[11px] text-slate-400 font-mono">Run ID: {runId}</p>
+              <p className="text-[11px] text-graphite-muted font-mono">Run ID: {runId}</p>
             </div>
           </div>
 
@@ -671,9 +665,9 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               onClick={handleDownloadMarkdown}
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs border-sky-500/40 text-sky-300 hover:bg-sky-500/20 transition cursor-pointer"
+              className="gap-1.5 text-xs border-copper/40 text-copper hover:bg-copper/20 transition cursor-pointer"
             >
-              <FileCode className="w-4 h-4 text-sky-400" />
+              <FileCode className="w-4 h-4 text-copper" />
               <span>{downloadedFormat === "md" ? "Downloaded .md!" : "Download Markdown (.md)"}</span>
             </Button>
 
@@ -681,19 +675,18 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               onClick={handleDownloadHTML}
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs border-purple-500/40 text-purple-300 hover:bg-purple-500/20 transition cursor-pointer"
+              className="gap-1.5 text-xs border-copper/40 text-copper hover:bg-copper/20 transition cursor-pointer"
             >
-              <FileText className="w-4 h-4 text-purple-400" />
+              <FileText className="w-4 h-4 text-copper" />
               <span>{downloadedFormat === "html" ? "Downloaded .html!" : "Download HTML (.html)"}</span>
             </Button>
 
             <Button
               onClick={handleSavePDF}
-              variant="gradient"
               size="sm"
-              className="gap-1.5 text-xs shadow-lg cursor-pointer"
+              className="gap-1.5 text-xs shadow-lg cursor-pointer bg-copper hover:bg-copper-hover text-white"
             >
-              <Download className="w-4 h-4 text-emerald-300" />
+              <Download className="w-4 h-4 text-white" />
               <span>{downloadedFormat === "pdf" ? "Saved PDF!" : "Save PDF (.pdf)"}</span>
             </Button>
 
@@ -701,7 +694,7 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               onClick={() => window.print()}
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20 transition cursor-pointer"
+              className="gap-1.5 text-xs border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 transition cursor-pointer"
             >
               <Printer className="w-4 h-4 text-emerald-400" />
               <span>Print / Browser PDF</span>
@@ -710,8 +703,8 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
 
         </CardHeader>
 
-        <CardContent className="p-6 bg-slate-950 rounded-b-xl border-t border-border/40 font-mono text-xs text-slate-200">
-          <div className="p-5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 max-h-[520px] overflow-y-auto leading-relaxed shadow-inner">
+        <CardContent className="p-6 bg-graphite-canvas rounded-b-xl border-t border-graphite-border font-mono text-xs text-foreground/90">
+          <div className="p-5 rounded-xl bg-graphite-panel border border-graphite-border space-y-2 max-h-[520px] overflow-y-auto leading-relaxed shadow-inner">
             {formattedUIElements}
           </div>
         </CardContent>
@@ -719,4 +712,3 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
     </div>
   );
 }
-

@@ -32,16 +32,16 @@ interface EngineeringReviewMeetingProps {
 }
 
 const AGENT_ICON_MAP: Record<string, React.ReactNode> = {
-  planner: <Sparkles className="w-4 h-4 text-purple-400" />,
-  analyzer: <Layers className="w-4 h-4 text-indigo-400" />,
-  architect: <Cpu className="w-4 h-4 text-blue-400" />,
-  bughunter: <Code2 className="w-4 h-4 text-amber-400" />,
-  security: <ShieldAlert className="w-4 h-4 text-emerald-400" />,
-  performance: <Zap className="w-4 h-4 text-yellow-400" />,
-  documentation: <Info className="w-4 h-4 text-sky-400" />,
-  feature: <Activity className="w-4 h-4 text-pink-400" />,
-  learning: <Sparkles className="w-4 h-4 text-cyan-400" />,
-  reviewer: <Award className="w-4 h-4 text-violet-400" />,
+  planner: <Sparkles className="w-4 h-4 text-copper" />,
+  analyzer: <Layers className="w-4 h-4 text-[#5B82A6]" />,
+  architect: <Cpu className="w-4 h-4 text-[#5B82A6]" />,
+  bughunter: <Code2 className="w-4 h-4 text-severity-critical" />,
+  security: <ShieldAlert className="w-4 h-4 text-severity-critical" />,
+  performance: <Zap className="w-4 h-4 text-severity-warning" />,
+  documentation: <Info className="w-4 h-4 text-emerald-400" />,
+  feature: <Activity className="w-4 h-4 text-copper" />,
+  learning: <Sparkles className="w-4 h-4 text-emerald-400" />,
+  reviewer: <Award className="w-4 h-4 text-copper" />,
 };
 
 const DEFAULT_MEETING: ReviewMeetingData = {
@@ -271,41 +271,41 @@ export function EngineeringReviewMeeting({
   }, [isPlaying, meetingData.presentations.length]);
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl p-5 shadow-2xl flex flex-col space-y-5 selection:bg-purple-500 selection:text-white">
+    <div className="rounded-2xl border border-graphite-border bg-graphite-panel backdrop-blur-xl p-5 shadow-2xl flex flex-col space-y-5 selection:bg-copper selection:text-white font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-graphite-border pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+          <div className="p-2.5 rounded-xl bg-copper/10 border border-copper/30 text-copper">
             <Users className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2 font-display">
               <span>Engineering Review Meeting</span>
               {isPlaying ? (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-xs font-mono text-red-400 animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-severity-critical/20 border border-severity-critical/40 text-xs font-mono text-severity-critical animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-severity-critical inline-block" />
                   LIVE
                 </span>
               ) : (
-                <Badge className="bg-purple-950/80 text-purple-300 border-purple-500/40 text-xs font-mono">
+                <Badge className="bg-copper/10 text-copper border-copper/40 text-xs font-mono">
                   Live AI Architecture Panel
                 </Badge>
               )}
             </h2>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-graphite-muted font-mono">
               Autonomous multi-agent findings presentation & final verdict.
             </p>
           </div>
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2 bg-graphite-canvas p-1.5 rounded-xl border border-graphite-border font-mono text-xs">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentIndex((p) => Math.max(0, p - 1))}
             disabled={currentIndex === 0}
-            className="h-8 px-2 text-slate-300 hover:text-white"
+            className="h-8 px-2 text-graphite-muted hover:text-white"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -314,7 +314,7 @@ export function EngineeringReviewMeeting({
             variant={isPlaying ? "destructive" : "default"}
             size="sm"
             onClick={() => setIsPlaying(!isPlaying)}
-            className="h-8 px-3 text-xs gap-1.5 bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-lg shadow-purple-600/20"
+            className="h-8 px-3 text-xs gap-1.5 bg-copper hover:bg-copper-hover text-white font-medium shadow-lg shadow-copper/20"
           >
             {isPlaying ? (
               <>
@@ -331,9 +331,9 @@ export function EngineeringReviewMeeting({
             variant={isSpeaking ? "destructive" : "outline"}
             size="sm"
             onClick={speakCurrentAgent}
-            className="h-8 px-2.5 text-xs gap-1.5 border-purple-500/40 text-purple-300 bg-purple-950/40 hover:bg-purple-900/60"
+            className="h-8 px-2.5 text-xs gap-1.5 border-copper/40 text-copper bg-copper/10 hover:bg-copper/20"
           >
-            <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? "animate-pulse text-red-400" : "text-purple-400"}`} />
+            <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? "animate-pulse text-severity-critical" : "text-copper"}`} />
             <span>{isSpeaking ? "Mute Voice" : "Voice Narrate"}</span>
           </Button>
 
@@ -344,7 +344,7 @@ export function EngineeringReviewMeeting({
               setCurrentIndex((p) => Math.min(meetingData.presentations.length - 1, p + 1))
             }
             disabled={currentIndex === meetingData.presentations.length - 1}
-            className="h-8 px-2 text-slate-300 hover:text-white"
+            className="h-8 px-2 text-graphite-muted hover:text-white"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -352,7 +352,7 @@ export function EngineeringReviewMeeting({
       </div>
 
       {/* Agent Nav Stepper Bar - All 10 Specialized Agents */}
-      <div className="flex flex-nowrap overflow-x-auto gap-1.5 bg-slate-950/90 p-2 rounded-xl border border-slate-800/80 scrollbar-none w-full items-center">
+      <div className="flex flex-nowrap overflow-x-auto gap-1.5 bg-graphite-canvas p-2 rounded-xl border border-graphite-border scrollbar-none w-full items-center">
         {meetingData.presentations.map((pres, idx) => {
           const isActive = idx === currentIndex;
           const isPassed = idx < currentIndex;
@@ -365,13 +365,13 @@ export function EngineeringReviewMeeting({
               }}
               className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold font-mono transition-all duration-200 shrink-0 whitespace-nowrap ${
                 isActive
-                  ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30 scale-[1.02]"
+                  ? "bg-copper text-white shadow-lg shadow-copper/20 scale-[1.02]"
                   : isPassed
-                  ? "bg-purple-950/40 text-purple-300 hover:bg-purple-900/30"
-                  : "bg-slate-900/60 text-slate-400 hover:bg-slate-800/60"
+                  ? "bg-copper/15 text-copper hover:bg-copper/25"
+                  : "bg-graphite-panel text-graphite-muted hover:bg-graphite-panel/80 hover:text-white"
               }`}
             >
-              {(pres.agent_id && AGENT_ICON_MAP[pres.agent_id]) || <Sparkles className="w-3.5 h-3.5 text-purple-400" />}
+              {(pres.agent_id && AGENT_ICON_MAP[pres.agent_id]) || <Sparkles className="w-3.5 h-3.5 text-copper" />}
               <span>{pres.agent_name.replace(" Agent", "").replace(" (Quality Gate)", "")}</span>
             </button>
           );
@@ -387,25 +387,22 @@ export function EngineeringReviewMeeting({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
           transition={{ duration: 0.25 }}
-          className="bg-slate-950/80 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4 relative overflow-hidden"
+          className="bg-graphite-canvas border border-graphite-border rounded-xl p-5 shadow-xl space-y-4 relative overflow-hidden"
         >
-          {/* Subtle agent glow backdrop */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-
           {/* Agent Header Info */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-graphite-border pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-700 shadow-md">
-                {(currentAgent.agent_id && AGENT_ICON_MAP[currentAgent.agent_id]) || <Sparkles className="w-6 h-6 text-purple-400" />}
+              <div className="p-3 rounded-xl bg-graphite-panel border border-graphite-border shadow-md">
+                {(currentAgent.agent_id && AGENT_ICON_MAP[currentAgent.agent_id]) || <Sparkles className="w-6 h-6 text-copper" />}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2 font-display">
                   <span>{currentAgent.agent_name}</span>
-                  <Badge variant="outline" className="border-slate-700 text-slate-300 text-xs font-mono">
+                  <Badge variant="outline" className="border-graphite-border text-graphite-muted text-xs font-mono">
                     {currentAgent.role}
                   </Badge>
                 </h3>
-                <p className="text-xs text-slate-400 font-mono">
+                <p className="text-xs text-graphite-muted font-mono">
                   Agent Presentation {currentIndex + 1} of {meetingData.presentations.length}
                 </p>
               </div>
@@ -413,12 +410,12 @@ export function EngineeringReviewMeeting({
 
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-xs text-slate-400 font-mono">Confidence Score</div>
+                <div className="text-xs text-graphite-muted font-mono">Confidence Score</div>
                 <div className="text-sm font-extrabold text-emerald-400 font-mono">
                   {((currentAgent.confidence ?? 0.95) * 100).toFixed(0)}%
                 </div>
                 {/* Animated confidence bar */}
-                <div className="mt-1 w-20 h-1 rounded-full bg-slate-800 overflow-hidden">
+                <div className="mt-1 w-20 h-1 rounded-full bg-graphite-border overflow-hidden">
                   <motion.div
                     key={(currentAgent.agent_id || "agent") + "-conf"}
                     initial={{ width: 0 }}
@@ -428,8 +425,8 @@ export function EngineeringReviewMeeting({
                       (currentAgent.confidence ?? 0.95) >= 0.9
                         ? "bg-emerald-500"
                         : (currentAgent.confidence ?? 0.95) >= 0.7
-                        ? "bg-amber-500"
-                        : "bg-red-500"
+                        ? "bg-severity-warning"
+                        : "bg-severity-critical"
                     }`}
                   />
                 </div>
@@ -437,8 +434,8 @@ export function EngineeringReviewMeeting({
               <Badge
                 className={`${
                   currentAgent.severity === "high" || currentAgent.severity === "critical"
-                    ? "bg-red-950 text-red-400 border-red-800"
-                    : "bg-emerald-950 text-emerald-400 border-emerald-800"
+                    ? "bg-severity-critical/15 text-severity-critical border-severity-critical/30"
+                    : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                 } text-xs font-mono px-2.5 py-1`}
               >
                 Severity: {(currentAgent.severity || "normal").toUpperCase()}
@@ -447,23 +444,23 @@ export function EngineeringReviewMeeting({
           </div>
 
           {/* Presentation Grid Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 font-sans">
             {/* Summary & Reasoning */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 font-mono mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-copper font-mono mb-1 font-display">
                   Executive Summary
                 </h4>
-                <p className="text-slate-200 text-sm leading-relaxed font-sans bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                <p className="text-foreground/90 text-sm leading-relaxed bg-graphite-panel p-3 rounded-lg border border-graphite-border">
                   {currentAgent.summary}
                 </p>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-indigo-400 font-mono mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#5B82A6] font-mono mb-1 font-display">
                   Architectural Reasoning
                 </h4>
-                <p className="text-slate-300 text-xs leading-relaxed font-mono bg-slate-900/40 p-3 rounded-lg border border-slate-800/80">
+                <p className="text-graphite-muted text-xs leading-relaxed font-mono bg-graphite-panel p-3 rounded-lg border border-graphite-border">
                   {currentAgent.reasoning || currentAgent.speech || "Verified agent finding details recorded."}
                 </p>
               </div>
@@ -472,25 +469,24 @@ export function EngineeringReviewMeeting({
             {/* Evidence & Recommended Actions */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 font-mono mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#38BDF8] font-mono mb-1 font-display">
                   Empirical Evidence
                 </h4>
-                <div className="bg-slate-900/90 p-3 rounded-lg border border-cyan-500/20 font-mono text-xs text-cyan-300 flex items-start gap-2">
-
-                  <FileCode className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <div className="bg-graphite-panel p-3 rounded-lg border border-[#38BDF8]/20 font-mono text-xs text-[#38BDF8] flex items-start gap-2">
+                  <FileCode className="w-4 h-4 text-[#38BDF8] shrink-0 mt-0.5" />
                   <span className="truncate">{currentAgent.evidence || currentAgent.key_point || "AST evidence verified by quality gate."}</span>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 font-mono mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 font-mono mb-1 font-display">
                   Recommended Engineering Actions
                 </h4>
                 <div className="space-y-1.5">
                   {(currentAgent.recommended_actions || [currentAgent.key_point || "Apply recommended fixes."]).map((act, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 text-xs text-slate-200 bg-slate-900/60 p-2 rounded-lg border border-slate-800"
+                      className="flex items-center gap-2 text-xs text-foreground/90 bg-graphite-panel p-2 rounded-lg border border-graphite-border"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>{act}</span>
@@ -502,17 +498,17 @@ export function EngineeringReviewMeeting({
               {/* Referenced Files */}
               {(currentAgent.referenced_files || (currentAgent.code_reference ? [currentAgent.code_reference] : [])).length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono mb-1">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-graphite-muted font-mono mb-1 font-display">
                     Referenced Code Modules
                   </h4>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5 font-mono">
                     {(currentAgent.referenced_files || (currentAgent.code_reference ? [currentAgent.code_reference] : [])).map((file, i) => (
                       <button
                         key={i}
                         onClick={() => onSelectFile && onSelectFile(file)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-950/60 border border-purple-500/30 text-purple-300 text-xs font-mono hover:bg-purple-900/60 transition cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-graphite-panel border border-[#5B82A6]/30 text-[#5B82A6] text-xs hover:bg-graphite-panel/80 transition cursor-pointer"
                       >
-                        <FileCode className="w-3 h-3 text-purple-400" />
+                        <FileCode className="w-3 h-3 text-[#5B82A6]" />
                         <span>{file}</span>
                       </button>
                     ))}
@@ -527,23 +523,23 @@ export function EngineeringReviewMeeting({
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-950/80 via-indigo-950/80 to-slate-950 border border-purple-500/50 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              className="mt-4 p-4 rounded-xl bg-graphite-panel border border-copper/40 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans"
             >
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-full bg-purple-600 text-white shadow-lg shadow-purple-600/40">
+                <div className="p-3 rounded-full bg-copper text-white shadow-lg shadow-copper/20">
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs font-mono text-purple-300 uppercase tracking-widest font-bold">
+                  <div className="text-xs font-mono text-copper uppercase tracking-widest font-bold font-display">
                     Final Engineering Review Verdict
                   </div>
-                  <div className="text-base font-extrabold text-white">{meetingData.verdict}</div>
-                  <div className="text-xs text-slate-300 font-mono mt-0.5 max-w-2xl">
+                  <div className="text-base font-extrabold text-white font-display">{meetingData.verdict}</div>
+                  <div className="text-xs text-graphite-muted font-mono mt-0.5 max-w-2xl">
                     {meetingData.verdict_reasoning}
                   </div>
                 </div>
               </div>
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 px-3 py-1 font-mono text-xs whitespace-nowrap">
+              <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 px-3 py-1 font-mono text-xs whitespace-nowrap">
                 Reviewer Verdict: PASSED
               </Badge>
             </motion.div>

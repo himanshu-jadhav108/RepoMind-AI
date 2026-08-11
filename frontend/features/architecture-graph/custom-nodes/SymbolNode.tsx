@@ -15,14 +15,14 @@ export function SymbolNode({ id, data }: { id: string; data: any }) {
       onMouseLeave={() => setHoveredNode(null)}
       className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all duration-200 shadow cursor-pointer ${
         isClass
-          ? "bg-amber-950/80 border-amber-500/50 text-amber-200"
+          ? "bg-amber-950/80 border-severity-warning/50 text-severity-warning"
           : "bg-emerald-950/80 border-emerald-500/50 text-emerald-200"
       }`}
     >
-      <Handle type="target" position={Position.Top} className="!bg-indigo-400 !w-1.5 !h-1.5" />
+      <Handle type="target" position={Position.Top} className="!bg-[#5B82A6] !w-1.5 !h-1.5" />
 
       {isClass ? (
-        <Box className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+        <Box className="w-3.5 h-3.5 text-severity-warning shrink-0" />
       ) : (
         <Cpu className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
       )}
@@ -31,7 +31,7 @@ export function SymbolNode({ id, data }: { id: string; data: any }) {
         {data.label}
       </span>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-indigo-400 !w-1.5 !h-1.5" />
+      <Handle type="source" position={Position.Bottom} className="!bg-[#5B82A6] !w-1.5 !h-1.5" />
     </div>
   );
 }
