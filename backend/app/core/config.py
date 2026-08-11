@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # Rate Limiting Settings
+    ANALYSIS_RATE_LIMIT_SECONDS: int = 600
+    RATE_LIMIT_BYPASS_LOCALHOST: bool = False
+
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",

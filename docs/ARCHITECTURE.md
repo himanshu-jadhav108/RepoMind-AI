@@ -215,6 +215,15 @@ Row-level security scopes data access per user/session once auth is introduced (
 - **Database**: Supabase-hosted Postgres, accessed by the backend via its service-role client; frontend never talks to Supabase directly for analysis data (goes through backend API).
 - **Environment separation**: distinct Render/Vercel/Supabase projects for staging and production.
 
+## Rate Limiting & Resource Protection
+
+To ensure the backend API remains reliable and publicly accessible when hosted on free-tier infrastructure:
+
+- **Shared Free-Tier LLM Key Protection**: All demo visitors share common free-tier AI provider keys (e.g. Gemini, Groq). Per-IP rate limiting prevents a single user or automated crawler from consuming daily API quotas.
+- **Fair Use Policy**: Analysis run triggers (`POST /api/v1/analysis/run`) are limited to **1 run per IP every 10 minutes** by default (`ANALYSIS_RATE_LIMIT_SECONDS = 600`), keeping the live demo available for everyone.
+- **Configurable Control**: The interval is configurable via `ANALYSIS_RATE_LIMIT_SECONDS` (lowered for development/demos, raised for production), and `RATE_LIMIT_BYPASS_LOCALHOST` allows local development testing when enabled.
+- **User-Friendly Error Handling**: Hits return an `HTTP 429 Too Many Requests` status with a `Retry-After` header and a human-readable JSON message designed for direct frontend display.
+
 ## Repository Knowledge Graph
 
 The Repository Analyzer builds a typed graph representation of the codebase, not just a flat dependency list:

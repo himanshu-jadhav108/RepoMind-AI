@@ -20,6 +20,7 @@ def _ensure_valid_uuid(val: str) -> str:
 
 
 from app.agents.learning_agent import LearningAgent
+from app.core.config import settings
 from app.core.dependency_injection import get_analysis_service, get_provider_router
 from app.core.logging import logger
 from app.models.analysis import (
@@ -43,9 +44,11 @@ from app.services.analysis_service import AnalysisService
 
 router = APIRouter(prefix="/analysis", tags=["Analysis Runs"])
 
-# In-memory per-IP rate limiter for analysis triggers
+# In-memory per-IP rate limiter state for analysis triggers.
+# Note: This in-memory state resets on every Render free-tier restart/redeploy/sleep-wake cycle.
+# This behavior is acceptable for single-instance free-tier deployment, but will not survive
+# horizontal scaling across multiple backend instances (which would require Redis or a shared cache).
 _ip_last_request: dict = {}
-RATE_LIMIT_INTERVAL_SEC = 0  # Set to 0 to allow instant multi-repo evaluation during live demos
 
 
 @router.post("/run", response_model=AnalysisRunResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -60,11 +63,35 @@ async def trigger_analysis_run(
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     last_time = _ip_last_request.get(client_ip, 0)
-    if RATE_LIMIT_INTERVAL_SEC > 0 and now - last_time < RATE_LIMIT_INTERVAL_SEC and client_ip != "127.0.0.1":
-        remaining = int(RATE_LIMIT_INTERVAL_SEC - (now - last_time))
+    interval = settings.ANALYSIS_RATE_LIMIT_SECONDS
+
+    is_localhost = client_ip in ("127.0.0.1", "localhost", "::1", "testclient")
+    bypass = settings.RATE_LIMIT_BYPASS_LOCALHOST and is_localhost
+
+    if interval > 0 and not bypass and (now - last_time) < interval:
+        remaining = int(interval - (now - last_time))
+
+        if interval >= 60:
+            interval_mins = interval // 60
+            limit_desc = f"{interval_mins} minute{'s' if interval_mins > 1 else ''}"
+        else:
+            limit_desc = f"{interval} second{'s' if interval != 1 else ''}"
+
+        if remaining >= 60:
+            rem_mins = (remaining + 59) // 60
+            time_desc = f"{rem_mins} minute{'s' if rem_mins > 1 else ''}"
+        else:
+            time_desc = f"{remaining} second{'s' if remaining != 1 else ''}"
+
+        message = (
+            f"Rate limit reached. To keep our free-tier AI services available for everyone, "
+            f"repository analysis is limited to 1 run every {limit_desc} per IP. "
+            f"Please try again in {time_desc}."
+        )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Rate limit exceeded. Please wait {remaining}s before triggering another analysis run.",
+            detail=message,
+            headers={"Retry-After": str(max(1, remaining))},
         )
     _ip_last_request[client_ip] = now
 

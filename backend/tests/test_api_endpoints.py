@@ -114,3 +114,33 @@ def test_analysis_run_lifecycle_and_endpoints():
     export_pdf = client.get(f"/api/v1/analysis/{run_id}/report/export?format=pdf")
     assert export_pdf.status_code == 200
     assert export_pdf.headers["content-type"] == "application/pdf"
+
+
+def test_analysis_rate_limiting_and_bypass(monkeypatch):
+    from app.core.config import settings
+    from app.api.v1.routes_analysis import _ip_last_request
+
+    # Clear in-memory rate limit state for test reproducibility
+    _ip_last_request.clear()
+
+    # Register repo
+    repo_res = client.post("/api/v1/repos", json={"repo_url": "https://github.com/pallets/flask"})
+    repo_id = repo_res.json()["repo_id"]
+
+    # 1. First trigger should succeed (202 Accepted)
+    res1 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
+    assert res1.status_code == 202
+
+    # 2. Second trigger immediately after should fail with 429 Too Many Requests
+    res2 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
+    assert res2.status_code == 429
+    assert "Retry-After" in res2.headers
+    err_detail = res2.json()["detail"]
+    assert "Rate limit reached." in err_detail
+    assert "To keep our free-tier AI services available for everyone" in err_detail
+
+    # 3. Enable RATE_LIMIT_BYPASS_LOCALHOST -> subsequent trigger should succeed
+    monkeypatch.setattr(settings, "RATE_LIMIT_BYPASS_LOCALHOST", True)
+    res3 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
+    assert res3.status_code == 202
+
