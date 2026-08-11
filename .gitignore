@@ -48,4 +48,5 @@ build/
 .DS_Store
 Thumbs.db
 *.log
+claude_report
 error.txt

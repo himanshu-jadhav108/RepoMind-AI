@@ -13,7 +13,7 @@
     <a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link"><img src="https://img.shields.io/badge/Demo_Video-Google_Drive-FF8800?style=for-the-badge&logo=googledrive&logoColor=white" alt="Demo Video"></a>
     <a href="https://repomind-ai-tktf.onrender.com/docs"><img src="https://img.shields.io/badge/API_Docs-Swagger-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Swagger Docs"></a>
     <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/ChatGPT_Codex_Hackathon-2026-purple?style=for-the-badge&logo=openai&logoColor=white" alt="Hackathon 2026"></a>
-    <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/Pytest-38%2F38%20Passing-emerald?style=for-the-badge&logo=pytest&logoColor=white" alt="Test Suite"></a>
+    <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/Pytest-26%2F26%20Passing-emerald?style=for-the-badge&logo=pytest&logoColor=white" alt="Test Suite"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"></a>
   </p>
 
@@ -67,7 +67,7 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 | :---------------------: | :-----------------------------------------------: | :-------------------------------------------------------------------- |
 |   🤖 **10 AI Agents**   |            **LangGraph State Machine**            | Orchestrated execution loop with automated quality gate review        |
 |  🌌 **5 Graph Views**   |   **2D Tree, 3D WebGL, Physics, Orbit, Layers**   | Multi-perspective architectural topology visualization                |
-|  🧪 **38 / 38 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and AST parsing test suite              |
+|  🧪 **26 / 26 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and AST parsing test suite              |
 |  ⚡ **5 AI Providers**  | **Gemini, Groq, OpenAI, OpenRouter, HuggingFace** | Adaptive provider router with automatic failover & offline resilience |
 |  🛡️ **Explainability**  |           **Line-by-Line & Analogies**            | Every finding backed by AST evidence, confidence scores & analogies   |
 | 📥 **3 Export Formats** |         **HTML, Markdown, Executive PDF**         | One-click production audit artifact downloads                         |
