@@ -117,7 +117,7 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <FileCode className="w-5 h-5 text-indigo-400" />
-            <h2 className="font-bold text-sm text-white truncate max-w-[220px]" title={label}>
+            <h2 className="font-bold text-sm text-white truncate max-w-[220px]" title={label || undefined}>
               {label}
             </h2>
           </div>

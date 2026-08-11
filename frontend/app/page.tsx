@@ -285,7 +285,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight max-w-4xl mx-auto leading-tight text-white"
           >
-            Don't Read Repositories Blind. <br />
+            Don&apos;t Read Repositories Blind. <br />
             <span className="text-copper">Inspect 3D Knowledge Topology</span> & AI Audits.
           </motion.h1>
 
