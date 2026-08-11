@@ -53,10 +53,36 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+
+        // Extended Custom Design System Tokens
+        copper: {
+          DEFAULT: "#D97736",
+          hover: "#C86A2B",
+          light: "#E08B4F",
+          dim: "rgba(217, 119, 54, 0.15)",
+        },
+        graphite: {
+          canvas: "#121316",
+          panel: "#1B1C22",
+          border: "#2A2B33",
+          muted: "#6E707E",
+        },
+        category: {
+          arch: "#5B82A6",      // Category A: Steel Slate Blue
+          security: "#FF3B30",  // Category B: High-Voltage Crimson
+          perf: "#FFB000",      // Category C: Amber Alert
+          qa: "#00E676",        // Category D: Terminal Green
+        },
+        severity: {
+          critical: "#FF3B30",
+          warning: "#FFB000",
+          info: "#00E676",
+        },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "monospace"],
+        display: ["var(--font-space-grotesk)", "Space Grotesk", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-jetbrains)", "JetBrains Mono", "Fira Code", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -72,14 +98,6 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "gradient-shift": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
-        },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "0.6", transform: "scale(1)" },
-          "50%": { opacity: "1", transform: "scale(1.05)" },
-        },
         "fade-up": {
           from: { opacity: "0", transform: "translateY(16px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -92,15 +110,19 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
         },
+        "agent-pulse": {
+          "0%": { boxShadow: "0 0 0 0 rgba(217, 119, 54, 0.4)" },
+          "70%": { boxShadow: "0 0 0 8px rgba(217, 119, 54, 0)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(217, 119, 54, 0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "gradient-shift": "gradient-shift 6s ease infinite",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "fade-up": "fade-up 0.4s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "typing-cursor": "typing-cursor 1s step-end infinite",
+        "agent-pulse": "agent-pulse 1.5s ease-out 1",
       },
     },
   },

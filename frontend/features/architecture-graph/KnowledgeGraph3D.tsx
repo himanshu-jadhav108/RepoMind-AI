@@ -40,13 +40,13 @@ interface Edge3D {
 type LabelPos = { x: number; y: number; visible: boolean; scale: number };
 
 const DEMO_NODES: Node3D[] = [
-  { id: "root", label: "backend/app/main.py", shortLabel: "main.py", type: "file", position: [0, 0, 0], radius: 1.1, color: "#a855f7" },
-  { id: "backend/services", label: "services/", shortLabel: "services/", type: "folder", position: [-3.2, -1.3, 1.8], radius: 0.9, color: "#38bdf8" },
-  { id: "services/analysis.py", label: "analysis_service.py", shortLabel: "analysis_service.py", type: "file", parentFolder: "backend/services", position: [-4.6, -2.2, 2.6], radius: 0.65, color: "#818cf8" },
-  { id: "services/repo.py", label: "repo_ingestion.py", shortLabel: "repo_ingestion.py", type: "file", parentFolder: "backend/services", position: [-2.4, -2.4, 0.9], radius: 0.65, color: "#818cf8" },
-  { id: "backend/agents", label: "agents/", shortLabel: "agents/", type: "folder", position: [3.4, 1.6, -1.9], radius: 0.9, color: "#38bdf8" },
-  { id: "agents/architect.py", label: "architect_agent.py", shortLabel: "architect_agent.py", type: "file", parentFolder: "backend/agents", position: [4.8, 2.5, -2.9], radius: 0.65, color: "#fbbf24" },
-  { id: "agents/reviewer.py", label: "reviewer_agent.py", shortLabel: "reviewer_agent.py", type: "file", parentFolder: "backend/agents", position: [2.5, 2.8, -1.0], radius: 0.65, color: "#34d399" },
+  { id: "root", label: "backend/app/main.py", shortLabel: "main.py", type: "file", position: [0, 0, 0], radius: 1.1, color: "#D97736" },
+  { id: "backend/services", label: "services/", shortLabel: "services/", type: "folder", position: [-3.2, -1.3, 1.8], radius: 0.9, color: "#5B82A6" },
+  { id: "services/analysis.py", label: "analysis_service.py", shortLabel: "analysis_service.py", type: "file", parentFolder: "backend/services", position: [-4.6, -2.2, 2.6], radius: 0.65, color: "#38BDF8" },
+  { id: "services/repo.py", label: "repo_ingestion.py", shortLabel: "repo_ingestion.py", type: "file", parentFolder: "backend/services", position: [-2.4, -2.4, 0.9], radius: 0.65, color: "#38BDF8" },
+  { id: "backend/agents", label: "agents/", shortLabel: "agents/", type: "folder", position: [3.4, 1.6, -1.9], radius: 0.9, color: "#5B82A6" },
+  { id: "agents/architect.py", label: "architect_agent.py", shortLabel: "architect_agent.py", type: "file", parentFolder: "backend/agents", position: [4.8, 2.5, -2.9], radius: 0.65, color: "#FFB000" },
+  { id: "agents/reviewer.py", label: "reviewer_agent.py", shortLabel: "reviewer_agent.py", type: "file", parentFolder: "backend/agents", position: [2.5, 2.8, -1.0], radius: 0.65, color: "#00E676" },
 ];
 
 const DEMO_EDGES: Edge3D[] = [
@@ -72,19 +72,19 @@ function buildNodes(graphData?: { nodes: any[]; edges: any[] } | null): Node3D[]
     const shortLabel = parts[parts.length - 1] || label;
     const isRoot = idx === 0 || label.includes("main.py") || label.includes("index.ts");
 
-    let color = "#818cf8";
+    let color = "#38BDF8";
     let radius = 0.55;
     if (isRoot) {
-      color = "#a855f7";
+      color = "#D97736";
       radius = 1.1;
     } else if (type === "folder") {
-      color = "#38bdf8";
+      color = "#5B82A6";
       radius = 0.9;
     } else if (type === "class") {
-      color = "#fbbf24";
+      color = "#FFB000";
       radius = 0.5;
     } else if (type === "function") {
-      color = "#34d399";
+      color = "#00E676";
       radius = 0.45;
     }
 

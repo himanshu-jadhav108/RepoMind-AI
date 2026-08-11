@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 225 8% 7%;
+    --foreground: 225 20% 95%;
 
-    --card: 224 71% 7%;
-    --card-foreground: 213 31% 91%;
+    --card: 231 11% 12%;
+    --card-foreground: 225 20% 95%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 231 11% 12%;
+    --popover-foreground: 225 20% 95%;
 
-    --primary: 263 70% 58%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 24 67% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 233 9% 18%;
+    --secondary-foreground: 225 20% 95%;
 
-    --muted: 216 34% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 233 9% 18%;
+    --muted-foreground: 233 7% 46%;
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 233 9% 18%;
+    --accent-foreground: 225 20% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 3 100% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 263 70% 58%;
+    --border: 233 9% 18%;
+    --input: 233 9% 18%;
+    --ring: 24 67% 53%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 }
 
@@ -46,17 +46,13 @@
   }
 }
 
-/* Glassmorphism Utilities */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Structural Panel Utilities */
+.panel-slate {
+  background: #1B1C22;
+  border: 1px solid #2A2B33;
 }
 
-.glass-card {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.panel-header {
+  background: #16171C;
+  border-bottom: 1px solid #2A2B33;
 }

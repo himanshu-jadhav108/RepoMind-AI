@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -10,496 +10,583 @@ import {
   Code2,
   Layers,
   GitBranch,
-  ArrowRight,
   Zap,
   Activity,
   Bot,
-  CheckCircle2,
   FileText,
-  FileSearch,
-  Users,
   Terminal,
   Globe,
-  Award,
   GraduationCap,
+  Box,
+  Eye,
 } from "lucide-react";
 
 import { RepoInputForm } from "@/features/repo-input/RepoInputForm";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
-const AGENTS_LIST = [
+// Dynamically import 3D WebGL Knowledge Graph for Hero Centerpiece (SSR disabled for Three.js canvas)
+const KnowledgeGraph3D = dynamic(
+  () => import("@/features/architecture-graph/KnowledgeGraph3D"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[460px] bg-graphite-panel rounded-xl border border-graphite-border flex flex-col items-center justify-center font-mono text-xs text-graphite-muted space-y-2">
+        <div className="w-6 h-6 border-2 border-copper border-t-transparent rounded-full animate-spin" />
+        <span>Initializing 3D WebGL Knowledge Topology Canvas...</span>
+      </div>
+    ),
+  }
+);
+
+export type AgentCategoryKey = "arch" | "security" | "perf" | "qa";
+
+interface AgentDef {
+  id: string;
+  name: string;
+  category: AgentCategoryKey;
+  categoryLabel: string;
+  categoryHeader: string;
+  accentColor: string;
+  borderColor: string;
+  badgeBg: string;
+  badgeText: string;
+  icon: React.ReactNode;
+  role: string;
+  description: string;
+  tools: string[];
+}
+
+const AGENTS_LIST: AgentDef[] = [
+  // Category A: Architecture & Dependency Topology (#5B82A6 Steel Slate Blue)
   {
     id: "planner",
     name: "Planner Agent",
-    icon: <Sparkles className="w-5 h-5 text-purple-400" />,
-    color: "from-purple-500/20 to-indigo-500/10 border-purple-500/30",
-    role: "Orchestration & Decomposition",
-    description: "Parses repository scope, maps dependencies, and schedules 10 parallel/sequential agent execution tasks.",
+    category: "arch",
+    categoryLabel: "Architecture & Dependency Topology",
+    categoryHeader: "SYS::ARCH_TOPOLOGY",
+    accentColor: "#5B82A6",
+    borderColor: "border-[#5B82A6]/40",
+    badgeBg: "bg-[#5B82A6]/15",
+    badgeText: "text-[#5B82A6]",
+    icon: <Sparkles className="w-4 h-4 text-[#5B82A6]" />,
+    role: "Orchestration & Scope Decomposition",
+    description: "Parses repository scope, maps module imports, and schedules 10 parallel/sequential agent execution tasks across LangGraph DAG.",
     tools: ["LangGraph DAG", "Scope Analyzer", "Task Planner"],
   },
   {
     id: "analyzer",
     name: "Repository Analyzer",
-    icon: <Layers className="w-5 h-5 text-indigo-400" />,
-    color: "from-indigo-500/20 to-blue-500/10 border-indigo-500/30",
+    category: "arch",
+    categoryLabel: "Architecture & Dependency Topology",
+    categoryHeader: "SYS::ARCH_TOPOLOGY",
+    accentColor: "#5B82A6",
+    borderColor: "border-[#5B82A6]/40",
+    badgeBg: "bg-[#5B82A6]/15",
+    badgeText: "text-[#5B82A6]",
+    icon: <Layers className="w-4 h-4 text-[#5B82A6]" />,
     role: "Symbol Extraction & Graph Builder",
-    description: "Clones repo, parses source AST symbols across 15+ languages via multi-language regex extractor, and builds NetworkX 2D/3D Knowledge Graph.",
-    tools: ["GitPython", "Regex Extractor", "NetworkX 3D"],
+    description: "Clones repo, parses source AST symbols across 15+ languages via regex extractor, and constructs NetworkX 2D/3D Knowledge Graph.",
+    tools: ["GitIngestion Engine", "Regex Symbol Parser", "NetworkX Graph Builder"],
   },
   {
     id: "architect",
     name: "Architect Agent",
-    icon: <Cpu className="w-5 h-5 text-blue-400" />,
-    color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30",
-    role: "System Architecture Audit",
-    description: "Evaluates Clean Architecture boundaries, design patterns, module coupling, and service layer abstractions.",
-    tools: ["Pattern Classifier", "Coupling Metric Engine", "Layer Audit"],
+    category: "arch",
+    categoryLabel: "Architecture & Dependency Topology",
+    categoryHeader: "SYS::ARCH_TOPOLOGY",
+    accentColor: "#5B82A6",
+    borderColor: "border-[#5B82A6]/40",
+    badgeBg: "bg-[#5B82A6]/15",
+    badgeText: "text-[#5B82A6]",
+    icon: <Cpu className="w-4 h-4 text-[#5B82A6]" />,
+    role: "System Architecture & Layer Audit",
+    description: "Evaluates Clean Architecture boundaries, module coupling metrics, service abstractions, and design pattern adherence.",
+    tools: ["Pattern Classifier", "Coupling Metric Engine", "Layer Auditor"],
+  },
+
+  // Category B: Static Analysis & Vulnerability Triage (#FF3B30 High-Voltage Crimson)
+  {
+    id: "security",
+    name: "Security Agent",
+    category: "security",
+    categoryLabel: "Static Analysis & Vulnerability Triage",
+    categoryHeader: "SYS::SEC_TRIAGE",
+    accentColor: "#FF3B30",
+    borderColor: "border-[#FF3B30]/40",
+    badgeBg: "bg-[#FF3B30]/15",
+    badgeText: "text-[#FF3B30]",
+    icon: <ShieldCheck className="w-4 h-4 text-[#FF3B30]" />,
+    role: "Vulnerability & CVE Triage",
+    description: "Audits CORS origins, environment secrets, SQL injection vectors, and hardcoded credential exposure across codebase.",
+    tools: ["OWASP Ruleset", "Secrets Scanner", "CVE Inspector"],
   },
   {
     id: "bughunter",
     name: "Bug Hunter Agent",
-    icon: <Code2 className="w-5 h-5 text-amber-400" />,
-    color: "from-amber-500/20 to-yellow-500/10 border-amber-500/30",
-    role: "Static Smell & Error Analysis",
-    description: "Identifies unhandled exception paths, middleware failures, null dereferences, and async deadlocks.",
-    tools: ["Control Flow Graph", "AST Heuristic Engine", "Exception Scanner"],
+    category: "security",
+    categoryLabel: "Static Analysis & Vulnerability Triage",
+    categoryHeader: "SYS::SEC_TRIAGE",
+    accentColor: "#FF3B30",
+    borderColor: "border-[#FF3B30]/40",
+    badgeBg: "bg-[#FF3B30]/15",
+    badgeText: "text-[#FF3B30]",
+    icon: <Code2 className="w-4 h-4 text-[#FF3B30]" />,
+    role: "Control Flow & Error Path Audit",
+    description: "Identifies unhandled exception branches, middleware failures, null dereferences, and async error gaps.",
+    tools: ["Control Flow Analyzer", "AST Heuristic Engine", "Exception Scanner"],
   },
-  {
-    id: "security",
-    name: "Security Agent",
-    icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />,
-    color: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30",
-    role: "Vulnerability & CVE Audit",
-    description: "Audits CORS origins, environment configs, SQL injection patterns, and secrets management.",
-    tools: ["OWASP Top 10", "Bandit Rules", "Secrets Scanner"],
-  },
+
+  // Category C: Runtime & IO Performance (#FFB000 Amber Alert)
   {
     id: "performance",
     name: "Performance Agent",
-    icon: <Zap className="w-5 h-5 text-amber-500" />,
-    color: "from-yellow-500/20 to-amber-500/10 border-yellow-500/30",
-    role: "Event-Loop & IO Profiling",
-    description: "Detects blocking IO on event loops, unindexed queries, heavy synchronous loops, and memory leaks.",
-    tools: ["Async Profiler", "Executor Audit", "Memory Monitor"],
+    category: "perf",
+    categoryLabel: "Runtime & IO Performance",
+    categoryHeader: "SYS::PERF_PROFILER",
+    accentColor: "#FFB000",
+    borderColor: "border-[#FFB000]/40",
+    badgeBg: "bg-[#FFB000]/15",
+    badgeText: "text-[#FFB000]",
+    icon: <Zap className="w-4 h-4 text-[#FFB000]" />,
+    role: "Event-Loop & IO Bottleneck Audit",
+    description: "Detects blocking synchronous IO on event loops, unindexed queries, heavy nested loops, and memory leaks.",
+    tools: ["Async Event Profiler", "Executor Auditor", "Memory Telemetry"],
   },
+
+  // Category D: Verification & Developer Onboarding (#00E676 Terminal Green)
   {
     id: "documentation",
     name: "Documentation Agent",
-    icon: <FileText className="w-5 h-5 text-sky-400" />,
-    color: "from-sky-500/20 to-blue-500/10 border-sky-500/30",
-    role: "Docstrings & OpenAPI Verification",
-    description: "Verifies inline Python docstrings, README clarity, OpenAPI specs, and setup instructions.",
+    category: "qa",
+    categoryLabel: "Verification & Developer Onboarding",
+    categoryHeader: "SYS::QA_LEARNING",
+    accentColor: "#00E676",
+    borderColor: "border-[#00E676]/40",
+    badgeBg: "bg-[#00E676]/15",
+    badgeText: "text-[#00E676]",
+    icon: <FileText className="w-4 h-4 text-[#00E676]" />,
+    role: "Docstrings & Specs Verification",
+    description: "Verifies inline Python docstrings, README setup instructions, OpenAPI schema contracts, and API documentation completeness.",
     tools: ["Docstring Parser", "OpenAPI Validator", "Markdown Generator"],
   },
   {
     id: "reviewer",
     name: "Reviewer Agent Loop",
-    icon: <ShieldCheck className="w-5 h-5 text-violet-400" />,
-    color: "from-violet-500/20 to-purple-500/10 border-violet-500/30",
+    category: "qa",
+    categoryLabel: "Verification & Developer Onboarding",
+    categoryHeader: "SYS::QA_LEARNING",
+    accentColor: "#00E676",
+    borderColor: "border-[#00E676]/40",
+    badgeBg: "bg-[#00E676]/15",
+    badgeText: "text-[#00E676]",
+    icon: <Terminal className="w-4 h-4 text-[#00E676]" />,
     role: "Self-Correction Quality Gate",
-    description: "Executes Review → Feedback → Rewrite → Validate → Approve loop, filtering low-confidence AI claims.",
-    tools: ["Verification Loop", "Confidence Scorer", "Claim Validation"],
+    description: "Runs Review → Feedback → Rewrite → Validate → Approve verification loop, discarding false-positive AI findings.",
+    tools: ["Verification Loop", "Confidence Scorer", "Claim Validator"],
   },
   {
     id: "learning",
     name: "Learning Agent",
-    icon: <GraduationCap className="w-5 h-5 text-indigo-400" />,
-    color: "from-indigo-500/20 to-purple-500/10 border-indigo-500/30",
+    category: "qa",
+    categoryLabel: "Verification & Developer Onboarding",
+    categoryHeader: "SYS::QA_LEARNING",
+    accentColor: "#00E676",
+    borderColor: "border-[#00E676]/40",
+    badgeBg: "bg-[#00E676]/15",
+    badgeText: "text-[#00E676]",
+    icon: <GraduationCap className="w-4 h-4 text-[#00E676]" />,
     role: "Codebase Mentor & Analogy Generator",
-    description: "Generates intuitive analogies, code walkthroughs, line-by-line breakdowns, and concept guides for onboarding developers.",
-    tools: ["Analogy Generator", "Line Breakdown Engine", "Concept Guide"],
+    description: "Synthesizes onboarding mental models, architectural analogies, line-by-line breakdowns, and concept guides.",
+    tools: ["Analogy Engine", "Line Breakdown Parser", "Concept Guide"],
   },
   {
     id: "copilot",
     name: "Repository Copilot",
-    icon: <Bot className="w-5 h-5 text-cyan-400" />,
-    color: "from-cyan-500/20 to-teal-500/10 border-cyan-500/30",
-    role: "Interactive Multi-Turn Query Agent",
-    description: "Answers natural language developer questions about codebase architecture, AST symbols, and refactoring plans in real-time.",
+    category: "qa",
+    categoryLabel: "Verification & Developer Onboarding",
+    categoryHeader: "SYS::QA_LEARNING",
+    accentColor: "#00E676",
+    borderColor: "border-[#00E676]/40",
+    badgeBg: "bg-[#00E676]/15",
+    badgeText: "text-[#00E676]",
+    icon: <Bot className="w-4 h-4 text-[#00E676]" />,
+    role: "Multi-Turn Interactive RAG Copilot",
+    description: "Answers natural language queries about codebase symbols, dependency paths, and refactoring strategies.",
     tools: ["Multi-Turn RAG", "AST Query Engine", "Refactor Assistant"],
   },
 ];
 
-
 export default function HomePage() {
   const [selectedAgentId, setSelectedAgentId] = useState<string>("planner");
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<AgentCategoryKey | "all">("all");
+
   const activeAgent = AGENTS_LIST.find((a) => a.id === selectedAgentId) || AGENTS_LIST[0];
+  const filteredAgents = activeCategoryFilter === "all"
+    ? AGENTS_LIST
+    : AGENTS_LIST.filter((a) => a.category === activeCategoryFilter);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-purple-500 selection:text-white overflow-hidden font-sans">
+    <div className="min-h-screen bg-graphite-canvas text-foreground flex flex-col font-sans selection:bg-copper selection:text-white">
       {/* Navigation Header */}
-      <header className="w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <motion.img
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 400 }}
+      <header className="w-full border-b border-graphite-border bg-graphite-canvas/95 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
-              className="w-9 h-9 rounded-xl object-cover shadow-lg shadow-purple-500/30 border border-purple-500/40 cursor-pointer"
+              className="w-7 h-7 rounded object-cover border border-graphite-border"
             />
-            <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">
-              RepoMind AI
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-bold text-lg tracking-tight text-white">
+                RepoMind AI
+              </span>
+              <span className="text-[10px] font-mono text-copper bg-copper/10 px-2 py-0.5 rounded border border-copper/30 uppercase tracking-wide">
+                v1.0 Engine
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="hidden sm:inline-flex border-purple-500/40 text-purple-300 bg-purple-950/40 font-mono text-xs">
-              ChatGPT Codex India Hackathon
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="hidden sm:inline-flex border-graphite-border text-graphite-muted font-mono text-xs">
+              ChatGPT Codex Hackathon
             </Badge>
             <a
               href="https://github.com/himanshu-jadhav108/RepoMind-AI"
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-slate-400 hover:text-white transition font-mono flex items-center gap-1"
+              className="text-xs text-graphite-muted hover:text-white transition font-mono flex items-center gap-1.5 px-2.5 py-1 rounded bg-graphite-panel border border-graphite-border"
             >
-              <Globe className="w-3.5 h-3.5 text-purple-400" /> GitHub Repo
+              <Globe className="w-3.5 h-3.5 text-copper" />
+              <span>GitHub</span>
             </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-12 pb-20 text-center relative overflow-hidden">
-        {/* Animated Background Glowing Orbs */}
-        <motion.div
-          animate={{
-            scale: [1, 1.25, 1],
-            opacity: [0.25, 0.45, 0.25],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-purple-600/20 rounded-full blur-[140px] pointer-events-none"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/3 left-1/3 w-[500px] h-[300px] bg-cyan-600/15 rounded-full blur-[120px] pointer-events-none"
-        />
-
-        {/* Hero Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-xs font-semibold text-purple-300 mb-6 shadow-xl backdrop-blur-md font-mono"
-        >
-          <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-          <span>Autonomous Multi-Agent AI Engineering Platform</span>
-        </motion.div>
-
-        {/* Animated Hero Title */}
-        <motion.h1
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: { staggerChildren: 0.05, delayChildren: 0.1 },
-            },
-          }}
-          className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-5xl mb-6 font-sans leading-tight flex flex-wrap justify-center gap-x-3 gap-y-1"
-        >
-          {"Turn Any Repository into an".split(" ").map((word, i) => (
-            <motion.span
-              key={i}
-              variants={{
-                hidden: { opacity: 0, y: 25, filter: "blur(8px)" },
-                visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 14 } },
-              }}
-              className="inline-block text-white"
-            >
-              {word}
-            </motion.span>
-          ))}
-          {"Explained,".split(" ").map((word, i) => (
-            <motion.span
-              key={`exp-${i}`}
-              variants={{
-                hidden: { opacity: 0, y: 25, filter: "blur(8px)" },
-                visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 14 } },
-              }}
-              className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]"
-            >
-              {word}
-            </motion.span>
-          ))}
-          {"Audit-Ready".split(" ").map((word, i) => (
-            <motion.span
-              key={`audit-${i}`}
-              variants={{
-                hidden: { opacity: 0, y: 25, filter: "blur(8px)" },
-                visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 14 } },
-              }}
-              className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-emerald-400 drop-shadow-[0_0_25px_rgba(56,189,248,0.4)]"
-            >
-              {word}
-            </motion.span>
-          ))}
-          {"Engineering Artifact".split(" ").map((word, i) => (
-            <motion.span
-              key={`artifact-${i}`}
-              variants={{
-                hidden: { opacity: 0, y: 25, filter: "blur(8px)" },
-                visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 14 } },
-              }}
-              className="inline-block text-white"
-            >
-              {word}
-            </motion.span>
-          ))}
-        </motion.h1>
-
-        {/* Animated Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.8, delay: 0.45, ease: "easeOut" }}
-          className="text-slate-300 text-base sm:text-xl max-w-3xl mb-10 leading-relaxed font-mono"
-        >
-          Delegate{" "}
-          <span className="text-purple-300 font-semibold px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-500/30">
-            architecture discovery
-          </span>
-          ,{" "}
-          <span className="text-emerald-300 font-semibold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30">
-            security triage
-          </span>
-          ,{" "}
-          <span className="text-cyan-300 font-semibold px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
-            2D/3D knowledge graph visualization
-          </span>
-          , and report generation to an autonomous team of{" "}
-          <span className="text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">
-            10 specialized AI agents
-          </span>
-          .
-        </motion.p>
-
-        {/* Prominent Demo & Input Form Container */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full max-w-2xl space-y-4"
-        >
-          <RepoInputForm />
-        </motion.div>
-
-        {/* Live Metrics Ticker Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-          className="max-w-4xl w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mt-12 text-left font-mono"
-        >
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Users className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 block uppercase">Multi-Agent</span>
-              <span className="text-sm font-bold text-white">10 Specialized Agents</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <Activity className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 block uppercase">Health Index</span>
-              <span className="text-sm font-bold text-emerald-400">7 Health Dimensions</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 block uppercase">Visualization</span>
-              <span className="text-sm font-bold text-indigo-300">2D / 3D WebGL Graph</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 block uppercase">Orchestration</span>
-              <span className="text-sm font-bold text-amber-300">LangGraph DAG Engine</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Interactive 10-Agent Live Showcase Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="max-w-5xl w-full mt-20 text-left space-y-4"
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-3 gap-2">
-            <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 font-sans">
-                <Bot className="w-5 h-5 text-purple-400" />
-                <span>Interactive AI Engineering Team</span>
-              </h2>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Click any agent below to inspect its role, tools, and execution strategy.
-              </p>
-            </div>
-            <Badge variant="outline" className="border-purple-500/30 text-purple-300 font-mono text-[11px]">
-              LangGraph State Machine
-            </Badge>
-          </div>
-
-          {/* Agent Selection Chips - Single Line Layout (Hidden Scrollbar) */}
-          <div
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            className="flex flex-nowrap overflow-x-auto gap-1.5 pt-2 pb-1 w-full items-center [::-webkit-scrollbar]:hidden"
+      {/* Hero Section — centerpiece WebGL graph topology canvas */}
+      <main className="flex-1 flex flex-col items-center px-4 pt-8 pb-16 relative">
+        <div className="max-w-6xl w-full text-center space-y-6">
+          {/* Header Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded bg-graphite-panel border border-graphite-border text-xs font-mono text-copper"
           >
+            <Terminal className="w-3.5 h-3.5 text-copper" />
+            <span>AUTONOMOUS MULTI-AGENT CODEBASE AUDIT & TOPOLOGY ENGINE</span>
+          </motion.div>
 
+          {/* Display Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight max-w-4xl mx-auto leading-tight text-white"
+          >
+            Don't Read Repositories Blind. <br />
+            <span className="text-copper">Inspect 3D Knowledge Topology</span> & AI Audits.
+          </motion.h1>
 
-            {AGENTS_LIST.map((agent) => {
-              const isSelected = selectedAgentId === agent.id;
-              return (
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-graphite-muted text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-mono"
+          >
+            Clone any public GitHub repo. 10 specialized AI agents extract AST symbol graphs, audit security CVEs, profile performance bottlenecks, and build an interactive 3D WebGL knowledge topology.
+          </motion.p>
+
+          {/* HERO CENTERPIECE: Live WebGL 3D Graph Viewport Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="w-full max-w-5xl mx-auto rounded-xl bg-graphite-panel border border-graphite-border shadow-2xl overflow-hidden text-left"
+          >
+            {/* Viewport Control Bar */}
+            <div className="panel-header px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-white tracking-wider">VIEWPORT::3D_KNOWLEDGE_TOPOLOGY</span>
+                <span className="text-graphite-muted hidden sm:inline">|</span>
+                <span className="text-graphite-muted hidden sm:inline">350 files parsed • 1,200 symbols mapped</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-copper/10 text-copper border border-copper/30 text-[11px]">
+                  Interactive WebGL Canvas
+                </span>
+              </div>
+            </div>
+
+            {/* In-Canvas Repository Form & Canvas Bar */}
+            <div className="p-3 bg-graphite-canvas/80 border-b border-graphite-border">
+              <RepoInputForm />
+            </div>
+
+            {/* 3D WebGL Graph Feature Centerpiece */}
+            <div className="relative h-[420px] w-full bg-graphite-canvas">
+              <KnowledgeGraph3D />
+            </div>
+          </motion.div>
+
+          {/* Telemetry Indicator Metrics Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="max-w-5xl w-full mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 text-left font-mono pt-4"
+          >
+            <div className="p-3 rounded-lg bg-graphite-panel border border-graphite-border flex items-center gap-3">
+              <div className="p-2 rounded bg-[#5B82A6]/10 text-[#5B82A6]">
+                <Layers className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] text-graphite-muted block uppercase">Symbol Parser</span>
+                <span className="text-xs font-bold text-white">15+ Languages</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-graphite-panel border border-graphite-border flex items-center gap-3">
+              <div className="p-2 rounded bg-severity-critical/10 text-severity-critical">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] text-graphite-muted block uppercase">Security Triage</span>
+                <span className="text-xs font-bold text-severity-critical">OWASP Top 10</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-graphite-panel border border-graphite-border flex items-center gap-3">
+              <div className="p-2 rounded bg-severity-warning/10 text-severity-warning">
+                <Zap className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] text-graphite-muted block uppercase">Profiler</span>
+                <span className="text-xs font-bold text-severity-warning">Event-Loop & IO</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-graphite-panel border border-graphite-border flex items-center gap-3">
+              <div className="p-2 rounded bg-copper/10 text-copper">
+                <Activity className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] text-graphite-muted block uppercase">DAG Engine</span>
+                <span className="text-xs font-bold text-copper">LangGraph 10-Agent</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* AGENT WORKSPACE SECTION — 4-Category Color-Coded Redesign */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="max-w-5xl w-full mx-auto mt-16 text-left space-y-4"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-graphite-border pb-3 gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2 font-display">
+                  <Bot className="w-4 h-4 text-copper" />
+                  <span>Autonomous AI Engineering Team (10 Agents)</span>
+                </h2>
+                <p className="text-xs text-graphite-muted font-mono mt-0.5">
+                  Categorized by output domain and severity language. Select an agent to inspect execution tools.
+                </p>
+              </div>
+
+              {/* Functional Category Filter Buttons */}
+              <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
                 <button
-                  key={agent.id}
-                  onClick={() => setSelectedAgentId(agent.id)}
-                  className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono transition-all duration-200 flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-                    isSelected
-                      ? "bg-purple-950/80 border-purple-500/60 text-purple-200 ring-2 ring-purple-500/30 shadow-lg scale-[1.02]"
-                      : "bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                  onClick={() => setActiveCategoryFilter("all")}
+                  className={`px-2.5 py-1 rounded border transition ${
+                    activeCategoryFilter === "all"
+                      ? "bg-copper text-white border-copper font-bold"
+                      : "bg-graphite-panel text-graphite-muted border-graphite-border hover:text-white"
                   }`}
                 >
-                  {agent.icon}
-                  <span>{agent.name}</span>
+                  ALL (10)
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Selected Agent Active Card Display */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeAgent.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className={`p-5 rounded-2xl bg-gradient-to-r ${activeAgent.color} border backdrop-blur-xl shadow-2xl space-y-3 font-mono`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 shadow">
-                    {activeAgent.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white font-sans">{activeAgent.name}</h3>
-                    <span className="text-xs text-purple-300">{activeAgent.role}</span>
-                  </div>
-                </div>
-                <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs">
-                  Active in Pipeline
-                </Badge>
+                <button
+                  onClick={() => setActiveCategoryFilter("arch")}
+                  className={`px-2.5 py-1 rounded border transition ${
+                    activeCategoryFilter === "arch"
+                      ? "bg-[#5B82A6]/20 text-[#5B82A6] border-[#5B82A6] font-bold"
+                      : "bg-graphite-panel text-graphite-muted border-graphite-border hover:text-white"
+                  }`}
+                >
+                  ARCH (3)
+                </button>
+                <button
+                  onClick={() => setActiveCategoryFilter("security")}
+                  className={`px-2.5 py-1 rounded border transition ${
+                    activeCategoryFilter === "security"
+                      ? "bg-[#FF3B30]/20 text-[#FF3B30] border-[#FF3B30] font-bold"
+                      : "bg-graphite-panel text-graphite-muted border-graphite-border hover:text-white"
+                  }`}
+                >
+                  SECURITY (2)
+                </button>
+                <button
+                  onClick={() => setActiveCategoryFilter("perf")}
+                  className={`px-2.5 py-1 rounded border transition ${
+                    activeCategoryFilter === "perf"
+                      ? "bg-[#FFB000]/20 text-[#FFB000] border-[#FFB000] font-bold"
+                      : "bg-graphite-panel text-graphite-muted border-graphite-border hover:text-white"
+                  }`}
+                >
+                  PERF (1)
+                </button>
+                <button
+                  onClick={() => setActiveCategoryFilter("qa")}
+                  className={`px-2.5 py-1 rounded border transition ${
+                    activeCategoryFilter === "qa"
+                      ? "bg-[#00E676]/20 text-[#00E676] border-[#00E676] font-bold"
+                      : "bg-graphite-panel text-graphite-muted border-graphite-border hover:text-white"
+                  }`}
+                >
+                  QA & DOCS (4)
+                </button>
               </div>
+            </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                {activeAgent.description}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                <span className="text-slate-400">Toolkit & Engine:</span>
-                {activeAgent.tools.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2.5 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-purple-200 font-mono"
+            {/* Agent Selector Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+              {filteredAgents.map((agent) => {
+                const isSelected = selectedAgentId === agent.id;
+                return (
+                  <button
+                    key={agent.id}
+                    onClick={() => setSelectedAgentId(agent.id)}
+                    className={`p-2.5 rounded-lg border text-left font-mono transition-all duration-150 flex flex-col gap-1.5 ${
+                      isSelected
+                        ? `${agent.borderColor} bg-graphite-panel ${agent.badgeText} shadow-md ring-1 ring-white/10 scale-[1.02]`
+                        : "bg-graphite-panel/60 border-graphite-border text-graphite-muted hover:text-white hover:border-graphite-muted/40"
+                    }`}
                   >
-                    ⚡ {t}
-                  </span>
-                ))}
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] uppercase tracking-wider text-graphite-muted">
+                        {agent.categoryHeader}
+                      </span>
+                      {agent.icon}
+                    </div>
+                    <span className="text-xs font-bold text-white truncate">{agent.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Agent Workspace Active Detail Panel */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeAgent.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className={`p-4 sm:p-5 rounded-xl bg-graphite-panel ${activeAgent.borderColor} border shadow-xl space-y-3 font-mono`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-graphite-border pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${activeAgent.badgeBg} border ${activeAgent.borderColor}`}>
+                      {activeAgent.icon}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono ${activeAgent.badgeText} uppercase tracking-wider`}>
+                          [{activeAgent.categoryHeader}]
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-white font-display">{activeAgent.name}</h3>
+                      <span className="text-xs text-graphite-muted">{activeAgent.role}</span>
+                    </div>
+                  </div>
+
+                  <Badge variant="outline" className={`${activeAgent.borderColor} ${activeAgent.badgeText} ${activeAgent.badgeBg} text-xs font-mono`}>
+                    LangGraph DAG Pipeline Node
+                  </Badge>
+                </div>
+
+                <p className="text-xs text-foreground/90 leading-relaxed font-sans">
+                  {activeAgent.description}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                  <span className="text-graphite-muted">Engine Toolkit:</span>
+                  {activeAgent.tools.map((tool, idx) => (
+                    <span
+                      key={idx}
+                      className={`px-2 py-0.5 rounded bg-graphite-canvas border border-graphite-border ${activeAgent.badgeText} font-mono`}
+                    >
+                      ⚡ {tool}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Technical Feature Cards Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 text-left font-mono"
+          >
+            <div className="p-5 rounded-xl bg-graphite-panel border border-graphite-border space-y-2.5">
+              <div className="w-9 h-9 rounded bg-[#5B82A6]/15 text-[#5B82A6] border border-[#5B82A6]/30 flex items-center justify-center">
+                <Box className="w-4 h-4" />
               </div>
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Feature Cards Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 text-left"
-        >
-          <motion.div
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="p-6 rounded-2xl bg-slate-900/80 border border-purple-500/30 backdrop-blur-xl shadow-xl space-y-3"
-          >
-            <div className="w-11 h-11 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-400 border border-purple-500/30 shadow-inner">
-              <Cpu className="w-5 h-5" />
+              <h3 className="text-sm font-bold text-white font-display">Symbol Graph Extraction</h3>
+              <p className="text-xs text-graphite-muted leading-relaxed">
+                Multi-language regex symbol parser scanning 15+ languages without heavy external AST binaries, building NetworkX dependency trees.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-white font-sans">Repository Knowledge Graph</h3>
-            <p className="text-xs text-slate-400 leading-relaxed font-mono">
-              Interactive 2D ReactFlow and 3D WebGL Galaxy graph mapping file structures, module imports, class hierarchies, and symbol call trees.
-            </p>
-          </motion.div>
 
-          <motion.div
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="p-6 rounded-2xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-xl shadow-xl space-y-3"
-          >
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 border border-emerald-500/30 shadow-inner">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="p-5 rounded-xl bg-graphite-panel border border-graphite-border space-y-2.5">
+              <div className="w-9 h-9 rounded bg-severity-critical/15 text-severity-critical border border-severity-critical/30 flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-white font-display">Self-Correction Quality Gate</h3>
+              <p className="text-xs text-graphite-muted leading-relaxed">
+                Reviewer Agent loop (Review → Feedback → Validate → Approve) filtering out low-confidence AI claims before report generation.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-white font-sans">Reviewer Agent Quality Gate</h3>
-            <p className="text-xs text-slate-400 leading-relaxed font-mono">
-              Self-correction verification loop (Review → Feedback → Rewrite → Validate → Approve) clearing AI findings before final report generation.
-            </p>
-          </motion.div>
 
-          <motion.div
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="p-6 rounded-2xl bg-slate-900/80 border border-sky-500/30 backdrop-blur-xl shadow-xl space-y-3"
-          >
-            <div className="w-11 h-11 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400 border border-sky-500/30 shadow-inner">
-              <GitBranch className="w-5 h-5" />
+            <div className="p-5 rounded-xl bg-graphite-panel border border-graphite-border space-y-2.5">
+              <div className="w-9 h-9 rounded bg-copper/15 text-copper border border-copper/30 flex items-center justify-center">
+                <Eye className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-white font-display">Explainability & Source Line Evidence</h3>
+              <p className="text-xs text-graphite-muted leading-relaxed">
+                Every finding includes line ranges, confidence scores, reasoning steps, and shallow git re-clone source evidence snippets.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-white font-sans">Explainability by Default</h3>
-            <p className="text-xs text-slate-400 leading-relaxed font-mono">
-              Every finding includes AI Reasoning, Confidence %, AST Evidence Snippets, Referenced Files, Recommendation Rationale, and Limitations.
-            </p>
           </motion.div>
-        </motion.div>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t border-slate-800/80 py-8 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400">
+      <footer className="w-full border-t border-graphite-border py-6 bg-graphite-canvas font-mono text-xs text-graphite-muted">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/RepoMind_AI_logo.jpeg" alt="Logo" className="w-5 h-5 rounded object-cover" />
-            <span className="text-slate-300 font-bold">RepoMind AI</span> — Autonomous Software Engineering Workspace
+            <img src="/RepoMind_AI_logo.jpeg" alt="Logo" className="w-4 h-4 rounded object-cover" />
+            <span className="text-white font-bold">RepoMind AI</span>
+            <span>— Autonomous Repository Audit Workspace</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">LangGraph</span>
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">FastAPI</span>
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">Next.js 14</span>
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">3D WebGL</span>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-graphite-panel border border-graphite-border text-[11px]">LangGraph</span>
+            <span className="px-2 py-0.5 rounded bg-graphite-panel border border-graphite-border text-[11px]">FastAPI</span>
+            <span className="px-2 py-0.5 rounded bg-graphite-panel border border-graphite-border text-[11px]">3D WebGL</span>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-
-
