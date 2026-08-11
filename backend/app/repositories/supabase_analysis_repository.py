@@ -17,6 +17,39 @@ class SupabaseAnalysisRepository(BaseRepository[AnalysisRunDetail]):
         self.runs_table = "analysis_runs"
         self.findings_table = "findings"
         self.results_table = "agent_results"
+        self._live_statuses: Dict[str, Dict] = {}
+
+    async def update_agent_status(self, run_id: str, agent_name: str, status: str, extra_data: Optional[Dict] = None) -> None:
+        if run_id not in self._live_statuses:
+            self._live_statuses[run_id] = {}
+        self._live_statuses[run_id][agent_name] = status
+        if extra_data:
+            self._live_statuses[run_id].update(extra_data)
+
+        run_detail = await self.get_by_id(run_id)
+        if run_detail:
+            from app.models.analysis import AgentStatus, AgentStatusEnum
+            st_val = status if status in AgentStatusEnum.__members__.values() else "completed"
+            status_enum = AgentStatusEnum(st_val)
+            updated = False
+            for ag in run_detail.agents:
+                if ag.name == agent_name:
+                    ag.status = status_enum
+                    updated = True
+                    break
+            if not updated:
+                run_detail.agents.append(AgentStatus(name=agent_name, status=status_enum))
+            await self.update(run_id, {"agents": [a.model_dump() for a in run_detail.agents]})
+
+    async def get_live_statuses(self, run_id: str) -> Dict:
+        live = dict(self._live_statuses.get(run_id, {}))
+        run_detail = await self.get_by_id(run_id)
+        if run_detail and run_detail.agents:
+            for ag in run_detail.agents:
+                st = ag.status.value if hasattr(ag.status, "value") else str(ag.status)
+                if ag.name not in live:
+                    live[ag.name] = st
+        return live
 
     async def get_by_id(self, item_id: str) -> Optional[AnalysisRunDetail]:
         try:
@@ -62,26 +95,35 @@ class SupabaseAnalysisRepository(BaseRepository[AnalysisRunDetail]):
     async def save_findings(self, run_id: str, findings: List[Finding]) -> None:
         if not findings:
             return
-        payloads = [
-            {
-                "id": f.id,
-                "run_id": run_id,
-                "category": f.category.value,
-                "severity": f.severity.value,
-                "file": f.file,
-                "line_start": f.line_start,
-                "line_end": f.line_end,
-                "description": f.description,
-                "suggested_fix": f.suggested_fix,
-                "reasoning": f.reasoning,
-                "confidence": f.confidence,
-                "evidence": f.evidence,
-                "referenced_files": f.referenced_files,
-                "review_status": f.review_status.value,
-            }
-            for f in findings
-        ]
-        self.client.table(self.findings_table).insert(payloads).execute()
+        payloads = []
+        for f in findings:
+            fid = f.id
+            try:
+                uuid.UUID(str(fid))
+            except Exception:
+                fid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(fid)))
+            payloads.append(
+                {
+                    "id": fid,
+                    "run_id": run_id,
+                    "category": f.category.value,
+                    "severity": f.severity.value,
+                    "file": f.file,
+                    "line_start": f.line_start,
+                    "line_end": f.line_end,
+                    "description": f.description,
+                    "suggested_fix": f.suggested_fix,
+                    "reasoning": f.reasoning,
+                    "confidence": f.confidence,
+                    "evidence": f.evidence,
+                    "referenced_files": f.referenced_files,
+                    "review_status": f.review_status.value,
+                }
+            )
+        try:
+            self.client.table(self.findings_table).insert(payloads).execute()
+        except Exception as e:
+            logger.warning(f"Failed to insert findings into Supabase: {e}")
 
     async def get_findings(
         self,

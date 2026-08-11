@@ -11,13 +11,13 @@ from app.providers.provider_interface import ProviderInterface, ProviderResponse
 class GeminiProvider(ProviderInterface):
     """
     Google Gemini AI Provider Adapter using direct HTTP REST API.
-    Defaults to 100% free model (gemini-1.5-flash).
+    Supports automatic fallback across model variants.
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-1.5-flash",
+        model_name: str = "gemini-2.5-flash",
         name_override: Optional[str] = None,
     ) -> None:
         self.api_key = api_key or settings.GEMINI_API_KEY
@@ -42,8 +42,6 @@ class GeminiProvider(ProviderInterface):
         if not self.is_available():
             raise ProviderException(f"Gemini API key is not configured for {self.name}.")
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
-
         contents = []
         if system_instruction:
             contents.append({"role": "user", "parts": [{"text": f"System Instruction: {system_instruction}"}]})
@@ -62,33 +60,43 @@ class GeminiProvider(ProviderInterface):
 
         start_time = time.time()
 
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(url, json=payload)
-                response.raise_for_status()
-                data = response.json()
+        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash"]
+        unique_models = []
+        for m in models_to_try:
+            if m not in unique_models:
+                unique_models.append(m)
 
-            latency_ms = (time.time() - start_time) * 1000
-            candidates = data.get("candidates", [])
-            if not candidates:
-                raise ProviderException(f"[{self.name}] Gemini returned empty response candidates.")
+        last_error = None
+        for current_model in unique_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={self.api_key}"
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(url, json=payload)
+                    response.raise_for_status()
+                    data = response.json()
 
-            text_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            usage = data.get("usageMetadata", {})
-            tokens_used = usage.get("totalTokenCount", 0)
+                latency_ms = (time.time() - start_time) * 1000
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    raise ProviderException(f"[{self.name}] Gemini returned empty response candidates.")
 
-            return ProviderResponse(
-                content=text_content,
-                raw_response=data,
-                provider_name=self.name,
-                model_name=self.model_name,
-                tokens_used=tokens_used,
-                latency_ms=latency_ms,
-            )
-        except httpx.TimeoutException as e:
-            raise ProviderTimeoutException(f"[{self.name}] Gemini API call timed out: {str(e)}")
-        except Exception as e:
-            raise ProviderException(f"[{self.name}] Gemini API call failed: {str(e)}")
+                text_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                usage = data.get("usageMetadata", {})
+                tokens_used = usage.get("totalTokenCount", 0)
+
+                return ProviderResponse(
+                    content=text_content,
+                    raw_response=data,
+                    provider_name=self.name,
+                    model_name=current_model,
+                    tokens_used=tokens_used,
+                    latency_ms=latency_ms,
+                )
+            except Exception as err:
+                last_error = err
+                continue
+
+        raise ProviderException(f"[{self.name}] Gemini API call failed across all model variants: {last_error}")
 
     async def stream(
         self,

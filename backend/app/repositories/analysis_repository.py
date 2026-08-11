@@ -16,6 +16,39 @@ class AnalysisRepository(BaseRepository[AnalysisRunDetail]):
         self._findings: Dict[str, List[Finding]] = {}
         self._results: Dict[str, Dict] = {}
         self._reports: Dict[str, Dict] = {}
+        self._live_statuses: Dict[str, Dict] = {}
+
+    async def update_agent_status(self, run_id: str, agent_name: str, status: str, extra_data: Optional[Dict] = None) -> None:
+        if run_id not in self._live_statuses:
+            self._live_statuses[run_id] = {}
+        self._live_statuses[run_id][agent_name] = status
+        if extra_data:
+            self._live_statuses[run_id].update(extra_data)
+
+        run_detail = await self.get_by_id(run_id)
+        if run_detail:
+            from app.models.analysis import AgentStatus, AgentStatusEnum
+            st_val = status if status in AgentStatusEnum.__members__.values() else "completed"
+            status_enum = AgentStatusEnum(st_val)
+            updated = False
+            for ag in run_detail.agents:
+                if ag.name == agent_name:
+                    ag.status = status_enum
+                    updated = True
+                    break
+            if not updated:
+                run_detail.agents.append(AgentStatus(name=agent_name, status=status_enum))
+            await self.update(run_id, {"agents": [a.model_dump() for a in run_detail.agents]})
+
+    async def get_live_statuses(self, run_id: str) -> Dict:
+        live = dict(self._live_statuses.get(run_id, {}))
+        run_detail = await self.get_by_id(run_id)
+        if run_detail and run_detail.agents:
+            for ag in run_detail.agents:
+                st = ag.status.value if hasattr(ag.status, "value") else str(ag.status)
+                if ag.name not in live:
+                    live[ag.name] = st
+        return live
 
     async def get_by_id(self, item_id: str) -> Optional[AnalysisRunDetail]:
         return self._runs.get(item_id)

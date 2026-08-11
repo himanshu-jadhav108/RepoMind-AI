@@ -33,11 +33,18 @@ class DependencyGraphBuilder:
             # Folder hierarchy containment edges
             parts = Path(file_path).parts
             if len(parts) > 1:
-                folder_path = "/".join(parts[:-1])
-                if folder_path not in folders_added:
-                    G.add_node(folder_path, type="folder", label=parts[-2])
-                    folders_added.add(folder_path)
-                G.add_edge(folder_path, file_path, relation="contains")
+                current_parent = ""
+                for part in parts[:-1]:
+                    folder_path = f"{current_parent}/{part}" if current_parent else part
+                    if folder_path not in folders_added:
+                        G.add_node(folder_path, type="folder", label=part)
+                        folders_added.add(folder_path)
+                        if current_parent:
+                            G.add_edge(current_parent, folder_path, relation="contains")
+                    current_parent = folder_path
+                if current_parent:
+                    G.add_edge(current_parent, file_path, relation="contains")
+
 
         # 2. Add symbols (classes & functions) and import edges
         file_paths_set = set(G.nodes)

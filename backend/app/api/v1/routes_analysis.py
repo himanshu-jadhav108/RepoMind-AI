@@ -1,11 +1,23 @@
 import asyncio
 import json
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request, HTTPException, status
 from fastapi.responses import StreamingResponse
+
+
+def _ensure_valid_uuid(val: str) -> str:
+    if not val:
+        return str(uuid.uuid4())
+    try:
+        uuid.UUID(str(val))
+        return str(val)
+    except Exception:
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(val)))
+
 
 from app.agents.learning_agent import LearningAgent
 from app.core.dependency_injection import get_analysis_service, get_provider_router
@@ -33,7 +45,7 @@ router = APIRouter(prefix="/analysis", tags=["Analysis Runs"])
 
 # In-memory per-IP rate limiter for analysis triggers
 _ip_last_request: dict = {}
-RATE_LIMIT_INTERVAL_SEC = 180  # Max 1 run per 3 minutes per IP
+RATE_LIMIT_INTERVAL_SEC = 0  # Set to 0 to allow instant multi-repo evaluation during live demos
 
 
 @router.post("/run", response_model=AnalysisRunResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -44,12 +56,11 @@ async def trigger_analysis_run(
 ):
     """
     Trigger a new multi-agent analysis run for a repository (starts LangGraph pipeline) per API.md.
-    Enforces per-IP rate limiting (1 run per 3 minutes) to preserve LLM API quota during evaluation.
     """
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     last_time = _ip_last_request.get(client_ip, 0)
-    if now - last_time < RATE_LIMIT_INTERVAL_SEC and client_ip != "127.0.0.1":
+    if RATE_LIMIT_INTERVAL_SEC > 0 and now - last_time < RATE_LIMIT_INTERVAL_SEC and client_ip != "127.0.0.1":
         remaining = int(RATE_LIMIT_INTERVAL_SEC - (now - last_time))
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -59,13 +70,18 @@ async def trigger_analysis_run(
 
     run_res = await analysis_service.start_analysis_run(payload)
 
-
     # Fetch actual registered repository metadata to construct real GitHub URL for git cloning
     repo_meta = await analysis_service.repo_repository.get_by_id(payload.repo_id)
-    if repo_meta and repo_meta.owner and repo_meta.name:
-        repo_url = f"https://github.com/{repo_meta.owner}/{repo_meta.name}"
+    if repo_meta:
+        if getattr(repo_meta, "repo_url", None):
+            repo_url = repo_meta.repo_url
+        elif repo_meta.owner and repo_meta.name:
+            repo_url = f"https://github.com/{repo_meta.owner}/{repo_meta.name}"
+        else:
+            repo_url = f"https://github.com/placeholder/{payload.repo_id}"
     else:
         repo_url = f"https://github.com/placeholder/{payload.repo_id}"
+
 
     # P0-1 FIX: Initialise live status entry so SSE can start polling immediately
     _run_live_statuses[run_res.run_id] = {}
@@ -91,9 +107,10 @@ async def trigger_analysis_run(
             finding_objs = []
             for f in raw_reviewed:
                 if isinstance(f, dict):
+                    fid = _ensure_valid_uuid(f.get("id"))
                     finding_objs.append(
                         Finding(
-                            id=f.get("id", f"finding-{run_res.run_id}"),
+                            id=fid,
                             category=FindingCategory(f.get("category", "bug")),
                             severity=FindingSeverity(f.get("severity", "medium")),
                             file=f.get("file", "unknown"),
@@ -110,7 +127,10 @@ async def trigger_analysis_run(
                     )
 
             if finding_objs:
-                await analysis_service.analysis_repository.save_findings(run_res.run_id, finding_objs)
+                try:
+                    await analysis_service.analysis_repository.save_findings(run_res.run_id, finding_objs)
+                except Exception as fe:
+                    logger.warning(f"Failed to save findings for run '{run_res.run_id}': {fe}")
 
             # 2. Persist Report & Health Score
             health_score = final_state.get("health_score", {"overall_score": 88.0})
@@ -118,24 +138,38 @@ async def trigger_analysis_run(
             report_md = report_data.get("markdown") if isinstance(report_data, dict) else str(report_data)
 
             if report_md or health_score:
-                await analysis_service.analysis_repository.save_report(
-                    run_res.run_id,
-                    report_markdown=report_md or f"# Audit Report for {repo_url}",
-                    health_score=health_score,
-                )
+                try:
+                    await analysis_service.analysis_repository.save_report(
+                        run_res.run_id,
+                        report_markdown=report_md or f"# Audit Report for {repo_url}",
+                        health_score=health_score,
+                    )
+                except Exception as re:
+                    logger.warning(f"Failed to save report for run '{run_res.run_id}': {re}")
 
             # P0-2 FIX: Persist knowledge graph data so the /graph endpoint can serve it
+            # P1-EXPLAIN FIX: Also persist repo_url + commit_sha so the /explain endpoint
+            # can re-clone (shallow) on demand and pull real source lines for the Learning Agent.
             knowledge_graph = final_state.get("knowledge_graph_data")
-            if knowledge_graph:
+            repo_struct_for_save = final_state.get("repo_structure", {})
+            try:
                 await analysis_service.analysis_repository.save_agent_results(
                     run_res.run_id,
                     {
-                        "knowledge_graph": knowledge_graph,
+                        "knowledge_graph": knowledge_graph or {"nodes": [], "edges": []},
                         "architect_summary": final_state.get("architect_summary"),
                         "documentation_markdown": final_state.get("documentation_markdown"),
                         "feature_suggestions": final_state.get("feature_suggestions"),
+                        "repo_url": repo_url,
+                        "commit_sha": repo_struct_for_save.get("commit_sha", payload.commit_sha or "latest"),
+                        "security_findings": final_state.get("security_findings", []),
+                        "bug_findings": final_state.get("bug_findings", []),
+                        "performance_findings": final_state.get("performance_findings", []),
                     },
                 )
+            except Exception as ge:
+                logger.warning(f"Failed to save agent results for run '{run_res.run_id}': {ge}")
+
 
             # 3. Update agent statuses and set run status to COMPLETED
             agent_statuses_dict = final_state.get("agent_statuses", {})
@@ -223,18 +257,10 @@ async def stream_analysis_updates(
         poll_interval = 1.5
 
         while elapsed < max_wait_seconds:
-            live = dict(_run_live_statuses.get(run_id, {}))
-
-            # Fetch persisted status from repository
             try:
-                run_detail = await analysis_service.analysis_repository.get_by_id(run_id)
-                if run_detail and run_detail.agents:
-                    for ag in run_detail.agents:
-                        st = ag.status.value if hasattr(ag.status, "value") else str(ag.status)
-                        if ag.name not in live:
-                            live[ag.name] = st
+                live = await analysis_service.analysis_repository.get_live_statuses(run_id)
             except Exception:
-                pass
+                live = dict(_run_live_statuses.get(run_id, {}))
 
             # Emit any newly completed/running agents not yet seen
             for agent_name, agent_status in list(live.items()):
@@ -254,7 +280,8 @@ async def stream_analysis_updates(
                 run_detail = await analysis_service.analysis_repository.get_by_id(run_id)
                 if run_detail and run_detail.status in (RunStatus.COMPLETED, RunStatus.FAILED):
                     # Flush any remaining agent statuses
-                    for agent_name, agent_status in list(_run_live_statuses.get(run_id, {}).items()):
+                    live_final = await analysis_service.analysis_repository.get_live_statuses(run_id)
+                    for agent_name, agent_status in list(live_final.items()):
                         if not agent_name.startswith("__") and agent_name not in seen_agents:
                             seen_agents.add(agent_name)
                             yield f"data: {json.dumps({'agent': agent_name, 'status': agent_status, 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
@@ -312,13 +339,18 @@ async def get_knowledge_graph(
 ):
     """
     Returns the Repository Knowledge Graph (React Flow format) built by the Repository Analyzer.
-    P0-2 FIX: Frontend now fetches real graph data instead of showing hardcoded demo nodes.
     """
     graph_data = None
     try:
-        await analysis_service.get_run_detail(run_id)
-        results = await analysis_service.analysis_repository.get_agent_results(run_id)
-        graph_data = results.get("knowledge_graph") if results else None
+        # 1. Check live persisted statuses
+        live_entry = await analysis_service.analysis_repository.get_live_statuses(run_id)
+        if live_entry and "knowledge_graph" in live_entry:
+            graph_data = live_entry["knowledge_graph"]
+
+        # 2. Check DB persisted agent results
+        if not graph_data:
+            results = await analysis_service.analysis_repository.get_agent_results(run_id)
+            graph_data = results.get("knowledge_graph") if results else None
     except Exception:
         pass
 
@@ -326,6 +358,7 @@ async def get_knowledge_graph(
         "run_id": run_id,
         "graph": graph_data or {"nodes": [], "edges": []},
     }
+
 
 
 @router.get("/{run_id}/findings", response_model=PaginatedFindingsResponse, status_code=status.HTTP_200_OK)
@@ -371,41 +404,93 @@ async def explain_code_region(
     analysis_service: AnalysisService = Depends(get_analysis_service),
 ):
     """
-    Request a plain-language explanation of a specific file or code region from Learning Agent.
-    Fetches real file source code from the workspace directory if snippet is omitted.
+    Request a plain-language explanation of a specific code region from Learning Agent per API.md.
+
+    P1-EXPLAIN FIX: Previously this endpoint fabricated a placeholder string
+    ("Code snippet from module X, lines Y-Z") whenever the caller didn't supply
+    `code_snippet` directly — which the frontend never did — so every explanation
+    the Learning Agent produced was based on fake input. This now:
+      1. Uses `code_snippet` from the request body if the caller already has it
+         (e.g. the code viewer already has the file open client-side).
+      2. Otherwise, shallow re-clones the repo for this run (cheap: depth=1) and
+         reads the real line range from disk.
+      3. Only falls back to a clearly-labeled placeholder if neither is available,
+         so the frontend can detect and handle "no real source" explicitly instead
+         of silently rendering a fake explanation as if it were real.
     """
     try:
         await analysis_service.get_run_detail(run_id)
     except Exception:
         pass  # Graceful fallback for demo or synthetic run IDs
 
-    file_path = payload.get("file_path") or payload.get("file", "source_file.py")
-    line_start = payload.get("line_start", 1)
-    line_end = payload.get("line_end", 300)
+    file_path = payload.get("file_path") or payload.get("file", "")
+    line_start = int(payload.get("line_start", 1))
+    line_end = int(payload.get("line_end", 60))
     code_snippet = payload.get("code_snippet")
 
-    clean_path = file_path.split("::")[0].split("#")[0].strip().lstrip("/").lstrip("\\")
+    if not file_path:
+        from app.core.exceptions import RepoMindException
+        raise RepoMindException("'file' is required.", code="MISSING_FILE_PATH", status_code=400)
+
+    if line_start > line_end or line_start < 1:
+        from app.core.exceptions import RepoMindException
+        raise RepoMindException("Invalid line range specified.", code="INVALID_LINE_RANGE", status_code=400)
+
+    source_is_real = bool(code_snippet)
+
+    if not code_snippet:
+        results = await analysis_service.analysis_repository.get_agent_results(run_id)
+        repo_url = results.get("repo_url") if results else None
+
+        if repo_url:
+            from app.analysis_toolkit.git_ingestion import GitIngestionService
+
+            git_service = GitIngestionService()
+            clone_path = None
+            try:
+                loop = asyncio.get_event_loop()
+                clone_path, _ = await loop.run_in_executor(None, git_service.clone_repository, repo_url)
+                code_snippet = await loop.run_in_executor(
+                    None,
+                    git_service.read_file_lines,
+                    clone_path,
+                    file_path,
+                    line_start,
+                    line_end,
+                )
+                source_is_real = bool(code_snippet)
+            except Exception as e:
+                logger.warning(f"[explain_code_region] Re-clone/read failed for run '{run_id}': {e}")
+            finally:
+                if clone_path:
+                    git_service.cleanup(clone_path)
 
     if not code_snippet:
         from pathlib import Path
         from app.analysis_toolkit.context_builder import ContextBuilder
+        clean_path = file_path.split("::")[0].split("#")[0].strip().lstrip("/").lstrip("\\")
         builder = ContextBuilder(max_lines_per_file=300)
-        
-        # Resolve real file content from workspace root or subfolders
         ws_root = Path.cwd()
         possible_dirs = [ws_root, ws_root / "backend", ws_root / "frontend"]
-        
         real_code = None
         for d in possible_dirs:
             real_code = builder.read_file_content(str(d), clean_path)
             if real_code:
                 break
-        
-        code_snippet = real_code if real_code else f"Source code for module '{clean_path}' (Lines {line_start}-{line_end})"
+        if real_code:
+            code_snippet = real_code
+            source_is_real = True
+        else:
+            code_snippet = f"# Source unavailable for '{file_path}' (lines {line_start}-{line_end})"
 
     provider_router = get_provider_router()
     learning_agent = LearningAgent(provider_router)
-    return await learning_agent.explain_code(file_path=clean_path, code_snippet=code_snippet, run_id=run_id)
+    result = await learning_agent.explain_code(file_path=file_path, code_snippet=code_snippet, run_id=run_id)
+    result["source_is_real"] = source_is_real
+    result["file"] = file_path
+    result["line_start"] = line_start
+    result["line_end"] = line_end
+    return result
 
 
 @router.get("/{run_id}/file-content", status_code=status.HTTP_200_OK)

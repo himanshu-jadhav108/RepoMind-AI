@@ -16,6 +16,22 @@ GITHUB_URL_PATTERN = re.compile(
     r"^https:\/\/(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(?:\.git)?\/?$"
 )
 
+
+def clean_github_url(repo_url: str) -> str:
+    """Sanitizes raw input GitHub URLs, stripping tree/blob paths, query strings, and whitespace."""
+    if not repo_url:
+        return repo_url
+    url = repo_url.strip().split("?")[0].split("#")[0]
+    match = re.search(r"github\.com/([^/]+)/([^/]+)", url, re.IGNORECASE)
+    if match:
+        owner = match.group(1)
+        repo_name = match.group(2)
+        if repo_name.endswith(".git"):
+            repo_name = repo_name[:-4]
+        return f"https://github.com/{owner}/{repo_name}"
+    return url
+
+
 LANGUAGE_EXTENSIONS = {
     ".py": "Python",
     ".js": "JavaScript",
@@ -57,7 +73,8 @@ class GitIngestionService:
 
     def validate_repo_url(self, repo_url: str) -> None:
         """Validates that repo_url matches standard public GitHub HTTPS format."""
-        if not repo_url or not GITHUB_URL_PATTERN.match(repo_url.strip()):
+        target_url = clean_github_url(repo_url)
+        if not target_url or not GITHUB_URL_PATTERN.match(target_url):
             raise UnprocessableRepoException(
                 f"Invalid repository URL format: '{repo_url}'. Only public GitHub HTTPS URLs (e.g. https://github.com/owner/repo) are allowed."
             )
@@ -84,33 +101,37 @@ class GitIngestionService:
         Clones a public repo into a temporary workspace directory with security validation,
         timeout handling, and size limit checks. Returns (cloned_path, commit_sha).
         """
-        self.validate_repo_url(repo_url)
+        target_url = clean_github_url(repo_url)
+        self.validate_repo_url(target_url)
 
-        temp_dir = tempfile.mkdtemp(prefix="repomind_clone_", dir=self.workspace_base_dir)
-        logger.info(f"Cloning repository '{repo_url}' into '{temp_dir}' (Timeout: {self.clone_timeout_sec}s)")
-
-        def _do_clone():
-            return Repo.clone_from(repo_url, temp_dir, depth=1)
-
+        temp_dir = None
         try:
+            temp_dir = tempfile.mkdtemp(prefix="repomind_clone_", dir=self.workspace_base_dir)
+            logger.info(f"Cloning repository '{target_url}' into '{temp_dir}' (Timeout: {self.clone_timeout_sec}s)")
+
+            def _do_clone():
+                return Repo.clone_from(target_url, temp_dir, depth=1, single_branch=True)
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(_do_clone)
                 repo = future.result(timeout=self.clone_timeout_sec)
 
-            commit_sha = repo.head.commit.hexsha if repo.head else "unknown"
+            commit_sha = repo.head.commit.hexsha if repo and repo.head else "unknown"
 
             # Enforce max directory size check
             self.check_repo_size(temp_dir)
 
             return temp_dir, commit_sha
         except concurrent.futures.TimeoutError:
-            self.cleanup(temp_dir)
+            if temp_dir:
+                self.cleanup(temp_dir)
             logger.error(f"Clone timed out after {self.clone_timeout_sec} seconds for '{repo_url}'")
             raise UnprocessableRepoException(
                 f"Cloning repository '{repo_url}' exceeded the {self.clone_timeout_sec}s wall-clock timeout."
             )
         except Exception as e:
-            self.cleanup(temp_dir)
+            if temp_dir:
+                self.cleanup(temp_dir)
             if isinstance(e, UnprocessableRepoException):
                 raise e
             logger.error(f"Failed to clone repository '{repo_url}': {str(e)}")
@@ -175,6 +196,53 @@ class GitIngestionService:
             "language_breakdown": language_counts,
             "files": files_list,
         }
+
+    @staticmethod
+    def read_file_lines(
+        repo_path: str,
+        relative_file_path: str,
+        line_start: int = 1,
+        line_end: int = 60,
+        max_lines: int = 400,
+    ) -> str:
+        """
+        Safely reads a bounded line range from a file inside an already-cloned repo.
+        Guards against path traversal (e.g. '../../etc/passwd') by resolving the final
+        path and confirming it stays within repo_path. Returns "" if unreadable so
+        callers can fall back gracefully instead of crashing the request.
+        """
+        base = Path(repo_path).resolve()
+        target = (base / relative_file_path).resolve()
+
+        # Path traversal guard: target must remain inside the cloned repo root.
+        if base not in target.parents and target != base:
+            logger.warning(f"[read_file_lines] Rejected out-of-tree path: '{relative_file_path}'")
+            return ""
+
+        if not target.exists() or not target.is_file():
+            logger.warning(f"[read_file_lines] File not found: '{target}'")
+            return ""
+
+        # Guard against binary/huge files.
+        try:
+            if target.stat().st_size > 2_000_000:
+                return ""
+            text = target.read_text(encoding="utf-8", errors="ignore")
+        except OSError as e:
+            logger.warning(f"[read_file_lines] Failed to read '{target}': {e}")
+            return ""
+
+        lines = text.splitlines()
+        if not lines:
+            return ""
+
+        start_idx = max(0, line_start - 1)
+        end_idx = min(len(lines), max(start_idx + 1, line_end))
+        # Cap total lines returned regardless of requested range, to bound LLM token cost.
+        if end_idx - start_idx > max_lines:
+            end_idx = start_idx + max_lines
+
+        return "\n".join(lines[start_idx:end_idx])
 
     @staticmethod
     def cleanup(repo_path: str) -> None:

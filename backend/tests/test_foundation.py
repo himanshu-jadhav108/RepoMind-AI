@@ -1,4 +1,5 @@
 import pytest
+pytest.importorskip("supabase", reason="supabase package required for foundation DI tests")
 
 from app.core.dependency_injection import (
     get_analysis_service,

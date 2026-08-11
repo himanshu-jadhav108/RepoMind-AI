@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
@@ -136,13 +137,10 @@ async def seed_demo_workspace():
         existing = await analysis_service.analysis_repository.get_by_id(demo_run_id)
         if not existing:
             from app.models.analysis import AnalysisRunDetail, RunStatus, AgentStatus, AgentStatusEnum
+            _now = datetime.now(timezone.utc)
             demo_run = AnalysisRunDetail(
                 run_id=demo_run_id,
                 repo_id="repo-repomind-ai",
-                repo_name="RepoMind-AI",
-                repo_owner="himanshu-jadhav108",
-                repo_url="https://github.com/himanshu-jadhav108/RepoMind-AI",
-                commit_sha="a7b8c9d0",
                 status=RunStatus.COMPLETED,
                 agents=[
                     AgentStatus(name="planner_agent", status=AgentStatusEnum.COMPLETED),
@@ -155,8 +153,8 @@ async def seed_demo_workspace():
                     AgentStatus(name="reviewer_agent", status=AgentStatusEnum.COMPLETED),
                     AgentStatus(name="report_generator", status=AgentStatusEnum.COMPLETED),
                 ],
-                started_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                completed_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                started_at=_now,
+                completed_at=_now,
             )
             await analysis_service.analysis_repository.create(demo_run)
             logger.info("Successfully seeded demo workspace 'demo-hackathon-workspace' on startup.")

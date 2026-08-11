@@ -115,6 +115,8 @@ async def test_learning_agent(provider_router):
     res = await agent.explain_code("app/main.py", "def hello(): print('world')")
     assert "summary" in res
     assert "related_concepts" in res
+    assert "line_by_line" in res
+    assert "common_pitfalls" in res
 
 
 @pytest.mark.asyncio

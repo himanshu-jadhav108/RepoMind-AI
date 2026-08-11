@@ -23,11 +23,18 @@ class SecurityAgent(BaseAgent):
         repo_struct = state.get("repo_structure", {})
         top_files = repo_struct.get("top_central_modules", [])[:5]
         file_contexts = repo_struct.get("file_contexts", {})
+        global_skipped = repo_struct.get("skipped_files", [])
 
         # Format source code context into prompt
         code_blocks = []
-        for path, code in list(file_contexts.items())[:5]:
-            code_blocks.append(f"```python\n# File: {path}\n{code}\n```")
+        target_skipped = [f for f in top_files if f not in file_contexts]
+        for f in global_skipped:
+            if f not in target_skipped:
+                target_skipped.append(f)
+
+        for path, code in file_contexts.items():
+            if path in top_files or len(code_blocks) < 5:
+                code_blocks.append(f"```python\n# File: {path}\n{code}\n```")
         source_context = "\n\n".join(code_blocks) if code_blocks else "No source code available."
 
         prompt = f"""
@@ -53,7 +60,7 @@ class SecurityAgent(BaseAgent):
                     "suggested_fix": "Remediation instructions",
                     "reasoning": "CVSS risk assessment rationale",
                     "confidence": 0.90,
-                    "evidence": "Quote an actual line range and code snippet directly from the provided source code above (e.g. Lines 5-10 in path/to/file.py)",
+                    "evidence": "Quote an actual line range and exact code snippet directly from the provided source code above (e.g. Lines 5-15 in path/to/file.py). Do not invent line ranges.",
                     "referenced_files": ["path/to/file.py"]
                 }}
             ]
@@ -80,13 +87,19 @@ class SecurityAgent(BaseAgent):
                 f["review_status"] = "unreviewed"
 
             log_agent_event("complete", self.name, run_id, f"Security scan complete: {len(findings)} findings.")
+            agent_status_map = {self.name: "completed"}
+            if target_skipped:
+                agent_status_map["skipped_files"] = target_skipped
             return {
                 "security_findings": findings,
-                "agent_statuses": {self.name: "completed"},
+                "agent_statuses": agent_status_map,
             }
         except Exception as e:
             logger.warning(f"[{self.name}] Provider call failed. Applying fallback: {str(e)}")
+            agent_status_map = {self.name: "degraded"}
+            if target_skipped:
+                agent_status_map["skipped_files"] = target_skipped
             return {
                 "security_findings": [],
-                "agent_statuses": {self.name: "degraded"},
+                "agent_statuses": agent_status_map,
             }

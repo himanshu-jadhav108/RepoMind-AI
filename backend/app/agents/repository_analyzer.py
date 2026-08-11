@@ -51,9 +51,7 @@ class RepositoryAnalyzer:
             scan_results["top_central_modules"] = top_modules
 
             # Step 5b: Build real source code file context for downstream LLM agents
-            from app.analysis_toolkit.context_builder import ContextBuilder
-            context_builder = ContextBuilder()
-            file_contexts, skipped_files = context_builder.build_file_context(
+            file_contexts, skipped_files = self.get_file_contexts(
                 clone_path, top_modules, max_files=7
             )
             scan_results["file_contexts"] = file_contexts
@@ -73,3 +71,14 @@ class RepositoryAnalyzer:
         finally:
             # Always cleanup ephemeral clone workspace
             self.git_ingestion.cleanup(clone_path)
+
+    def get_file_contexts(
+        self, repo_path: str, target_files: list[str], max_files: int = 7
+    ) -> Tuple[Dict[str, str], list[str]]:
+        """
+        Given target file paths and cloned repo path, reads each file's actual source using ContextBuilder.
+        Returns (contents_map, skipped_files).
+        """
+        from app.analysis_toolkit.context_builder import ContextBuilder
+        context_builder = ContextBuilder()
+        return context_builder.build_file_context(repo_path, target_files, max_files=max_files)

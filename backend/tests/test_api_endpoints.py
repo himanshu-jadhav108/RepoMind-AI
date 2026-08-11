@@ -1,3 +1,6 @@
+import pytest
+pytest.importorskip("supabase", reason="supabase package required for API endpoint integration tests")
+
 from fastapi.testclient import TestClient
 
 from app.main import app

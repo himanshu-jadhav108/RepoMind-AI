@@ -13,7 +13,8 @@ from app.agents.report_generator_agent import ReportGeneratorAgent
 from app.agents.repository_analyzer import RepositoryAnalyzer
 from app.agents.reviewer_agent import ReviewerAgent
 from app.agents.security_agent import SecurityAgent
-from app.core.dependency_injection import get_provider_router
+# get_provider_router is imported lazily inside each node to avoid module-level
+# supabase dependency that breaks test collection when supabase is not installed.
 from app.core.logging import logger
 from app.orchestration.state import AnalysisState
 
@@ -22,48 +23,29 @@ from app.orchestration.state import AnalysisState
 # Format: {run_id: {agent_name: "queued" | "running" | "completed" | "degraded" | "failed"}}
 # Written by each node as it executes; read by the SSE endpoint in routes_analysis.py.
 # ---------------------------------------------------------------------------
-_run_live_statuses: Dict[str, Dict[str, str]] = {}
+# ---------------------------------------------------------------------------
+# Live agent status tracker for real-time SSE streaming & storage persistence.
+# Keyed by run_id; synchronized with AnalysisRepository.
+# ---------------------------------------------------------------------------
+_run_live_statuses: Dict[str, Dict[str, Any]] = {}
 
 
-def _set_agent_status(run_id: str, agent_name: str, status: str) -> None:
-    """Thread-safe update of live agent status + persistent repository sync."""
+async def _set_agent_status(run_id: str, agent_name: str, status: str, extra_data: Dict[str, Any] | None = None) -> None:
+    """Update live agent status in persistent analysis repository."""
     if run_id not in _run_live_statuses:
         _run_live_statuses[run_id] = {}
     _run_live_statuses[run_id][agent_name] = status
+    if extra_data:
+        _run_live_statuses[run_id].update(extra_data)
     logger.debug(f"[LiveStatus] run={run_id} agent={agent_name} -> {status}")
 
-    # Synchronize status to AnalysisRepository persistent store
     try:
-        from app.core.dependency_injection import get_analysis_repository
-        repo = get_analysis_repository()
-        if repo:
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(_async_persist_agent_status(repo, run_id, agent_name, status))
-            except RuntimeError:
-                pass
+        from app.core.dependency_injection import get_analysis_service
+        service = get_analysis_service()
+        if service and service.analysis_repository:
+            await service.analysis_repository.update_agent_status(run_id, agent_name, status, extra_data)
     except Exception as e:
         logger.debug(f"[LiveStatus] Persistence skip: {e}")
-
-
-async def _async_persist_agent_status(repo, run_id: str, agent_name: str, status: str) -> None:
-    """Helper coroutine for persisting agent status updates to repository."""
-    try:
-        run_detail = await repo.get_by_id(run_id)
-        if run_detail:
-            from app.models.analysis import AgentStatus, AgentStatusEnum
-            status_enum = AgentStatusEnum(status) if status in AgentStatusEnum.__members__.values() else AgentStatusEnum.COMPLETED
-            updated = False
-            for ag in run_detail.agents:
-                if ag.name == agent_name:
-                    ag.status = status_enum
-                    updated = True
-                    break
-            if not updated:
-                run_detail.agents.append(AgentStatus(name=agent_name, status=status_enum))
-            await repo.update(run_id, {"agents": [a.model_dump() for a in run_detail.agents]})
-    except Exception as e:
-        logger.debug(f"[LiveStatus] DB persist error: {e}")
 
 
 def _extract_agent_status(result: Dict[str, Any], agent_name: str) -> str:
@@ -79,19 +61,20 @@ def _extract_agent_status(result: Dict[str, Any], agent_name: str) -> str:
 async def planner_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
     repo_url = state.get("repo_url", "")
-    _set_agent_status(run_id, "planner_agent", "running")
+    await _set_agent_status(run_id, "planner_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     planner = PlannerAgent(provider_router)
     try:
         plan = await planner.plan_execution(repo_url, run_id=run_id)
-        _set_agent_status(run_id, "planner_agent", "completed")
+        await _set_agent_status(run_id, "planner_agent", "completed")
         return {
             "execution_plan": plan,
             "agent_statuses": {"planner_agent": "completed"},
         }
     except Exception as e:
         logger.warning(f"[planner_node] Failed: {e}")
-        _set_agent_status(run_id, "planner_agent", "degraded")
+        await _set_agent_status(run_id, "planner_agent", "degraded")
         return {
             "execution_plan": {},
             "agent_statuses": {"planner_agent": "degraded"},
@@ -105,7 +88,7 @@ async def repository_analyzer_node(state: AnalysisState) -> Dict[str, Any]:
     """
     run_id = state.get("run_id", "run")
     repo_url = state.get("repo_url", "")
-    _set_agent_status(run_id, "repository_analyzer", "running")
+    await _set_agent_status(run_id, "repository_analyzer", "running")
     analyzer = RepositoryAnalyzer()
 
     try:
@@ -117,118 +100,146 @@ async def repository_analyzer_node(state: AnalysisState) -> Dict[str, Any]:
             repo_url,
             run_id,
         )
-        _set_agent_status(run_id, "repository_analyzer", "completed")
+        await _set_agent_status(run_id, "repository_analyzer", "completed", extra_data={"knowledge_graph": react_flow_graph})
         return {
             "repo_structure": scan_results,
             "knowledge_graph_data": react_flow_graph,
             "agent_statuses": {"repository_analyzer": "completed"},
         }
+
     except Exception as e:
         logger.error(f"[repository_analyzer_node] Failed: {e}", exc_info=True)
-        _set_agent_status(run_id, "repository_analyzer", "failed")
+        await _set_agent_status(run_id, "repository_analyzer", "failed")
         raise  # Propagate so LangGraph marks the run as failed
 
 
 async def architect_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "architect_agent", "running")
+    await _set_agent_status(run_id, "architect_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = ArchitectAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "architect_agent", _extract_agent_status(result, "architect_agent"))
+    await _set_agent_status(run_id, "architect_agent", _extract_agent_status(result, "architect_agent"))
     return result
 
 
 async def bug_hunter_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "bug_hunter_agent", "running")
+    await _set_agent_status(run_id, "bug_hunter_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = BugHunterAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "bug_hunter_agent", _extract_agent_status(result, "bug_hunter_agent"))
+    await _set_agent_status(run_id, "bug_hunter_agent", _extract_agent_status(result, "bug_hunter_agent"))
     return result
 
 
 async def security_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "security_agent", "running")
+    await _set_agent_status(run_id, "security_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = SecurityAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "security_agent", _extract_agent_status(result, "security_agent"))
+    await _set_agent_status(run_id, "security_agent", _extract_agent_status(result, "security_agent"))
     return result
 
 
 async def performance_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "performance_agent", "running")
+    await _set_agent_status(run_id, "performance_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = PerformanceAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "performance_agent", _extract_agent_status(result, "performance_agent"))
+    await _set_agent_status(run_id, "performance_agent", _extract_agent_status(result, "performance_agent"))
     return result
 
 
 async def documentation_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "documentation_agent", "running")
+    await _set_agent_status(run_id, "documentation_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = DocumentationAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "documentation_agent", _extract_agent_status(result, "documentation_agent"))
+    await _set_agent_status(run_id, "documentation_agent", _extract_agent_status(result, "documentation_agent"))
     return result
 
 
 async def feature_suggestion_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "feature_suggestion_agent", "running")
+    await _set_agent_status(run_id, "feature_suggestion_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = FeatureSuggestionAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "feature_suggestion_agent", _extract_agent_status(result, "feature_suggestion_agent"))
+    await _set_agent_status(run_id, "feature_suggestion_agent", _extract_agent_status(result, "feature_suggestion_agent"))
     return result
 
 
 async def reviewer_loop_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
     retry_count = state.get("reviewer_retry_count", 0)
-    _set_agent_status(run_id, "reviewer_agent", "running")
+    await _set_agent_status(run_id, "reviewer_agent", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = ReviewerAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "reviewer_agent", _extract_agent_status(result, "reviewer_agent"))
+    await _set_agent_status(run_id, "reviewer_agent", _extract_agent_status(result, "reviewer_agent"))
 
     reviewed = result.get("reviewed_findings", [])
-    has_rejected = any(f.get("review_status") in ("rejected", "flagged_low_confidence") for f in reviewed)
+    rejected_categories = set()
+    for f in reviewed:
+        status_val = f.get("review_status")
+        if status_val in ("rejected", "flagged_low_confidence"):
+            cat = str(f.get("category", "")).lower()
+            if cat in ("bug", "bugs"):
+                rejected_categories.add("bug_hunter_agent")
+            elif cat in ("sec", "security"):
+                rejected_categories.add("security_agent")
+            elif cat in ("perf", "performance"):
+                rejected_categories.add("performance_agent")
+            elif cat in ("arch", "architecture"):
+                rejected_categories.add("architect_agent")
+            else:
+                rejected_categories.add("bug_hunter_agent")
 
-    if has_rejected and retry_count < 2:
+    if rejected_categories and retry_count < 2:
         result["review_passed"] = False
         result["reviewer_retry_count"] = retry_count + 1
-        result["review_feedback"] = f"Retry {retry_count + 1}: Filter out low-confidence claims and refine evidence."
+        priority_order = ["bug_hunter_agent", "security_agent", "performance_agent", "architect_agent"]
+        target = next((ag for ag in priority_order if ag in rejected_categories), "bug_hunter_agent")
+        result["rejected_agent_target"] = target
+        result["review_feedback"] = f"Retry {retry_count + 1}: Refine evidence and filter low-confidence claims for {target}."
     else:
         result["review_passed"] = True
         result["reviewer_retry_count"] = retry_count
+        result["rejected_agent_target"] = "report_generator"
 
     return result
 
 
 def route_after_reviewer(state: AnalysisState) -> str:
-    """Conditional router: loops back to bug_hunter_agent on rejection up to 2 retries."""
+    """Conditional router: loops back to rejected finding-producing agent (architect/bug_hunter/security/performance) on rejection up to 2 retries."""
     review_passed = state.get("review_passed", True)
     retry_count = state.get("reviewer_retry_count", 0)
-    if not review_passed and retry_count <= 2:
-        logger.info(f"[ReviewerLoop] Rejection detected. Retrying branch (Attempt {retry_count}/2)...")
-        return "bug_hunter_agent"
+    target_agent = state.get("rejected_agent_target", "bug_hunter_agent")
+    if not review_passed and retry_count <= 2 and target_agent in ("architect_agent", "bug_hunter_agent", "security_agent", "performance_agent"):
+        logger.info(f"[ReviewerLoop] Rejection detected for {target_agent}. Retrying branch (Attempt {retry_count}/2)...")
+        return target_agent
     return "report_generator"
 
 
 async def report_generator_node(state: AnalysisState) -> Dict[str, Any]:
     run_id = state.get("run_id", "run")
-    _set_agent_status(run_id, "report_generator", "running")
+    await _set_agent_status(run_id, "report_generator", "running")
+    from app.core.dependency_injection import get_provider_router
     provider_router = get_provider_router()
     agent = ReportGeneratorAgent(provider_router)
     result = await agent.run(state)
-    _set_agent_status(run_id, "report_generator", _extract_agent_status(result, "report_generator"))
+    await _set_agent_status(run_id, "report_generator", _extract_agent_status(result, "report_generator"))
     return result
 
 
@@ -279,7 +290,10 @@ def build_repomind_graph() -> StateGraph:
         "reviewer_agent_loop",
         route_after_reviewer,
         {
+            "architect_agent": "architect_agent",
             "bug_hunter_agent": "bug_hunter_agent",
+            "security_agent": "security_agent",
+            "performance_agent": "performance_agent",
             "report_generator": "report_generator",
         },
     )

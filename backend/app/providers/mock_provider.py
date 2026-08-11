@@ -40,29 +40,55 @@ class MockProvider(ProviderInterface):
 
         # Select canned response based on prompt context
         if "reviewer" in p_lower or "reviewer" in s_lower or "reviewer" in (system_instruction or "").lower():
-            resp_dict = {
-                "verdict": "approved",
-                "review_status": "approved",
-                "feedback": "All agent findings verified against AST static call graph.",
-                "confidence": 0.96,
-                "reviewed_findings": [
-                    {
-                        "id": "b1",
-                        "category": "bug",
-                        "severity": "medium",
-                        "file": "app/main.py",
-                        "line_start": 10,
-                        "line_end": 20,
-                        "description": "Unhandled exception in endpoint handler",
-                        "suggested_fix": "Add try-except block",
-                        "reasoning": "AST analysis detected missing exception handling",
-                        "confidence": 0.85,
-                        "evidence": "def handle(): pass",
-                        "referenced_files": ["app/main.py"],
-                        "review_status": "approved",
-                    }
-                ],
-            }
+            reviewed_list = None
+            if "raw findings:" in p_lower:
+                try:
+                    raw_str = prompt.split("Raw Findings:")[1].split("Evaluate each finding")[0].strip()
+                    raw_list = json.loads(raw_str)
+                    reviewed_list = []
+                    for f in raw_list:
+                        f_copy = dict(f)
+                        conf = f_copy.get("confidence", 0.85)
+                        if conf >= 0.70:
+                            f_copy["review_status"] = "approved"
+                        else:
+                            f_copy["review_status"] = "flagged_low_confidence"
+                        reviewed_list.append(f_copy)
+                except Exception:
+                    reviewed_list = None
+
+            if reviewed_list is not None:
+                resp_dict = {
+                    "verdict": "approved" if all(x.get("review_status") == "approved" for x in reviewed_list) else "needs_revision",
+                    "review_status": "approved",
+                    "feedback": "Reviewed findings against AST evidence.",
+                    "confidence": 0.90,
+                    "reviewed_findings": reviewed_list,
+                }
+            else:
+                resp_dict = {
+                    "verdict": "approved",
+                    "review_status": "approved",
+                    "feedback": "All agent findings verified against AST static call graph.",
+                    "confidence": 0.96,
+                    "reviewed_findings": [
+                        {
+                            "id": "b1",
+                            "category": "bug",
+                            "severity": "medium",
+                            "file": "app/main.py",
+                            "line_start": 10,
+                            "line_end": 20,
+                            "description": "Unhandled exception in endpoint handler",
+                            "suggested_fix": "Add try-except block",
+                            "reasoning": "AST analysis detected missing exception handling",
+                            "confidence": 0.85,
+                            "evidence": "def handle(): pass",
+                            "referenced_files": ["app/main.py"],
+                            "review_status": "approved",
+                        }
+                    ],
+                }
         elif "architect" in p_lower or "architect" in s_lower:
             resp_dict = {
                 "summary": "Clean Architecture modular decomposition with decoupled services.",
@@ -160,6 +186,17 @@ class MockProvider(ProviderInterface):
                         "review_status": "approved",
                     }
                 ],
+            }
+        elif "learning" in p_lower or "explain" in p_lower or "mentor" in s_lower:
+            resp_dict = {
+                "summary": "Core module handling data processing and service orchestration.",
+                "line_by_line": [
+                    {"lines": "1-15", "explanation": "Imports dependencies and initializes service abstractions."},
+                    {"lines": "16-40", "explanation": "Defines core logic and state mutation functions."}
+                ],
+                "analogy": "Functions like a post office sorting and dispatching incoming mail packages.",
+                "common_pitfalls": ["Avoid calling blocking synchronous file reads on main event loop."],
+                "related_concepts": ["Clean Architecture", "Dependency Injection"]
             }
         else:
             resp_dict = {

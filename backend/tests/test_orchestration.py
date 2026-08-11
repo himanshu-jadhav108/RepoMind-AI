@@ -39,6 +39,13 @@ def test_graph_compilation():
 
 @pytest.mark.asyncio
 async def test_langgraph_pipeline_execution(mock_repo_dir, monkeypatch):
+    pytest.importorskip("supabase", reason="supabase package required for full pipeline DI container test")
+    from app.core.dependency_injection import container
+    from app.providers.mock_provider import MockProvider
+    mock_p = MockProvider()
+    container.provider_router.register_provider(mock_p)
+    container.provider_router.set_priority_order(["mock_provider"])
+
     # Patch clone_repository to use local mock directory
     monkeypatch.setattr(
         "app.agents.repository_analyzer.GitIngestionService.clone_repository",
@@ -62,3 +69,5 @@ async def test_langgraph_pipeline_execution(mock_repo_dir, monkeypatch):
     assert "reviewed_findings" in final_state
     assert "final_report" in final_state
     assert final_state["agent_statuses"].get("report_generator") == "completed"
+    assert final_state["agent_statuses"].get("bug_hunter_agent") == "completed"
+    assert final_state["agent_statuses"].get("security_agent") == "completed"

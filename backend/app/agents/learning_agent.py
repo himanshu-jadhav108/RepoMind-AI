@@ -22,28 +22,37 @@ class LearningAgent(BaseAgent):
     async def explain_code(self, file_path: str, code_snippet: str, run_id: str = "interactive") -> Dict[str, Any]:
         log_agent_event("start", self.name, run_id, f"Generating plain-language explanation for '{file_path}'")
 
+        # P1-EXPLAIN FIX: richer schema — a one-paragraph explanation + buzzword list
+        # gave users very little to actually learn from. This now asks for a summary,
+        # a line-by-line breakdown, a concrete analogy, and common pitfalls, so the
+        # UI has enough structure to render something more useful than a wall of text.
         prompt = f"""
         You are the Learning Agent for RepoMind AI.
-        Explain the code snippet from '{file_path}' in clear, jargon-free plain language.
+        Explain the following real code snippet from '{file_path}' in simple, plain language
+        without heavy jargon. Base every claim strictly on the code shown below — do not
+        invent behavior that isn't present in the snippet.
 
         Code Snippet:
-        ```python
+        ```
         {code_snippet}
         ```
 
         Return a JSON object matching this exact schema:
         {{
-            "summary": "A concise one-sentence high-level overview of what this file does",
+            "summary": "One or two sentence plain-language summary of what this code does",
             "line_by_line": [
-                {{"lines": "1-15", "explanation": "Imports dependencies and initializes core service layer."}}
+                {{"lines": "1-5", "explanation": "What happens in this specific range"}}
             ],
-            "analogy": "A simple, intuitive real-world analogy describing the core logic",
-            "common_pitfalls": ["Common bug or pitfall developers might make when editing this file"],
-            "related_concepts": ["Clean Architecture", "Dependency Injection"]
+            "analogy": "A concrete, everyday analogy that maps to the core logic here",
+            "common_pitfalls": ["A mistake developers commonly make with this kind of code"],
+            "related_concepts": ["Concept 1", "Concept 2"]
         }}
+
+        If the snippet is too short or generic to break into meaningful line ranges,
+        return a single entry in "line_by_line" covering the whole snippet.
         """
 
-        system_instruction = "You are a friendly Senior Software Architect and Coding Mentor. Output valid JSON only."
+        system_instruction = "You are a friendly Coding Mentor. Prefer analogies and clear explanations. Output valid JSON."
 
         try:
             res = await self.provider_router.generate(
@@ -54,24 +63,22 @@ class LearningAgent(BaseAgent):
                 agent_name=self.name,
             )
             parsed = json.loads(res.content)
-            # Guarantee schema fields exist
-            if "summary" not in parsed:
-                parsed["summary"] = f"Core module {file_path} handles key execution logic for the repository."
-            if "line_by_line" not in parsed or not isinstance(parsed["line_by_line"], list):
-                parsed["line_by_line"] = []
-            if "analogy" not in parsed:
-                parsed["analogy"] = "Functions like a central dispatcher routing requests to domain handlers."
-            if "common_pitfalls" not in parsed or not isinstance(parsed["common_pitfalls"], list):
-                parsed["common_pitfalls"] = []
-            if "related_concepts" not in parsed or not isinstance(parsed["related_concepts"], list):
-                parsed["related_concepts"] = ["Software Architecture", "Modular Design"]
-            return parsed
+            # Normalize shape defensively in case the model omits a field.
+            return {
+                "summary": parsed.get("summary", ""),
+                "line_by_line": parsed.get("line_by_line", []),
+                "analogy": parsed.get("analogy", ""),
+                "common_pitfalls": parsed.get("common_pitfalls", []),
+                "related_concepts": parsed.get("related_concepts", []),
+            }
         except Exception as e:
             logger.warning(f"[{self.name}] Explain code failed: {str(e)}")
+            # Fallback matches the same shape as the success path so the frontend
+            # never needs a second code path to render degraded results.
             return {
-                "summary": f"Module '{file_path}' handles core structural logic for the application.",
+                "summary": f"This code component in {file_path} handles key execution logic for the system.",
                 "line_by_line": [],
-                "analogy": "Acts as an orchestration node connecting component layers.",
+                "analogy": "",
                 "common_pitfalls": [],
-                "related_concepts": ["Clean Architecture", "Modular Design"],
+                "related_concepts": ["Software Architecture", "Clean Code"],
             }

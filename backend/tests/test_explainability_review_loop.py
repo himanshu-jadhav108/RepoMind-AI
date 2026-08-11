@@ -5,9 +5,16 @@ from app.agents.reviewer_agent import ReviewerAgent
 from app.providers.provider_router import ProviderRouter
 
 
+from app.providers.mock_provider import MockProvider
+
+
 @pytest.fixture
 def provider_router():
-    return ProviderRouter(max_retries_per_provider=1)
+    router = ProviderRouter(max_retries_per_provider=1)
+    mock_p = MockProvider()
+    router.register_provider(mock_p)
+    router.set_priority_order(["mock_provider"])
+    return router
 
 
 @pytest.mark.asyncio
@@ -82,3 +89,31 @@ async def test_reviewer_loop_confidence_threshold_pass(provider_router):
     # Low confidence item (0.40 < 0.70) must be flagged_low_confidence
     f2_rev = next(item for item in reviewed if item["id"] == "f2")
     assert f2_rev["review_status"] == "flagged_low_confidence"
+
+
+def test_reviewer_agent_conditional_loop_routing():
+    from app.orchestration.graph import route_after_reviewer
+
+    # Rejection in security finding -> route back to security_agent
+    state_rej = {
+        "review_passed": False,
+        "reviewer_retry_count": 1,
+        "rejected_agent_target": "security_agent",
+    }
+    assert route_after_reviewer(state_rej) == "security_agent"
+
+    # Max retries exceeded (retry 3 > 2) -> proceed to report_generator
+    state_max = {
+        "review_passed": False,
+        "reviewer_retry_count": 3,
+        "rejected_agent_target": "security_agent",
+    }
+    assert route_after_reviewer(state_max) == "report_generator"
+
+    # Review passed -> proceed to report_generator
+    state_pass = {
+        "review_passed": True,
+        "reviewer_retry_count": 1,
+        "rejected_agent_target": "report_generator",
+    }
+    assert route_after_reviewer(state_pass) == "report_generator"
