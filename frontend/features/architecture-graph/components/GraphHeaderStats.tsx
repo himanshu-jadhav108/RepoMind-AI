@@ -23,73 +23,73 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
   const dead = stats?.deadFiles || 0;
 
   return (
-    <div className="w-full bg-slate-950/80 border-b border-border/80 p-3 backdrop-blur-xl">
+    <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 backdrop-blur-xl">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono">
         {/* Metric 1 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <Activity className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Overall Health</span>
+            <span className="text-[10px] text-graphite-muted block">Overall Health</span>
             <span className="font-bold text-emerald-400 text-xs">{health}%</span>
           </div>
         </div>
 
-        {/* Metric 2 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
-          <div className="p-1.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        {/* Metric 2: Security Severity Red */}
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-severity-critical/10 text-severity-critical border border-severity-critical/20">
             <ShieldAlert className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Security Rating</span>
-            <span className="font-bold text-indigo-300 text-xs">{security}%</span>
+            <span className="text-[10px] text-graphite-muted block">Security Rating</span>
+            <span className="font-bold text-severity-critical text-xs">{security}%</span>
           </div>
         </div>
 
-        {/* Metric 3 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
-          <div className="p-1.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        {/* Metric 3: Performance Warning Amber */}
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-severity-warning/10 text-severity-warning border border-severity-warning/20">
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Performance</span>
-            <span className="font-bold text-amber-300 text-xs">{performance}%</span>
+            <span className="text-[10px] text-graphite-muted block">Performance</span>
+            <span className="font-bold text-severity-warning text-xs">{performance}%</span>
           </div>
         </div>
 
-        {/* Metric 4 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
-          <div className="p-1.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
+        {/* Metric 4: Doc Coverage Green */}
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <BookOpen className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Doc Coverage</span>
-            <span className="font-bold text-sky-300 text-xs">{docs}%</span>
+            <span className="text-[10px] text-graphite-muted block">Doc Coverage</span>
+            <span className="font-bold text-emerald-400 text-xs">{docs}%</span>
           </div>
         </div>
 
         {/* Metric 5 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
             <AlertOctagon className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Circular Deps</span>
+            <span className="text-[10px] text-graphite-muted block">Circular Deps</span>
             <span className={`font-bold text-xs ${circular > 0 ? "text-rose-400" : "text-emerald-400"}`}>
               {circular} detected
             </span>
           </div>
         </div>
 
-        {/* Metric 6 */}
-        <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
-          <div className="p-1.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+        {/* Metric 6: Category A Steel Slate Blue */}
+        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-[#5B82A6]/10 text-[#5B82A6] border border-[#5B82A6]/20">
             <Cpu className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 block">Dead Files</span>
-            <span className="font-bold text-slate-300 text-xs">{dead} files</span>
+            <span className="text-[10px] text-graphite-muted block">Dead Files</span>
+            <span className="font-bold text-white text-xs">{dead} files</span>
           </div>
         </div>
       </div>

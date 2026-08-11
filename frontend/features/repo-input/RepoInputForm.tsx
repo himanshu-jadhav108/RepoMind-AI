@@ -91,11 +91,11 @@ export function RepoInputForm() {
           disabled={loading || !!activeRunId}
           variant="outline"
           size="lg"
-          className="w-full gap-2.5 bg-gradient-to-r from-purple-950/90 via-indigo-950/90 to-purple-950/90 border-2 border-purple-500/70 text-purple-200 hover:text-white font-mono text-sm shadow-2xl shadow-purple-600/30 px-6 py-3.5 rounded-2xl transition ring-2 ring-purple-500/30 hover:ring-purple-400 cursor-pointer"
+          className="w-full gap-2.5 bg-graphite-panel border-2 border-copper/60 text-white hover:border-copper font-mono text-sm shadow-xl px-6 py-3.5 rounded-xl transition ring-1 ring-copper/30 cursor-pointer"
         >
           {loading && activeRepoUrl.includes("Demo") ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-copper" />
               <span className="font-bold">Initializing Multi-Agent Team Demo...</span>
             </>
           ) : (
@@ -107,9 +107,9 @@ export function RepoInputForm() {
         </Button>
 
         {/* Repository GitHub Input Form */}
-        <form onSubmit={handleSubmit} className="relative flex items-center">
+        <form onSubmit={handleSubmit} className="relative flex items-center font-mono">
           <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-graphite-muted">
               <Github className="w-5 h-5" />
             </div>
             <input
@@ -118,7 +118,7 @@ export function RepoInputForm() {
               onChange={(e) => setRepoUrl(e.target.value)}
               placeholder="Paste public GitHub URL (e.g. https://github.com/fastapi/fastapi)"
               required
-              className="w-full h-14 pl-12 pr-36 rounded-xl glass-panel text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border/80 transition-all"
+              className="w-full h-14 pl-12 pr-36 rounded-xl bg-graphite-canvas text-sm text-foreground placeholder:text-graphite-muted focus:outline-none focus:ring-2 focus:ring-copper/50 border border-graphite-border transition-all"
             />
             <div className="absolute inset-y-1.5 right-1.5 flex items-center">
               <Button

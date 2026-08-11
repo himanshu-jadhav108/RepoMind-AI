@@ -40,28 +40,28 @@ export function GraphToolbar() {
   const setSelectedRisk = useGraphStore((s) => s.setSelectedRisk);
 
   return (
-    <div className="w-full bg-slate-900/90 border-b border-border/80 p-3 backdrop-blur-xl flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+    <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
       {/* Search Input */}
       <div className="relative flex-1 min-w-[220px] max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <Search className="w-4 h-4 absolute left-3 top-2.5 text-graphite-muted" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Instant search by file, function, class..."
-          className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition"
+          className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-graphite-canvas border border-graphite-border text-white placeholder:text-graphite-muted focus:outline-none focus:border-copper transition"
         />
       </div>
 
       {/* Top 5 Layout Mode Selector */}
       <div className="flex items-center gap-2">
-        <span className="text-slate-400 flex items-center gap-1 font-semibold">
-          <Layers className="w-3.5 h-3.5 text-indigo-400" /> Layout:
+        <span className="text-graphite-muted flex items-center gap-1 font-semibold">
+          <Layers className="w-3.5 h-3.5 text-[#5B82A6]" /> Layout:
         </span>
         <select
           value={layoutMode}
           onChange={(e) => setLayoutMode(e.target.value as LayoutMode)}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-indigo-300 font-bold focus:outline-none focus:border-indigo-500 cursor-pointer shadow"
+          className="px-2.5 py-1.5 rounded-lg bg-graphite-canvas border border-graphite-border text-[#5B82A6] font-bold focus:outline-none focus:border-copper cursor-pointer shadow"
         >
           {TOP_5_LAYOUT_OPTIONS.map((opt) => (
             <option key={opt.id} value={opt.id}>
@@ -71,15 +71,15 @@ export function GraphToolbar() {
         </select>
       </div>
 
-      {/* AI Agent Traversal View Selector */}
+      {/* AI Agent Traversal View Selector — Category A Steel Slate Blue (#5B82A6) */}
       <div className="flex items-center gap-2">
-        <span className="text-purple-400 flex items-center gap-1 font-semibold">
-          <Bot className="w-3.5 h-3.5 text-purple-400" /> Agent View:
+        <span className="text-[#5B82A6] flex items-center gap-1 font-semibold">
+          <Bot className="w-3.5 h-3.5 text-[#5B82A6]" /> Agent View:
         </span>
         <select
           value={selectedAgent || ""}
           onChange={(e) => setSelectedAgent(e.target.value ? (e.target.value as AgentName) : null)}
-          className="px-2.5 py-1.5 rounded-lg bg-purple-950/80 border border-purple-500/40 text-purple-200 font-semibold focus:outline-none focus:border-purple-400 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-[#5B82A6]/10 border border-[#5B82A6]/30 text-[#5B82A6] font-semibold focus:outline-none focus:border-[#5B82A6] cursor-pointer"
         >
           <option value="">Off (Standard View)</option>
           {AGENT_OPTIONS.map((agent) => (
@@ -92,13 +92,13 @@ export function GraphToolbar() {
 
       {/* Risk Level Filter */}
       <div className="flex items-center gap-2">
-        <span className="text-slate-400 flex items-center gap-1">
-          <Filter className="w-3.5 h-3.5 text-slate-400" /> Risk:
+        <span className="text-graphite-muted flex items-center gap-1">
+          <Filter className="w-3.5 h-3.5 text-graphite-muted" /> Risk:
         </span>
         <select
           value={selectedRisk}
           onChange={(e) => setSelectedRisk(e.target.value as any)}
-          className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+          className="px-2 py-1.5 rounded-lg bg-graphite-canvas border border-graphite-border text-foreground focus:outline-none focus:border-copper cursor-pointer"
         >
           <option value="all">All Risks</option>
           <option value="critical">Critical Only</option>
