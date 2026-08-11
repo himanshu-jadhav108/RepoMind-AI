@@ -17,46 +17,45 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { useGraphStore } from "../store/useGraphStore";
-import { explainCodeRegion } from "@/lib/api-client";
+import { explainCodeSnippet, filterFindingsByFile } from "@/lib/api-client";
+import { CodeExplanation, Finding } from "@/types";
 
 interface NodeInspectorSidebarProps {
   graphData?: any;
   runId?: string;
-  findings?: any[];
+  findings?: Finding[];
   inline?: boolean;
-}
-
-interface LineBreakdown {
-  lines: string;
-  explanation: string;
-}
-
-interface ExplanationData {
-  summary?: string;
-  line_by_line?: LineBreakdown[];
-  analogy?: string;
-  common_pitfalls?: string[];
-  related_concepts?: string[];
 }
 
 export function NodeInspectorSidebar({ graphData, runId, findings = [], inline = false }: NodeInspectorSidebarProps) {
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useGraphStore((s) => s.setSelectedNodeId);
 
-  const [explanation, setExplanation] = useState<ExplanationData | null>(null);
+  const [explanation, setExplanation] = useState<CodeExplanation | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLines, setExpandedLines] = useState<boolean>(true);
 
+  const nodeData = graphData?.nodes?.find((n: any) => n.id === selectedNodeId) || {
+    id: selectedNodeId,
+    data: { label: selectedNodeId, language: "Python" },
+  };
+
+  const label = nodeData.data?.label || selectedNodeId;
+  const language = nodeData.data?.language || "Python";
+  const filePath = nodeData.data?.file_path || label;
+
   useEffect(() => {
-    if (!selectedNodeId) return;
+    if (!selectedNodeId) {
+      setExplanation(null);
+      return;
+    }
 
     let isMounted = true;
     setLoading(true);
     setError(null);
-    setExplanation(null);
 
-    explainCodeRegion(runId || "local_run", selectedNodeId)
+    explainCodeSnippet(runId || "local_run", filePath, 1, 60)
       .then((data) => {
         if (isMounted) {
           setExplanation(data);
@@ -65,7 +64,7 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
       })
       .catch((err) => {
         if (isMounted) {
-          setError("Could not load AI code explanation.");
+          setError(err.message || "Could not load AI code explanation.");
           setLoading(false);
         }
       });
@@ -73,7 +72,7 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
     return () => {
       isMounted = false;
     };
-  }, [selectedNodeId, runId]);
+  }, [selectedNodeId, runId, filePath]);
 
   if (!selectedNodeId && !inline) return null;
 
@@ -92,14 +91,6 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
       </div>
     );
   }
-
-  const nodeData = graphData?.nodes?.find((n: any) => n.id === selectedNodeId) || {
-    id: selectedNodeId,
-    data: { label: selectedNodeId, language: "Python" },
-  };
-
-  const label = nodeData.data?.label || selectedNodeId;
-  const language = nodeData.data?.language || "Python";
 
   // Filter findings matching selectedNodeId
   const nodeFindings = findings.filter(

@@ -28,6 +28,7 @@ import { GraphToolbar } from "./components/GraphToolbar";
 import { NodeHoverCard } from "./components/NodeHoverCard";
 import { NodeInspectorSidebar } from "./components/NodeInspectorSidebar";
 import { AgentTraversalOverlay } from "./components/AgentTraversalOverlay";
+import { AgentReplayController } from "./components/AgentReplayController";
 import dynamic from "next/dynamic";
 
 const KnowledgeGraph3D = dynamic(
@@ -193,9 +194,6 @@ const DEMO_GRAPH_DATA = {
   ],
 };
 
-
-import { AgentReplayController } from "./components/AgentReplayController";
-
 export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }: KnowledgeGraphProps) {
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useGraphStore((s) => s.setSelectedNodeId);
@@ -207,13 +205,17 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
   const expandedNodeIds = useGraphStore((s) => s.expandedNodeIds);
   const selectedAgent = useGraphStore((s) => s.selectedAgent);
 
-  // Raw Graph Data Fallback
+  // Raw Graph Data Fallback — only use hardcoded DEMO_GRAPH_DATA if runId is explicitly a demo run
   const rawData = useMemo(() => {
     if (graphData && graphData.nodes && graphData.nodes.length > 0) {
       return graphData;
     }
-    return DEMO_GRAPH_DATA;
-  }, [graphData]);
+    if (runId && (runId.includes("demo") || runId === "demo_run")) {
+      return DEMO_GRAPH_DATA;
+    }
+    return graphData || { nodes: [], edges: [] };
+  }, [graphData, runId]);
+
 
   // Nodes Filter (Search, Risk Tier, Folder Drill-Down)
   const filteredNodes: Node[] = useMemo(() => {
@@ -249,7 +251,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
       data: n.data || { label: n.id },
       position: { x: 0, y: 0 },
     }));
-  }, [rawData, drillLevel, expandedNodeIds, searchQuery, selectedRisk]);
+  }, [rawData, expandedNodeIds, searchQuery, selectedRisk]);
 
   // Edges Filter with Smart Prioritization & Cap
   const { filteredEdges, totalEdgeCount, isEdgeTruncated } = useMemo(() => {
@@ -400,7 +402,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
               <Panel position="top-right" className="mr-3 mt-3">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs font-mono backdrop-blur-md shadow-xl">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Showing 100 of {totalEdgeCount} edges — select node to focus dependencies</span>
+                  <span>Showing 100 of {totalEdgeCount} edges — refine with search or drill-down</span>
                 </div>
               </Panel>
             )}

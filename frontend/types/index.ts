@@ -28,6 +28,18 @@ export type FindingCategory = "bug" | "security" | "performance" | "architecture
 export type FindingSeverity = "low" | "medium" | "high" | "critical";
 export type ReviewStatus = "approved" | "rewritten_and_approved" | "flagged_low_confidence" | "unreviewed";
 
+export interface CodeExplanation {
+  summary: string;
+  line_by_line: { lines: string; explanation: string }[];
+  analogy: string;
+  common_pitfalls: string[];
+  related_concepts: string[];
+  source_is_real?: boolean;
+  file?: string;
+  line_start?: number;
+  line_end?: number;
+}
+
 export interface Finding {
   id: string;
   category: FindingCategory;

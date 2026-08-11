@@ -285,6 +285,32 @@ export default function AnalyzeWorkspacePage({
     fetchInitialData();
   }, [runId]);
 
+  const hasGraphNodes = Boolean(graphData && graphData.nodes && graphData.nodes.length > 0);
+
+  // Poll graph endpoint every 2.5 seconds if graphData is empty
+  useEffect(() => {
+    if (hasGraphNodes) return;
+
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const gData = await getKnowledgeGraph(runId);
+        if (isMounted && gData && gData.nodes && gData.nodes.length > 0) {
+          setGraphData(gData);
+        }
+      } catch (e) {
+        console.error("Graph poll error:", e);
+      }
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [runId, hasGraphNodes]);
+
+
+
   const handleSelectFinding = (file: string, line: number) => {
     setSelectedFile(file);
     setSelectedLine(line);

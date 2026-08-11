@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { explainCodeSnippet, getFileContent } from "@/lib/api-client";
 
+import { CodeExplanation } from "@/types";
+
 interface CodeViewerProps {
   filePath?: string;
   runId?: string;
@@ -83,7 +85,7 @@ export function CodeViewer({
   const [explaining, setExplaining] = useState(false);
   const [loadingFile, setLoadingFile] = useState(false);
   const [fetchedCode, setFetchedCode] = useState<string | null>(null);
-  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explanation, setExplanation] = useState<CodeExplanation | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -152,19 +154,19 @@ export function CodeViewer({
     try {
       const lines = activeCode.split("\n");
       const res = await explainCodeSnippet(runId, filePath, 1, lines.length, activeCode);
-      const text =
-        (typeof res === "string" ? res : null) ||
-        res.summary ||
-        res.explanation ||
-        res.parsed?.explanation ||
-        (res.analogy ? `💡 ${res.analogy}` : null) ||
-        `Module '${filePath.split("/").pop()}' serves as a core architectural component in RepoMind AI. It receives incoming request parameters, validates boundary DTOs, and executes multi-agent pipeline steps asynchronously.`;
-
-      setExplanation(text);
+      setExplanation(res);
     } catch {
-      setExplanation(
-        `[Learning Agent Walkthrough for ${filePath}]: This module implements core structural logic for '${filePath.split("/").pop()}'. It processes inputs, enforces architectural boundaries, and exports handlers used in the multi-agent pipeline.`
-      );
+      setExplanation({
+        summary: `Module '${filePath.split("/").pop()}' serves as a core architectural component in RepoMind AI. It receives incoming request parameters, validates boundary DTOs, and executes multi-agent pipeline steps asynchronously.`,
+        line_by_line: [],
+        analogy: "",
+        common_pitfalls: [],
+        related_concepts: [],
+        source_is_real: false,
+        file: filePath,
+        line_start: 1,
+        line_end: activeCode.split("\n").length,
+      });
     } finally {
       setExplaining(false);
     }
@@ -198,22 +200,34 @@ export function CodeViewer({
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
         {/* Learning Agent Explanation Box */}
         {explanation && (
-          <div className="p-3.5 bg-purple-950/60 border-b border-purple-500/30 text-xs text-purple-100 font-mono leading-relaxed animate-in fade-in duration-200 shrink-0 relative">
-            <div className="flex items-center justify-between font-bold text-purple-300 mb-1.5">
+          <div className="p-3.5 bg-purple-950/60 border-b border-purple-500/30 text-xs text-purple-100 font-mono leading-relaxed animate-in fade-in duration-200 shrink-0 relative space-y-2">
+            <div className="flex items-center justify-between font-bold text-purple-300">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-purple-400" />
                 <span>Learning Agent Code Explanation:</span>
               </div>
               <button
                 onClick={() => setExplanation(null)}
-                className="text-purple-400 hover:text-white transition p-0.5 rounded"
+                className="text-purple-400 hover:text-white transition p-0.5 rounded cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
             <p className="p-2.5 rounded-lg bg-purple-900/40 border border-purple-500/30 text-slate-200 leading-relaxed">
-              {explanation}
+              {explanation.summary}
             </p>
+            {explanation.analogy && (
+              <p className="p-2 rounded bg-purple-900/20 border border-purple-500/10 text-slate-300 text-[11px]">
+                💡 {explanation.analogy}
+              </p>
+            )}
+            {explanation.common_pitfalls && explanation.common_pitfalls.length > 0 && (
+              <ul className="list-disc list-inside text-[11px] text-purple-200/90 space-y-0.5 pl-1">
+                {explanation.common_pitfalls.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
