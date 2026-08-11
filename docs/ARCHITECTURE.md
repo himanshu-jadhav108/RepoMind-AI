@@ -29,7 +29,7 @@
 │                     └────────────────────┘                          │
 │                                                                     │
 │  ┌────────────────────────────────────────────────────────────┐   │
-│  │ Repository Analysis Toolkit: GitPython, Tree-sitter, NetworkX│   │
+│  │ Repository Analysis Toolkit: GitPython, Regex Symbol Parser, NetworkX│   │
 │  └────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -42,7 +42,7 @@ Analysis is triggered by a repo URL, executed as an asynchronous LangGraph run, 
 Repo URL
    │
    ▼
-Repo Ingestion (GitPython clone) ──▶ Structural Parsing (Tree-sitter)
+Repo Ingestion (GitPython clone) ──▶ Symbol Extraction (Regex Symbol Parser)
    │                                          │
    │                                          ▼
    │                              Repository Knowledge Graph (NetworkX)
@@ -72,7 +72,7 @@ Every arrow into an agent box also passes through the AI Provider Layer when tha
 | Code Viewer | Monaco Editor |
 | Backend Framework | FastAPI (Python) |
 | AI Orchestration | LangGraph |
-| Repo Parsing | GitPython, Tree-sitter |
+| Repo Parsing | GitPython, Regex Symbol Parser |
 | Dependency Graphing | NetworkX |
 | Database / Auth | Supabase (Postgres + Auth + Storage) |
 | Frontend Hosting | Vercel |
@@ -230,11 +230,15 @@ The Repository Analyzer builds a typed graph representation of the codebase, not
 
 - **Nodes**: files, folders, classes, functions/methods.
 - **Edges**: folder containment, file imports, class inheritance, function call relationships.
-- **Construction**: Tree-sitter extracts symbols and call sites per file; GitPython supplies the file/folder tree; NetworkX assembles nodes and edges into a single directed graph and computes centrality (to prioritize which modules matter most for deeper agent analysis, per RULES.md performance rules).
+- **Construction**: The multi-language symbol parser (`code_parser.py`) extracts class definitions, methods, and import statements per file; GitPython supplies the file/folder tree; NetworkX assembles nodes and edges into a single directed graph and computes centrality (to prioritize which modules matter most for deeper agent analysis, per RULES.md performance rules).
 - **Consumption**: the Architect Agent renders it as the architecture diagram; the Performance Agent uses centrality to prioritize hot-path modules; the frontend renders it interactively via React Flow, with nodes clickable into the Monaco code viewer.
 - **Persistence**: serialized per `repo_url + commit_sha` and cached (see Caching Strategy) so it is built once per commit and reused by every agent and by the frontend graph view.
 
 This graph is the structural backbone the rest of the system reasons over — agents query it rather than re-deriving structure independently.
+
+### Multi-Language Symbol Extraction Design Tradeoff
+
+RepoMind AI utilizes a lightweight, regex-based symbol parser (`code_parser.py`) for extracting class definitions, functions, and import statements across 15+ programming languages rather than heavy language-specific Abstract Syntax Tree (AST) parsers (such as `tree-sitter` or Python's native `ast` module). This is a deliberate engineering tradeoff: no single AST library supports 15+ heterogeneous languages uniformly without compiling per-language native C/C++ bindings or introducing heavy external binary dependencies. Regex-based pattern matching provides deterministic, high-throughput symbol and dependency extraction across polyglot codebases while remaining lightweight, fast, and serverless-friendly for free-tier deployments.
 
 ## Adaptive AI Routing Engine
 
@@ -249,7 +253,7 @@ The Provider Layer's `ProviderRouter` extends beyond simple priority-order failo
 ## Caching Strategy
 
 - **Repo-level cache**: keyed by `repo_url + commit_sha`; if a repo has already been analyzed at that exact commit, cached `agent_results` are served instantly instead of re-running agents.
-- **Parsing cache**: Tree-sitter parse trees and the NetworkX dependency graph are cached per commit to avoid redundant parsing across agents that need structural data.
+- **Parsing cache**: Extracted symbol metadata and the NetworkX dependency graph are cached per commit to avoid redundant parsing across agents that need structural data.
 - **Provider response cache**: short-TTL cache for identical prompts (e.g., re-running the same agent during development) to reduce cost during iteration.
 - Cache invalidation is commit-based, not time-based — a new commit on the same repo always triggers a fresh run.
 

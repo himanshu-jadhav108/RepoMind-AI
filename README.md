@@ -67,9 +67,9 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 | :---------------------: | :-----------------------------------------------: | :-------------------------------------------------------------------- |
 |   🤖 **10 AI Agents**   |            **LangGraph State Machine**            | Orchestrated execution loop with automated quality gate review        |
 |  🌌 **5 Graph Views**   |   **2D Tree, 3D WebGL, Physics, Orbit, Layers**   | Multi-perspective architectural topology visualization                |
-|  🧪 **26 / 26 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and AST parsing test suite              |
+|  🧪 **26 / 26 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and symbol parser test suite            |
 |  ⚡ **5 AI Providers**  | **Gemini, Groq, OpenAI, OpenRouter, HuggingFace** | Adaptive provider router with automatic failover & offline resilience |
-|  🛡️ **Explainability**  |           **Line-by-Line & Analogies**            | Every finding backed by AST evidence, confidence scores & analogies   |
+|  🛡️ **Explainability**  |           **Line-by-Line & Analogies**            | Every finding backed by source line evidence, confidence scores & analogies |
 | 📥 **3 Export Formats** |         **HTML, Markdown, Executive PDF**         | One-click production audit artifact downloads                         |
 
 </div>
@@ -80,7 +80,7 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 
 | Feature / Metric                    |   Traditional Manual Onboarding    |            RepoMind AI Autonomous Platform             |
 | :---------------------------------- | :--------------------------------: | :----------------------------------------------------: |
-| **Initial Codebase Comprehension**  |   3 to 5 Days of manual reading    |        **< 30 Seconds** automated AST scanning         |
+| **Initial Codebase Comprehension**  |   3 to 5 Days of manual reading    |        **< 30 Seconds** automated symbol extraction           |
 | **Architectural Boundary Mapping**  | Static diagrams that get outdated  |     **Dynamic 3D WebGL Galaxy Graph** in real-time     |
 | **Security & Vulnerability Triage** |      Disjointed CLI scanners       |      **Integrated Security & Bug Hunter Agents**       |
 | **Code Explanation & Mentorship**   |   Interrupting senior engineers    | **Interactive Learning Agent** line-by-line breakdowns |
@@ -93,7 +93,7 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 
 **RepoMind AI** is an enterprise-grade autonomous software engineering intelligence platform engineered for the **ChatGPT Codex India Hackathon 2026**.
 
-When a developer or reviewer submits any GitHub repository URL, RepoMind AI deploys a team of **10 specialized AI agents** orchestrated via a **LangGraph StateGraph**. The platform clones the repo, extracts AST code symbols across 15+ programming languages using a multi-language regex & parser engine, constructs a **NetworkX dependency graph**, executes parallel security, architecture, performance, and documentation audits, and renders a live, interactive **2D ER / 3D WebGL Galaxy Engineering Workspace**.
+When a developer or reviewer submits any GitHub repository URL, RepoMind AI deploys a team of **10 specialized AI agents** orchestrated via a **LangGraph StateGraph**. The platform clones the repo, extracts structural code symbols (classes, functions, imports) across 15+ programming languages using a multi-language regex symbol parser, constructs a **NetworkX dependency graph**, executes parallel security, architecture, performance, and documentation audits, and renders a live, interactive **2D ER / 3D WebGL Galaxy Engineering Workspace**.
 
 ---
 
@@ -109,7 +109,7 @@ When a developer or reviewer submits any GitHub repository URL, RepoMind AI depl
 - **Level 1**: Root Repositories & Entry Points.
 - **Level 2**: Module Folders & Packages.
 - **Level 3**: Source Code Files (`.py`, `.tsx`, `.go`, `.rs`, `.java`).
-- **Level 4**: AST Class Definitions & Method Functions.
+- **Level 4**: Parsed Class Definitions & Method Functions.
 - **Level 5**: AI Agent Reasoning Overlay & Inspection Cards.
 
 ### 🎛️ 3. 5 Curated Graph Layout Engines
@@ -133,7 +133,7 @@ When a developer or reviewer submits any GitHub repository URL, RepoMind AI depl
 - Zero "black box" claims. Every single audit finding includes:
   - `reasoning`: Structural domain rationale.
   - `confidence`: Calibrated score (0.0 to 1.0).
-  - `evidence`: Exact AST source line snippets.
+  - `evidence`: Exact source line snippets.
   - `referenced_files`: Full module impact path.
 
 ### 📥 7. Executive Export Suite (HTML, Markdown, PDF)
@@ -227,8 +227,8 @@ graph TD
     classDef outputFill fill:#059669,stroke:#34d399,stroke-width:3px,color:#ffffff;
 
     User([GitHub Repo URL]):::userFill --> Ingest[Repo Ingestion Service]:::ingestFill
-    Ingest --> AST[AST Symbol Parser & NetworkX Graph]:::ingestFill
-    AST --> Planner[1. Planner Agent]:::plannerFill
+    Ingest --> Parser[Multi-Language Symbol Parser & NetworkX Graph]:::ingestFill
+    Parser --> Planner[1. Planner Agent]:::plannerFill
 
     Planner --> Analyzer[2. Repository Analyzer]:::analyzerFill
     Analyzer --> Architect[3. Architect Agent]:::architectFill
@@ -253,7 +253,7 @@ graph TD
 ### Detailed Agent Descriptions & Capabilities
 
 1. 📋 **Planner Agent**: Analyzes repository size, primary language distribution, and framework complexity to build a 10-stage execution plan and assign agent tasks.
-2. 🔍 **Repository Analyzer**: Runs Git cloning in async thread workers, parses AST symbols (classes, functions, imports) across 15+ languages via regex/ast, and computes NetworkX degree centrality metrics.
+2. 🔍 **Repository Analyzer**: Runs Git cloning in async thread workers, extracts code symbols (classes, functions, imports) across 15+ languages using a multi-language regex parser, and computes NetworkX degree centrality metrics.
 3. 🏗️ **Architect Agent**: Evaluates Clean Architecture boundaries, checks controller-to-service isolation, detects circular module dependencies, and computes coupling indices.
 4. 🐛 **Bug Hunter Agent**: Analyzes control flow graphs to detect unhandled exceptions, missing error handlers, null reference risks, and async coroutine deadlocks.
 5. 🛡️ **Security Agent**: Audits OWASP Top 10 risks including wildcard CORS headers, unvalidated SQL/ORMs, plain-text secret keys, and non-root Docker runtime setups.
@@ -293,7 +293,7 @@ flowchart TD
 
     subgraph OrchestrationLayer ["Multi-Agent Engine (LangGraph & NetworkX)"]
         StateGraph["LangGraph State Machine"]:::engine
-        ASTEngine["AST Regex & Symbol Parser"]:::engine
+        SymbolEngine["Regex-Based Symbol Parser"]:::engine
         NetworkX["NetworkX Graph Builder"]:::engine
         ProviderRouter["LLM Provider Router (Gemini/Groq/OpenAI)"]:::engine
     end
@@ -314,8 +314,8 @@ flowchart TD
     Router --> ReportService
 
     AnalysisService --> StateGraph
-    StateGraph --> ASTEngine
-    ASTEngine --> NetworkX
+    StateGraph --> SymbolEngine
+    SymbolEngine --> NetworkX
     StateGraph --> ProviderRouter
 
     AnalysisService --> Supabase
@@ -369,7 +369,7 @@ sequenceDiagram
         FastAPI-->>NextJS: SSE Event: planner_agent running...
     and Async State Graph Execution
         FastAPI->>LangGraph: Build & Execute StateGraph
-        LangGraph->>LangGraph: Clone Repo & Parse AST Symbols
+        LangGraph->>LangGraph: Clone Repo & Extract Code Symbols
         LangGraph->>LLM: Dispatch Parallel Agent Prompts (Architect, Security, BugHunter)
         LLM-->>LangGraph: Return Findings & Rationale
         LangGraph->>LangGraph: Reviewer Agent Quality Gate Loop
@@ -452,7 +452,7 @@ RepoMind-AI/
 │   │   │   ├── reviewer_agent.py
 │   │   │   ├── learning_agent.py
 │   │   │   └── feature_suggestion_agent.py
-│   │   ├── analysis_toolkit/  # Git ingestion, AST symbol parser, NetworkX graph engine
+│   │   ├── analysis_toolkit/  # Git ingestion, multi-language symbol parser, NetworkX graph engine
 │   │   │   ├── git_ingestion.py
 │   │   │   ├── symbol_parser.py
 │   │   │   └── dependency_graph_builder.py

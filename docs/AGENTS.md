@@ -52,7 +52,7 @@ No agent emits a bare claim without these four fields populated; the Report Gene
 
 **Input**: Repo URL, cloned repo path (from `git_ingestion.py`).
 
-**Output**: File tree, language breakdown, entry points, dependency graph (via `dependency_graph.py`), parsed AST summaries per file (via `code_parser.py`).
+**Output**: File tree, language breakdown, entry points, dependency graph (via `dependency_graph.py`), extracted symbol summaries per file (via `code_parser.py`).
 
 **Internal Workflow**:
 1. Clone repo via GitPython.
@@ -115,7 +115,7 @@ No agent emits a bare claim without these four fields populated; the Report Gene
 
 **Purpose**: Detects bugs, code smells, and anti-patterns.
 
-**Input**: `RepoStructure`, parsed ASTs per file.
+**Input**: `RepoStructure`, extracted symbols per file.
 
 **Output**: List of findings — file, line range, severity (low/medium/high/critical), description, suggested fix.
 
@@ -136,7 +136,7 @@ No agent emits a bare claim without these four fields populated; the Report Gene
 
 **Purpose**: Identifies security vulnerabilities and unsafe patterns.
 
-**Input**: `RepoStructure`, dependency manifest files (package.json, requirements.txt, etc.), parsed ASTs.
+**Input**: `RepoStructure`, dependency manifest files (package.json, requirements.txt, etc.), extracted code symbols.
 
 **Output**: Security findings — vulnerability type, severity (CVSS-style tiering), affected file/line, remediation guidance.
 
@@ -157,7 +157,7 @@ No agent emits a bare claim without these four fields populated; the Report Gene
 
 **Purpose**: Identifies performance bottlenecks and inefficient patterns.
 
-**Input**: `RepoStructure`, parsed ASTs, dependency graph (to spot hot-path modules).
+**Input**: `RepoStructure`, extracted code symbols, dependency graph (to spot hot-path modules).
 
 **Output**: Performance findings — location, issue type (e.g., N+1 query, unbounded loop, blocking I/O), estimated impact, suggested optimization.
 
