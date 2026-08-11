@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("supabase", reason="supabase package required for API endpoint tests")
 
 from fastapi import FastAPI

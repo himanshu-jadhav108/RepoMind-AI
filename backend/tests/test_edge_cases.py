@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("supabase", reason="supabase package required for repo service tests")
 
 from app.analysis_toolkit.code_parser import CodeParser

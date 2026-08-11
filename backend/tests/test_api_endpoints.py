@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("supabase", reason="supabase package required for API endpoint integration tests")
 
 from fastapi.testclient import TestClient
@@ -117,8 +118,8 @@ def test_analysis_run_lifecycle_and_endpoints():
 
 
 def test_analysis_rate_limiting_and_bypass(monkeypatch):
-    from app.core.config import settings
     from app.api.v1.routes_analysis import _ip_last_request
+    from app.core.config import settings
 
     # Clear in-memory rate limit state for test reproducibility
     _ip_last_request.clear()

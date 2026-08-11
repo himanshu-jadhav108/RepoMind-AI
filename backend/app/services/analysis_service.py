@@ -98,7 +98,12 @@ class AnalysisService(BaseService):
         return run
 
     def _get_demo_fallback_findings(self, run_id: str) -> list:
-        from app.models.finding import Finding, FindingCategory, FindingSeverity, ReviewStatus
+        from app.models.finding import (
+            Finding,
+            FindingCategory,
+            FindingSeverity,
+            ReviewStatus,
+        )
         return [
             Finding(
                 id=f"sec-{run_id}-1",

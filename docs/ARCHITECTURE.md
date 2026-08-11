@@ -224,6 +224,16 @@ To ensure the backend API remains reliable and publicly accessible when hosted o
 - **Configurable Control**: The interval is configurable via `ANALYSIS_RATE_LIMIT_SECONDS` (lowered for development/demos, raised for production), and `RATE_LIMIT_BYPASS_LOCALHOST` allows local development testing when enabled.
 - **User-Friendly Error Handling**: Hits return an `HTTP 429 Too Many Requests` status with a `Retry-After` header and a human-readable JSON message designed for direct frontend display.
 
+## Single-Instance Analysis Run Queueing
+
+To prevent memory exhaustion (OOM crashes) and CPU starvation on single-instance free-tier hosting (e.g., Render 512MB RAM, 0.1 CPU):
+
+- **Concurrency Ceiling**: Pipeline execution is governed by an `asyncio.Semaphore` capped at 1 concurrent run (`MAX_CONCURRENT_ANALYSIS_RUNS = 1`).
+- **FIFO Queueing**: Submissions received while an analysis is in progress are accepted immediately with `HTTP 202 Accepted` and assigned a 1-based queue position.
+- **Real-Time Queue Visibility**: The SSE update stream (`GET /api/v1/analysis/run/{run_id}/stream`) emits `queue_manager` updates informing the client of their position in line.
+- **Queue Depth Protection**: Unbounded queue growth is prevented by a maximum backlog limit (`MAX_QUEUED_RUNS = 5`). Submissions beyond the queue limit return an `HTTP 429` status requesting the user to try again shortly.
+- **Guaranteed Cleanup**: Execution slots are acquired and released within `try...finally` contexts to guarantee queue advancement even if a run errors or times out.
+
 ## Repository Knowledge Graph
 
 The Repository Analyzer builds a typed graph representation of the codebase, not just a flat dependency list:

@@ -2,10 +2,8 @@ import pytest
 
 from app.agents.bug_hunter_agent import BugHunterAgent
 from app.agents.reviewer_agent import ReviewerAgent
-from app.providers.provider_router import ProviderRouter
-
-
 from app.providers.mock_provider import MockProvider
+from app.providers.provider_router import ProviderRouter
 
 
 @pytest.fixture

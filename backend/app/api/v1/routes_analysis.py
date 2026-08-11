@@ -5,21 +5,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 
-def _ensure_valid_uuid(val: str) -> str:
-    if not val:
-        return str(uuid.uuid4())
-    try:
-        uuid.UUID(str(val))
-        return str(val)
-    except Exception:
-        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(val)))
-
-
 from app.agents.learning_agent import LearningAgent
+from app.core.concurrency import analysis_concurrency_manager
 from app.core.config import settings
 from app.core.dependency_injection import get_analysis_service, get_provider_router
 from app.core.logging import logger
@@ -41,6 +32,17 @@ from app.models.finding import (
 from app.models.report import HealthScoreResponse
 from app.orchestration.graph import _run_live_statuses, repomind_app
 from app.services.analysis_service import AnalysisService
+
+
+def _ensure_valid_uuid(val: str) -> str:
+    if not val:
+        return str(uuid.uuid4())
+    try:
+        uuid.UUID(str(val))
+        return str(val)
+    except Exception:
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(val)))
+
 
 router = APIRouter(prefix="/analysis", tags=["Analysis Runs"])
 
@@ -95,6 +97,16 @@ async def trigger_analysis_run(
         )
     _ip_last_request[client_ip] = now
 
+    # Concurrency control: register run in single-instance FIFO queue
+    try:
+        queue_info = analysis_concurrency_manager.register_run(payload.repo_id)
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(ve),
+            headers={"Retry-After": "60"},
+        )
+
     run_res = await analysis_service.start_analysis_run(payload)
 
     # Fetch actual registered repository metadata to construct real GitHub URL for git cloning
@@ -112,10 +124,16 @@ async def trigger_analysis_run(
 
     # P0-1 FIX: Initialise live status entry so SSE can start polling immediately
     _run_live_statuses[run_res.run_id] = {}
+    if queue_info.get("status") == "queued":
+        _run_live_statuses[run_res.run_id]["__queue__"] = queue_info
 
     # Async background task — persists results on pipeline completion
     async def run_pipeline_task():
         try:
+            await analysis_concurrency_manager.acquire_execution_slot(run_res.run_id)
+            if run_res.run_id in _run_live_statuses:
+                _run_live_statuses[run_res.run_id].pop("__queue__", None)
+
             logger.info(f"Starting background LangGraph execution for run '{run_res.run_id}' ({repo_url})")
 
             # Execute LangGraph pipeline
@@ -153,30 +171,12 @@ async def trigger_analysis_run(
                         )
                     )
 
-            if finding_objs:
-                try:
-                    await analysis_service.analysis_repository.save_findings(run_res.run_id, finding_objs)
-                except Exception as fe:
-                    logger.warning(f"Failed to save findings for run '{run_res.run_id}': {fe}")
+            try:
+                await analysis_service.analysis_repository.save_findings(run_res.run_id, finding_objs)
+            except Exception as fe:
+                logger.warning(f"Failed to save findings for run '{run_res.run_id}': {fe}")
 
-            # 2. Persist Report & Health Score
-            health_score = final_state.get("health_score", {"overall_score": 88.0})
-            report_data = final_state.get("final_report", {})
-            report_md = report_data.get("markdown") if isinstance(report_data, dict) else str(report_data)
-
-            if report_md or health_score:
-                try:
-                    await analysis_service.analysis_repository.save_report(
-                        run_res.run_id,
-                        report_markdown=report_md or f"# Audit Report for {repo_url}",
-                        health_score=health_score,
-                    )
-                except Exception as re:
-                    logger.warning(f"Failed to save report for run '{run_res.run_id}': {re}")
-
-            # P0-2 FIX: Persist knowledge graph data so the /graph endpoint can serve it
-            # P1-EXPLAIN FIX: Also persist repo_url + commit_sha so the /explain endpoint
-            # can re-clone (shallow) on demand and pull real source lines for the Learning Agent.
+            # 2. Persist Agent Results & Knowledge Graph
             knowledge_graph = final_state.get("knowledge_graph_data")
             repo_struct_for_save = final_state.get("repo_structure", {})
             try:
@@ -225,6 +225,8 @@ async def trigger_analysis_run(
                 await analysis_service.analysis_repository.update(run_res.run_id, {"status": RunStatus.FAILED.value})
             # Mark all remaining agents as failed in live status
             _run_live_statuses[run_res.run_id]["__error__"] = str(e)
+        finally:
+            analysis_concurrency_manager.release_execution_slot(run_res.run_id)
 
     asyncio.create_task(run_pipeline_task())
 
@@ -494,6 +496,7 @@ async def explain_code_region(
 
     if not code_snippet:
         from pathlib import Path
+
         from app.analysis_toolkit.context_builder import ContextBuilder
         clean_path = file_path.split("::")[0].split("#")[0].strip().lstrip("/").lstrip("\\")
         builder = ContextBuilder(max_lines_per_file=300)
@@ -763,7 +766,7 @@ async def repository_copilot_chat(
     # Fetch context data for the run
     findings_res = await analysis_service.get_findings(run_id=run_id, page=1, page_size=50)
     raw_findings = findings_res.get("data", []) if isinstance(findings_res, dict) else getattr(findings_res, "data", [])
-    
+
     findings_text_items = []
     for f in raw_findings[:10]:
         if isinstance(f, dict):
@@ -984,7 +987,7 @@ async def start_hackathon_demo_mode(
     rapid agent progress (60s execution profile) with pre-cached high-quality findings.
     """
     demo_run_id = f"demo-hackathon-{int(datetime.now(timezone.utc).timestamp())}"
-    
+
     # Pre-populate live status entries with queued status
     _run_live_statuses[demo_run_id] = {
         "planner_agent": "completed",

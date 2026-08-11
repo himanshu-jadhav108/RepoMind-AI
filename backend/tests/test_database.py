@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("supabase", reason="supabase package required for database integration tests")
 
 from pathlib import Path

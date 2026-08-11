@@ -1,7 +1,9 @@
+import uuid
 from typing import Dict, List, Optional
 
 from supabase import Client
 
+from app.core.logging import logger
 from app.models.analysis import AgentStatus, AnalysisRunDetail, RunStatus
 from app.models.finding import Finding, FindingCategory, FindingSeverity, ReviewStatus
 from app.repositories.base_repository import BaseRepository

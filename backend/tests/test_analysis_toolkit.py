@@ -102,3 +102,51 @@ def test_repository_analyzer_pipeline(mock_repo_dir):
     assert scan_results["total_files"] >= 3
     assert graph.number_of_nodes() > 0
     assert len(rf_format["nodes"]) > 0
+
+
+def test_dependency_graph_performance_large_repo():
+    import time
+
+    builder = DependencyGraphBuilder()
+
+    files = []
+    symbol_map = {}
+    total_files_count = 350
+
+    for i in range(total_files_count):
+        file_path = f"app/module_{i}.py"
+        files.append({
+            "path": file_path,
+            "name": f"module_{i}.py",
+            "language": "Python",
+            "size_bytes": 100,
+        })
+        symbol_map[file_path] = {
+            "classes": [f"Class{i}"],
+            "functions": [f"fn_{i}"],
+            "imports": [],
+        }
+
+    # Add hand-picked known imports
+    symbol_map["app/module_10.py"]["imports"] = ["app.module_20", "module_30"]
+    symbol_map["app/module_100.py"]["imports"] = ["module_200"]
+
+    repo_structure = {"files": files, "total_files": total_files_count}
+
+    start_time = time.perf_counter()
+    graph = builder.build_knowledge_graph(repo_structure, symbol_map)
+    elapsed = time.perf_counter() - start_time
+
+    # (a) Verify hand-picked import edges
+    assert graph.has_edge("app/module_10.py", "app/module_20.py")
+    assert graph.edges["app/module_10.py", "app/module_20.py"]["relation"] == "imports"
+
+    assert graph.has_edge("app/module_10.py", "app/module_30.py")
+    assert graph.edges["app/module_10.py", "app/module_30.py"]["relation"] == "imports"
+
+    assert graph.has_edge("app/module_100.py", "app/module_200.py")
+    assert graph.edges["app/module_100.py", "app/module_200.py"]["relation"] == "imports"
+
+    # (b) Regression guard: must complete in well under 1-2 seconds (usually < 0.1s)
+    assert elapsed < 2.0, f"build_knowledge_graph took too long ({elapsed:.3f}s) for {total_files_count} files"
+

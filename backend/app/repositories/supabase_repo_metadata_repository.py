@@ -63,7 +63,7 @@ class SupabaseRepoMetadataRepository(BaseRepository[RepoMetadata]):
             if item.last_analyzed_at
             else None,
         }
-        res = self.client.table(self.table).insert(payload).execute()
+        self.client.table(self.table).insert(payload).execute()
         return item
 
     async def update(self, item_id: str, data: dict) -> Optional[RepoMetadata]:

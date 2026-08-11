@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     ANALYSIS_RATE_LIMIT_SECONDS: int = 600
     RATE_LIMIT_BYPASS_LOCALHOST: bool = False
 
+    # Repository Ingestion Limits
+    REPO_MAX_SIZE_MB: int = 75
+    MAX_FILES_TO_ANALYZE: int = 3000
+
+    # Analysis Concurrency & Queue Limits
+    MAX_CONCURRENT_ANALYSIS_RUNS: int = 1
+    MAX_QUEUED_RUNS: int = 5
+
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",

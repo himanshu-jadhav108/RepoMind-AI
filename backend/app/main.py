@@ -136,7 +136,12 @@ async def seed_demo_workspace():
 
         existing = await analysis_service.analysis_repository.get_by_id(demo_run_id)
         if not existing:
-            from app.models.analysis import AnalysisRunDetail, RunStatus, AgentStatus, AgentStatusEnum
+            from app.models.analysis import (
+                AgentStatus,
+                AgentStatusEnum,
+                AnalysisRunDetail,
+                RunStatus,
+            )
             _now = datetime.now(timezone.utc)
             demo_run = AnalysisRunDetail(
                 run_id=demo_run_id,

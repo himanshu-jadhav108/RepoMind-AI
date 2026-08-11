@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
 
@@ -49,6 +49,71 @@ class DependencyGraphBuilder:
         # 2. Add symbols (classes & functions) and import edges
         file_paths_set = set(G.nodes)
 
+        # Optimization: Build one-time lookup indices for O(1) import resolution.
+        # Complexity improvement:
+        # Before: O(files * imports * files) due to nested linear scan over all files for every import statement.
+        # After:  O(files) one-time index construction + O(files * imports) dict lookups.
+        normalized_module_to_file: Dict[str, str] = {}
+        basename_to_files: Dict[str, List[str]] = {}
+
+        for f_path in file_paths_set:
+            if G.nodes[f_path].get("type") != "file":
+                continue
+
+            clean_p = f_path.replace("\\", "/").replace(".py", "").replace(".ts", "").replace(".js", "").replace("/", ".")
+            clean_p = clean_p.strip(".")
+            normalized_module_to_file[clean_p] = f_path
+
+            base_name = Path(f_path).stem
+            if base_name:
+                if base_name not in basename_to_files:
+                    basename_to_files[base_name] = []
+                basename_to_files[base_name].append(f_path)
+
+        def _resolve_import(imp: str, current_file: str) -> Optional[str]:
+            clean_imp = imp.replace("\\", "/").replace(".py", "").replace(".ts", "").replace(".js", "").replace("/", ".")
+            clean_imp = clean_imp.strip(".")
+            if not clean_imp:
+                return None
+
+            # 1. Direct O(1) exact normalized match
+            if clean_imp in normalized_module_to_file:
+                target = normalized_module_to_file[clean_imp]
+                if target != current_file:
+                    return target
+
+            # 2. Lookup by module/file stem name with closest path prefix match
+            stem = clean_imp.split(".")[-1]
+            candidates = basename_to_files.get(stem, [])
+            matching_targets = []
+            for target in candidates:
+                if target == current_file:
+                    continue
+                clean_target = target.replace("\\", "/").replace(".py", "").replace(".ts", "").replace(".js", "").replace("/", ".")
+                if clean_imp in target or clean_target.endswith(clean_imp) or clean_imp in clean_target:
+                    matching_targets.append(target)
+
+            if not matching_targets:
+                return None
+
+            if len(matching_targets) == 1:
+                return matching_targets[0]
+
+            # Prefer candidate sharing longest path prefix with current_file
+            cur_parts = Path(current_file).parts
+            def common_prefix_len(tgt: str) -> int:
+                tgt_parts = Path(tgt).parts
+                length = 0
+                for p1, p2 in zip(cur_parts, tgt_parts):
+                    if p1 == p2:
+                        length += 1
+                    else:
+                        break
+                return length
+
+            matching_targets.sort(key=common_prefix_len, reverse=True)
+            return matching_targets[0]
+
         for file_path, symbols in symbol_map.items():
             if file_path not in G:
                 continue
@@ -65,16 +130,11 @@ class DependencyGraphBuilder:
                 G.add_node(fn_id, type="function", label=fn_name, parent_file=file_path)
                 G.add_edge(file_path, fn_id, relation="defines")
 
-            # Import dependencies between files
+            # Import dependencies between files using O(1) index lookup
             for imp in symbols.get("imports", []):
-                # Try resolving import path against file paths in the graph
-                for target_path in file_paths_set:
-                    if target_path == file_path:
-                        continue
-                    clean_target = target_path.replace("/", ".").replace(".py", "").replace(".ts", "").replace(".js", "")
-                    if imp in target_path or clean_target.endswith(imp):
-                        G.add_edge(file_path, target_path, relation="imports")
-                        break
+                target_path = _resolve_import(imp, file_path)
+                if target_path:
+                    G.add_edge(file_path, target_path, relation="imports")
 
         logger.info(f"Built Knowledge Graph with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges.")
         return G

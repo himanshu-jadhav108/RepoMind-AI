@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 from git import Repo
 
+from app.core.config import settings
 from app.core.exceptions import RepositoryNotFoundException, UnprocessableRepoException
 from app.core.logging import logger
 
@@ -65,11 +66,15 @@ class GitIngestionService:
         self,
         workspace_base_dir: Optional[str] = None,
         clone_timeout_sec: float = 60.0,
-        max_repo_size_bytes: int = 500 * 1024 * 1024,
+        max_repo_size_bytes: Optional[int] = None,
+        max_files_to_analyze: Optional[int] = None,
     ) -> None:
         self.workspace_base_dir = workspace_base_dir or tempfile.gettempdir()
         self.clone_timeout_sec = clone_timeout_sec
-        self.max_repo_size_bytes = max_repo_size_bytes
+        default_size_bytes = getattr(settings, "REPO_MAX_SIZE_MB", 75) * 1024 * 1024
+        self.max_repo_size_bytes = max_repo_size_bytes if max_repo_size_bytes is not None else default_size_bytes
+        self.max_files_to_analyze = max_files_to_analyze if max_files_to_analyze is not None else getattr(settings, "MAX_FILES_TO_ANALYZE", 3000)
+        self._scan_cache: Dict[str, Dict] = {}
 
     def validate_repo_url(self, repo_url: str) -> None:
         """Validates that repo_url matches standard public GitHub HTTPS format."""
@@ -79,22 +84,89 @@ class GitIngestionService:
                 f"Invalid repository URL format: '{repo_url}'. Only public GitHub HTTPS URLs (e.g. https://github.com/owner/repo) are allowed."
             )
 
-    def check_repo_size(self, repo_path: str) -> int:
-        """Calculates total size of cloned directory and verifies it is under max_repo_size_bytes."""
-        total_size = 0
-        for root, _, files in os.walk(repo_path):
-            for f in files:
+    def _walk_repository(self, repo_path: str) -> Dict:
+        """
+        Executes a single os.walk pass to sum file sizes and build file metadata.
+        Enforces max_repo_size_bytes early mid-walk and caps analyzed file count.
+        """
+        if repo_path in self._scan_cache:
+            return self._scan_cache[repo_path]
+
+        path_obj = Path(repo_path)
+        if not path_obj.exists():
+            raise UnprocessableRepoException(f"Repository path '{repo_path}' does not exist.")
+
+        files_list: List[Dict] = []
+        language_counts: Dict[str, int] = {}
+        total_size_bytes = 0
+
+        # Directories to ignore during scanning
+        ignored_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build", ".next", "vendor", "target", ".cache"}
+
+        for root, dirs, files in os.walk(repo_path):
+            # Exclude ignored directories in-place
+            dirs[:] = [d for d in dirs if d not in ignored_dirs and not d.startswith(".")]
+
+            for file_name in files:
+                full_path = Path(root) / file_name
+                rel_path = full_path.relative_to(path_obj).as_posix()
+
+                ext = full_path.suffix.lower()
+                language = LANGUAGE_EXTENSIONS.get(ext, "Other")
+                language_counts[language] = language_counts.get(language, 0) + 1
+
                 try:
-                    total_size += os.path.getsize(os.path.join(root, f))
+                    file_size = full_path.stat().st_size
                 except OSError:
-                    pass
-        if total_size > self.max_repo_size_bytes:
-            mb_limit = self.max_repo_size_bytes // (1024 * 1024)
-            mb_actual = total_size // (1024 * 1024)
-            raise UnprocessableRepoException(
-                f"Repository size ({mb_actual} MB) exceeds maximum allowed threshold of {mb_limit} MB."
+                    file_size = 0
+
+                total_size_bytes += file_size
+
+                if total_size_bytes > self.max_repo_size_bytes:
+                    actual_mb = total_size_bytes / (1024 * 1024)
+                    limit_mb = self.max_repo_size_bytes // (1024 * 1024)
+                    raise UnprocessableRepoException(
+                        f"Repository size ({actual_mb:.1f} MB) exceeds maximum allowed limit of {limit_mb} MB. "
+                        f"Please analyze a smaller repository."
+                    )
+
+                # Cap files_list at max_files_to_analyze (Option b: forgiving cap after noise filter)
+                if len(files_list) < self.max_files_to_analyze:
+                    files_list.append(
+                        {
+                            "path": rel_path,
+                            "name": file_name,
+                            "extension": ext,
+                            "language": language,
+                            "size_bytes": file_size,
+                        }
+                    )
+
+        if not files_list:
+            raise UnprocessableRepoException(f"Repository at '{repo_path}' contains no analyzable files.")
+
+        if len(files_list) == self.max_files_to_analyze:
+            logger.warning(
+                f"Repository file count exceeded cap of {self.max_files_to_analyze}. "
+                f"Analyzed top {self.max_files_to_analyze} files."
             )
-        return total_size
+
+        primary_language = max(language_counts, key=language_counts.get) if language_counts else "Unknown"
+
+        result = {
+            "total_files": len(files_list),
+            "total_size_bytes": total_size_bytes,
+            "primary_language": primary_language,
+            "language_breakdown": language_counts,
+            "files": files_list,
+        }
+        self._scan_cache[repo_path] = result
+        return result
+
+    def check_repo_size(self, repo_path: str) -> int:
+        """Calculates total size of cloned directory and verifies size and file-count limits."""
+        res = self._walk_repository(repo_path)
+        return res["total_size_bytes"]
 
     def clone_repository(self, repo_url: str) -> Tuple[str, str]:
         """
@@ -118,7 +190,7 @@ class GitIngestionService:
 
             commit_sha = repo.head.commit.hexsha if repo and repo.head else "unknown"
 
-            # Enforce max directory size check
+            # Enforce max directory size check (single-pass walk)
             self.check_repo_size(temp_dir)
 
             return temp_dir, commit_sha
@@ -144,58 +216,7 @@ class GitIngestionService:
         """
         Walks the repository directory tree and gathers file statistics and language breakdown.
         """
-        path_obj = Path(repo_path)
-        if not path_obj.exists():
-            raise UnprocessableRepoException(f"Repository path '{repo_path}' does not exist.")
-
-        files_list: List[Dict] = []
-        language_counts: Dict[str, int] = {}
-        total_size_bytes = 0
-
-        # Directories to ignore during scanning
-        ignored_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build", ".next"}
-
-        for root, dirs, files in os.walk(repo_path):
-            # Exclude ignored directories in-place
-            dirs[:] = [d for d in dirs if d not in ignored_dirs and not d.startswith(".")]
-
-            for file_name in files:
-                full_path = Path(root) / file_name
-                rel_path = full_path.relative_to(path_obj).as_posix()
-
-                ext = full_path.suffix.lower()
-                language = LANGUAGE_EXTENSIONS.get(ext, "Other")
-                language_counts[language] = language_counts.get(language, 0) + 1
-
-                try:
-                    file_size = full_path.stat().st_size
-                except OSError:
-                    file_size = 0
-
-                total_size_bytes += file_size
-
-                files_list.append(
-                    {
-                        "path": rel_path,
-                        "name": file_name,
-                        "extension": ext,
-                        "language": language,
-                        "size_bytes": file_size,
-                    }
-                )
-
-        if not files_list:
-            raise UnprocessableRepoException(f"Repository at '{repo_path}' contains no analyzable files.")
-
-        primary_language = max(language_counts, key=language_counts.get) if language_counts else "Unknown"
-
-        return {
-            "total_files": len(files_list),
-            "total_size_bytes": total_size_bytes,
-            "primary_language": primary_language,
-            "language_breakdown": language_counts,
-            "files": files_list,
-        }
+        return self._walk_repository(repo_path)
 
     @staticmethod
     def read_file_lines(
@@ -244,12 +265,13 @@ class GitIngestionService:
 
         return "\n".join(lines[start_idx:end_idx])
 
-    @staticmethod
-    def cleanup(repo_path: str) -> None:
-        """Removes temporary repository clone directory safely."""
-        if repo_path and os.path.exists(repo_path):
-            try:
-                shutil.rmtree(repo_path, ignore_errors=True)
-                logger.info(f"Cleaned up clone workspace: '{repo_path}'")
-            except Exception as e:
-                logger.warning(f"Failed to cleanup temp workspace '{repo_path}': {str(e)}")
+    def cleanup(self, repo_path: str) -> None:
+        """Removes temporary repository clone directory safely and clears scan cache."""
+        if repo_path:
+            self._scan_cache.pop(repo_path, None)
+            if os.path.exists(repo_path):
+                try:
+                    shutil.rmtree(repo_path, ignore_errors=True)
+                    logger.info(f"Cleaned up clone workspace: '{repo_path}'")
+                except Exception as e:
+                    logger.warning(f"Failed to cleanup temp workspace '{repo_path}': {str(e)}")

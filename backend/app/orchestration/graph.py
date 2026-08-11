@@ -13,6 +13,7 @@ from app.agents.report_generator_agent import ReportGeneratorAgent
 from app.agents.repository_analyzer import RepositoryAnalyzer
 from app.agents.reviewer_agent import ReviewerAgent
 from app.agents.security_agent import SecurityAgent
+
 # get_provider_router is imported lazily inside each node to avoid module-level
 # supabase dependency that breaks test collection when supabase is not installed.
 from app.core.logging import logger
