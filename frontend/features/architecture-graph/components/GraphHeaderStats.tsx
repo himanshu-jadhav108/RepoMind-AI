@@ -26,7 +26,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
     <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 backdrop-blur-xl">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono">
         {/* Metric 1 */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <Activity className="w-4 h-4" />
           </div>
@@ -37,7 +37,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
         </div>
 
         {/* Metric 2: Security Severity Red */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-severity-critical/10 text-severity-critical border border-severity-critical/20">
             <ShieldAlert className="w-4 h-4" />
           </div>
@@ -48,7 +48,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
         </div>
 
         {/* Metric 3: Performance Warning Amber */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-severity-warning/10 text-severity-warning border border-severity-warning/20">
             <Zap className="w-4 h-4" />
           </div>
@@ -59,7 +59,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
         </div>
 
         {/* Metric 4: Doc Coverage Green */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <BookOpen className="w-4 h-4" />
           </div>
@@ -70,7 +70,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
         </div>
 
         {/* Metric 5 */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
             <AlertOctagon className="w-4 h-4" />
           </div>
@@ -83,7 +83,7 @@ export function GraphHeaderStats({ stats }: GraphHeaderStatsProps) {
         </div>
 
         {/* Metric 6: Category A Steel Slate Blue */}
-        <div className="p-2 rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
+        <div className="p-2 min-h-[44px] rounded-lg bg-graphite-canvas border border-graphite-border flex items-center gap-2.5">
           <div className="p-1.5 rounded bg-[#5B82A6]/10 text-[#5B82A6] border border-[#5B82A6]/20">
             <Cpu className="w-4 h-4" />
           </div>

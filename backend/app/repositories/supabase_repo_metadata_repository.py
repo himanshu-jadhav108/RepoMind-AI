@@ -1,6 +1,9 @@
-from typing import Optional
+from typing import Optional, Any
 
-from supabase import Client
+try:
+    from supabase import Client
+except ImportError:
+    Client = Any  # type: ignore
 
 from app.models.repo import RepoMetadata
 from app.repositories.base_repository import BaseRepository

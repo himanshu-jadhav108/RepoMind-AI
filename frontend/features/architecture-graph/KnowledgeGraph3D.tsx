@@ -1,427 +1,512 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useCallback } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars, Line } from "@react-three/drei";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen, Sparkles, Layers, ChevronDown, ChevronUp, Palette, Cpu } from "lucide-react";
 import * as THREE from "three";
-import { Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen, Sparkles } from "lucide-react";
-
-// P1-3D FIX: this view previously hand-projected sphere coordinates onto a flat
-// <canvas> 2D context with manual sin/cos trig — which is why it looked flat and
-// slightly jittery no matter how the layout was tuned. This rebuild uses real
-// react-three-fiber (WebGL) so nodes get true depth, real perspective, and a
-// proper orbit camera, while keeping the same visual language (indigo/cyan/amber
-// glow palette, glass label pills, hover HUD) and the same
-// { graphData, onNodeClick } contract so nothing else needs to change.
 
 interface KnowledgeGraph3DProps {
   graphData?: { nodes: any[]; edges: any[] } | null;
   onNodeClick?: (nodeId: string) => void;
 }
 
-interface Node3D {
+interface Node3DData {
   id: string;
   label: string;
   shortLabel: string;
-  type: string;
-  parentFolder?: string;
-  position: [number, number, number];
-  radius: number;
+  type: string; // "folder" | "file" | "class" | "function"
+  language: string;
+  languageKey: string;
   color: string;
+  val: number;
+  degree: number;
+  isRoot: boolean;
+  x?: number;
+  y?: number;
+  z?: number;
 }
 
-interface Edge3D {
+interface Link3DData {
   id: string;
-  source: string;
-  target: string;
+  source: string | Node3DData;
+  target: string | Node3DData;
   animated?: boolean;
 }
 
-type LabelPos = { x: number; y: number; visible: boolean; scale: number };
+// ── Language & Type Palette (Warm Graphite & Industrial Copper Redesign) ────
+export const LANGUAGE_PALETTE: Record<
+  string,
+  { label: string; color: string; bgClass: string; textClass: string; borderClass: string }
+> = {
+  root: {
+    label: "Root Anchor",
+    color: "#D97736", // Warm Copper
+    bgClass: "bg-[#D97736]/20",
+    textClass: "text-[#D97736]",
+    borderClass: "border-[#D97736]/40",
+  },
+  folder: {
+    label: "Folder / Architecture",
+    color: "#5B82A6", // Steel Blue Architecture
+    bgClass: "bg-[#5B82A6]/20",
+    textClass: "text-[#5B82A6]",
+    borderClass: "border-[#5B82A6]/40",
+  },
+  python: {
+    label: "Python",
+    color: "#E5A93C", // Warm Amber Gold
+    bgClass: "bg-[#E5A93C]/20",
+    textClass: "text-[#E5A93C]",
+    borderClass: "border-[#E5A93C]/40",
+  },
+  typescript: {
+    label: "TypeScript / JS",
+    color: "#38BDF8", // Vibrant Cyan Teal
+    bgClass: "bg-[#38BDF8]/20",
+    textClass: "text-[#38BDF8]",
+    borderClass: "border-[#38BDF8]/40",
+  },
+  json: {
+    label: "JSON / Config",
+    color: "#34D399", // Mint Teal
+    bgClass: "bg-[#34D399]/20",
+    textClass: "text-[#34D399]",
+    borderClass: "border-[#34D399]/40",
+  },
+  markdown: {
+    label: "Markdown / Docs",
+    color: "#FB7185", // Coral Rose
+    bgClass: "bg-[#FB7185]/20",
+    textClass: "text-[#FB7185]",
+    borderClass: "border-[#FB7185]/40",
+  },
+  css: {
+    label: "CSS / Styling",
+    color: "#60A5FA", // Sky Slate
+    bgClass: "bg-[#60A5FA]/20",
+    textClass: "text-[#60A5FA]",
+    borderClass: "border-[#60A5FA]/40",
+  },
+  other: {
+    label: "Other Source",
+    color: "#94A3B8", // Muted Slate
+    bgClass: "bg-[#94A3B8]/20",
+    textClass: "text-[#94A3B8]",
+    borderClass: "border-[#94A3B8]/40",
+  },
+};
 
-const DEMO_NODES: Node3D[] = [
-  { id: "root", label: "backend/app/main.py", shortLabel: "main.py", type: "file", position: [0, 0, 0], radius: 1.1, color: "#D97736" },
-  { id: "backend/services", label: "services/", shortLabel: "services/", type: "folder", position: [-3.2, -1.3, 1.8], radius: 0.9, color: "#5B82A6" },
-  { id: "services/analysis.py", label: "analysis_service.py", shortLabel: "analysis_service.py", type: "file", parentFolder: "backend/services", position: [-4.6, -2.2, 2.6], radius: 0.65, color: "#38BDF8" },
-  { id: "services/repo.py", label: "repo_ingestion.py", shortLabel: "repo_ingestion.py", type: "file", parentFolder: "backend/services", position: [-2.4, -2.4, 0.9], radius: 0.65, color: "#38BDF8" },
-  { id: "backend/agents", label: "agents/", shortLabel: "agents/", type: "folder", position: [3.4, 1.6, -1.9], radius: 0.9, color: "#5B82A6" },
-  { id: "agents/architect.py", label: "architect_agent.py", shortLabel: "architect_agent.py", type: "file", parentFolder: "backend/agents", position: [4.8, 2.5, -2.9], radius: 0.65, color: "#FFB000" },
-  { id: "agents/reviewer.py", label: "reviewer_agent.py", shortLabel: "reviewer_agent.py", type: "file", parentFolder: "backend/agents", position: [2.5, 2.8, -1.0], radius: 0.65, color: "#00E676" },
+function resolveLanguageKey(n: any): string {
+  const type = n.type || "file";
+  const label = (n.data?.label || n.id || "").toLowerCase();
+  
+  if (n.id === "root" || label === "repomind-ai/" || label === "root") return "root";
+  if (type === "folder") return "folder";
+
+  const rawLang = (n.data?.language || "").toLowerCase();
+  if (rawLang.includes("python") || rawLang.includes("py")) return "python";
+  if (
+    rawLang.includes("typescript") ||
+    rawLang.includes("javascript") ||
+    rawLang.includes("react") ||
+    rawLang.includes("ts") ||
+    rawLang.includes("js")
+  ) {
+    return "typescript";
+  }
+  if (
+    rawLang.includes("json") ||
+    rawLang.includes("config") ||
+    rawLang.includes("yaml") ||
+    rawLang.includes("toml")
+  ) {
+    return "json";
+  }
+  if (rawLang.includes("markdown") || rawLang.includes("doc")) return "markdown";
+  if (rawLang.includes("css") || rawLang.includes("style")) return "css";
+
+  // Fallback to extension check
+  if (label.endsWith(".py")) return "python";
+  if (label.endsWith(".ts") || label.endsWith(".tsx") || label.endsWith(".js") || label.endsWith(".jsx")) return "typescript";
+  if (label.endsWith(".json") || label.endsWith(".yaml") || label.endsWith(".yml") || label.endsWith(".toml") || label.endsWith(".env")) return "json";
+  if (label.endsWith(".md") || label.endsWith(".rst") || label.endsWith(".txt")) return "markdown";
+  if (label.endsWith(".css") || label.endsWith(".scss") || label.endsWith(".less")) return "css";
+
+  return "other";
+}
+
+// Fallback high-quality demo data structure representing RepoMind AI codebase
+const FALLBACK_DEMO_NODES = [
+  { id: "root", type: "folder", data: { label: "RepoMind-AI/", language: "Root" } },
+  { id: "backend", type: "folder", data: { label: "backend/", language: "Folder" } },
+  { id: "frontend", type: "folder", data: { label: "frontend/", language: "Folder" } },
+  { id: "be_agents", type: "folder", data: { label: "backend/agents/", language: "Folder" } },
+  { id: "be_api", type: "folder", data: { label: "backend/api/v1/", language: "Folder" } },
+  { id: "be_toolkit", type: "folder", data: { label: "backend/analysis_toolkit/", language: "Folder" } },
+  { id: "be_providers", type: "folder", data: { label: "backend/providers/", language: "Folder" } },
+  { id: "f_main_py", type: "file", data: { label: "main.py", language: "Python" } },
+  { id: "f_dep_graph", type: "file", data: { label: "dependency_graph.py", language: "Python" } },
+  { id: "f_code_parser", type: "file", data: { label: "code_parser.py", language: "Python" } },
+  { id: "f_planner", type: "file", data: { label: "planner_agent.py", language: "Python" } },
+  { id: "f_architect", type: "file", data: { label: "architect_agent.py", language: "Python" } },
+  { id: "f_bug_hunter", type: "file", data: { label: "bug_hunter_agent.py", language: "Python" } },
+  { id: "f_gemini", type: "file", data: { label: "gemini_provider.py", language: "Python" } },
+  { id: "f_kg3d", type: "file", data: { label: "KnowledgeGraph3D.tsx", language: "TypeScript (React)" } },
+  { id: "f_kg2d", type: "file", data: { label: "KnowledgeGraph.tsx", language: "TypeScript (React)" } },
+  { id: "f_api_client", type: "file", data: { label: "api-client.ts", language: "TypeScript" } },
+  { id: "f_package_json", type: "file", data: { label: "package.json", language: "JSON / Config" } },
+  { id: "f_readme", type: "file", data: { label: "README.md", language: "Markdown" } },
 ];
 
-const DEMO_EDGES: Edge3D[] = [
-  { id: "e1", source: "root", target: "backend/services", animated: true },
-  { id: "e2", source: "root", target: "backend/agents", animated: true },
-  { id: "e3", source: "backend/services", target: "services/analysis.py" },
-  { id: "e4", source: "backend/services", target: "services/repo.py" },
-  { id: "e5", source: "backend/agents", target: "agents/architect.py" },
-  { id: "e6", source: "backend/agents", target: "agents/reviewer.py" },
+const FALLBACK_DEMO_EDGES = [
+  { id: "e1", source: "root", target: "backend" },
+  { id: "e2", source: "root", target: "frontend" },
+  { id: "e3", source: "backend", target: "be_agents" },
+  { id: "e4", source: "backend", target: "be_api" },
+  { id: "e5", source: "backend", target: "be_toolkit" },
+  { id: "e6", source: "backend", target: "be_providers" },
+  { id: "e7", source: "backend", target: "f_main_py" },
+  { id: "e8", source: "be_toolkit", target: "f_dep_graph" },
+  { id: "e9", source: "be_toolkit", target: "f_code_parser" },
+  { id: "e10", source: "be_agents", target: "f_planner" },
+  { id: "e11", source: "be_agents", target: "f_architect" },
+  { id: "e12", source: "be_agents", target: "f_bug_hunter" },
+  { id: "e13", source: "be_providers", target: "f_gemini" },
+  { id: "e14", source: "frontend", target: "f_kg3d" },
+  { id: "e15", source: "frontend", target: "f_kg2d" },
+  { id: "e16", source: "frontend", target: "f_api_client" },
+  { id: "e17", source: "frontend", target: "f_package_json" },
+  { id: "e18", source: "root", target: "f_readme" },
+  { id: "e19", source: "f_kg3d", target: "f_kg2d" },
+  { id: "e20", source: "f_dep_graph", target: "f_code_parser" },
 ];
-
-function buildNodes(graphData?: { nodes: any[]; edges: any[] } | null): Node3D[] {
-  const rawNodes = graphData?.nodes || [];
-  if (rawNodes.length === 0) return DEMO_NODES;
-
-  const capped = rawNodes.slice(0, 60);
-  const count = capped.length;
-
-  return capped.map((n, idx) => {
-    const type = n.type || "file";
-    const label = n.data?.label || n.id;
-    const parts = label.split("/");
-    const shortLabel = parts[parts.length - 1] || label;
-    const isRoot = idx === 0 || label.includes("main.py") || label.includes("index.ts");
-
-    let color = "#38BDF8";
-    let radius = 0.55;
-    if (isRoot) {
-      color = "#D97736";
-      radius = 1.1;
-    } else if (type === "folder") {
-      color = "#5B82A6";
-      radius = 0.9;
-    } else if (type === "class") {
-      color = "#FFB000";
-      radius = 0.5;
-    } else if (type === "function") {
-      color = "#00E676";
-      radius = 0.45;
-    }
-
-    if (isRoot) {
-      return { id: n.id, label, shortLabel, type, position: [0, 0, 0] as [number, number, number], radius, color };
-    }
-
-    // Fibonacci sphere distribution for even, non-overlapping placement — same
-    // idea as the old canvas version's spherical projection, but now feeding real
-    // 3D world-space coordinates instead of manually-projected screen coordinates.
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-    const y = 1 - (idx / Math.max(1, count - 1)) * 2;
-    const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y));
-    const theta = goldenAngle * idx;
-    const orbit = 3.2 + (idx % 3) * 1.6;
-
-    const x = Math.cos(theta) * radiusAtY * orbit;
-    const z = Math.sin(theta) * radiusAtY * orbit;
-    const yPos = y * orbit * 0.6;
-
-    return {
-      id: n.id,
-      label,
-      shortLabel,
-      type,
-      parentFolder: n.parentFolder,
-      position: [x, yPos, z] as [number, number, number],
-      radius,
-      color,
-    };
-  });
-}
-
-function buildEdges(graphData: { nodes: any[]; edges: any[] } | null | undefined, nodes: Node3D[]): Edge3D[] {
-  const rawEdges = graphData?.edges || [];
-  if (rawEdges.length === 0) return DEMO_EDGES;
-  const validIds = new Set(nodes.map((n) => n.id));
-  return rawEdges
-    .filter((e: any) => validIds.has(e.source) && validIds.has(e.target))
-    .slice(0, 90)
-    .map((e: any) => ({ id: e.id, source: e.source, target: e.target, animated: !!e.animated }));
-}
-
-// A glowing orb: a solid sphere plus a soft additive-ish transparent halo sphere,
-// which fakes bloom cheaply (no postprocessing pass needed) while staying real
-// WebGL geometry with proper depth — unlike the old canvas radial-gradient trick.
-function NodeOrb({
-  node,
-  isHovered,
-  onHover,
-  onClick,
-}: {
-  node: Node3D;
-  isHovered: boolean;
-  onHover: (n: Node3D | null) => void;
-  onClick: (n: Node3D) => void;
-}) {
-  const scale = isHovered ? 1.35 : 1;
-  return (
-    <group position={node.position}>
-      <mesh
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          onHover(node);
-        }}
-        onPointerOut={() => onHover(null)}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick(node);
-        }}
-      >
-        <sphereGeometry args={[node.radius * scale, 24, 24]} />
-        <meshStandardMaterial
-          color={isHovered ? "#ffffff" : node.color}
-          emissive={node.color}
-          emissiveIntensity={isHovered ? 1.4 : 0.65}
-          roughness={0.35}
-          metalness={0.1}
-        />
-      </mesh>
-      {/* Halo glow — transparent, larger, no depth write so it never occludes other nodes */}
-      <mesh scale={2.2 * scale}>
-        <sphereGeometry args={[node.radius, 16, 16]} />
-        <meshBasicMaterial color={node.color} transparent opacity={isHovered ? 0.22 : 0.12} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-}
-
-function EdgeLine({
-  from,
-  to,
-  animated,
-  highlighted,
-}: {
-  from: [number, number, number];
-  to: [number, number, number];
-  animated?: boolean;
-  highlighted?: boolean;
-}) {
-  const particleRef = useRef<THREE.Mesh>(null);
-  const t = useRef(Math.random());
-
-  useFrame((_, delta) => {
-    if (!particleRef.current) return;
-    t.current = (t.current + delta * 0.35) % 1;
-    particleRef.current.position.lerpVectors(new THREE.Vector3(...from), new THREE.Vector3(...to), t.current);
-  });
-
-  return (
-    <>
-      <Line
-        points={[from, to]}
-        color={highlighted ? "#D97736" : animated ? "#5B82A6" : "#2A2B33"}
-        transparent
-        opacity={highlighted ? 0.9 : animated ? 0.45 : 0.22}
-        lineWidth={highlighted ? 2 : 1}
-      />
-      {(animated || highlighted) && (
-        <mesh ref={particleRef}>
-          <sphereGeometry args={[highlighted ? 0.07 : 0.05, 8, 8]} />
-          <meshBasicMaterial color={highlighted ? "#FF3B30" : "#5B82A6"} />
-        </mesh>
-      )}
-    </>
-  );
-}
-
-// Lives INSIDE the Canvas. Each frame it projects node world positions to screen
-// space and reports them up via onUpdate — it renders no DOM/mesh itself, it's a
-// pure per-frame data bridge (Canvas can't contain plain DOM elements directly).
-function LabelPositionTracker({
-  nodes,
-  onUpdate,
-}: {
-  nodes: Node3D[];
-  onUpdate: (positions: Map<string, LabelPos>) => void;
-}) {
-  const { camera, size } = useThree();
-
-  useFrame(() => {
-    const vec = new THREE.Vector3();
-    const next = new Map<string, LabelPos>();
-    nodes.forEach((n) => {
-      vec.set(...n.position);
-      vec.project(camera);
-      const x = (vec.x * 0.5 + 0.5) * size.width;
-      const y = (-vec.y * 0.5 + 0.5) * size.height;
-      const scale = Math.max(0.5, Math.min(1.3, 1.4 - vec.z));
-      next.set(n.id, { x, y, visible: vec.z < 1, scale });
-    });
-    onUpdate(next);
-  });
-
-  return null;
-}
-
-// Lives OUTSIDE the Canvas as a plain absolutely-positioned overlay. Reads the
-// positions computed by LabelPositionTracker and renders real DOM label pills —
-// cheaper and crisper than drei's <Html> reconciler for 50+ simultaneous labels,
-// and avoids each label fighting WebGL depth-sorting.
-function LabelOverlay({
-  nodes,
-  hoveredId,
-  positions,
-}: {
-  nodes: Node3D[];
-  hoveredId: string | null;
-  positions: Map<string, LabelPos>;
-}) {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden font-mono">
-      {nodes
-        .filter((n) => n.type === "folder" || n.id === "root" || hoveredId === n.id)
-        .map((n) => {
-          const pos = positions.get(n.id);
-          if (!pos || !pos.visible) return null;
-          const isHovered = hoveredId === n.id;
-          return (
-            <div
-              key={n.id}
-              className="absolute font-mono transition-opacity"
-              style={{
-                left: pos.x,
-                top: pos.y + 14 * pos.scale,
-                transform: `translate(-50%, 0) scale(${pos.scale})`,
-                transformOrigin: "top center",
-              }}
-            >
-              <div
-                className={`px-2 py-0.5 rounded-md border text-[11px] whitespace-nowrap ${
-                  isHovered
-                    ? "bg-graphite-panel border-[#5B82A6]/80 text-white"
-                    : "bg-graphite-canvas border-graphite-border text-foreground/90"
-                }`}
-              >
-                {isHovered ? n.label : n.shortLabel}
-              </div>
-            </div>
-          );
-        })}
-    </div>
-  );
-}
-
-function Scene({
-  nodes,
-  edges,
-  hoveredNode,
-  setHoveredNode,
-  onNodeClick,
-  orbitControlsRef,
-}: {
-  nodes: Node3D[];
-  edges: Edge3D[];
-  hoveredNode: Node3D | null;
-  setHoveredNode: (n: Node3D | null) => void;
-  onNodeClick: (n: Node3D) => void;
-  orbitControlsRef: React.MutableRefObject<any>;
-}) {
-  const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
-
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1.2} color="#D97736" />
-      <pointLight position={[-10, -10, -10]} intensity={0.6} color="#38BDF8" />
-
-      <Stars radius={80} depth={50} count={1200} factor={2.2} fade speed={0.4} />
-
-      {edges.map((edge) => {
-        const src = nodeMap.get(edge.source);
-        const tgt = nodeMap.get(edge.target);
-        if (!src || !tgt) return null;
-        const highlighted = !!hoveredNode && (hoveredNode.id === src.id || hoveredNode.id === tgt.id);
-        return (
-          <EdgeLine key={edge.id} from={src.position} to={tgt.position} animated={edge.animated} highlighted={highlighted} />
-        );
-      })}
-
-      {nodes.map((node) => (
-        <NodeOrb key={node.id} node={node} isHovered={hoveredNode?.id === node.id} onHover={setHoveredNode} onClick={onNodeClick} />
-      ))}
-
-      <OrbitControls
-        ref={orbitControlsRef}
-        enablePan={false}
-        minDistance={4}
-        maxDistance={26}
-        autoRotate={!hoveredNode}
-        autoRotateSpeed={0.35}
-        dampingFactor={0.08}
-      />
-    </>
-  );
-}
 
 export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DProps) {
-  const [hoveredNode, setHoveredNode] = useState<Node3D | null>(null);
-  const [labelPositions, setLabelPositions] = useState<Map<string, LabelPos>>(new Map());
-  const orbitControlsRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const graphInstanceRef = useRef<any>(null);
+  const [hoveredNode, setHoveredNode] = useState<Node3DData | null>(null);
+  const [isLegendOpen, setIsLegendOpen] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const nodes = useMemo(() => buildNodes(graphData), [graphData]);
-  const edges = useMemo(() => buildEdges(graphData, nodes), [graphData, nodes]);
+  // ── Prepare Nodes & Edges with Degree Calculations & Language Colors ────
+  const { nodes, links, neighborMap, linkMap } = useMemo(() => {
+    const rawNodes = graphData?.nodes && graphData.nodes.length > 0 ? graphData.nodes : FALLBACK_DEMO_NODES;
+    const rawEdges = graphData?.edges && graphData.edges.length > 0 ? graphData.edges : FALLBACK_DEMO_EDGES;
 
-  const handleNodeClick = useCallback(
-    (node: Node3D) => {
-      onNodeClick?.(node.id);
-    },
-    [onNodeClick]
-  );
+    const degreeMap = new Map<string, number>();
+    const nMap = new Map<string, Set<string>>();
+    const lMap = new Set<string>();
+
+    rawEdges.forEach((e: any) => {
+      const src = typeof e.source === "object" ? e.source.id : e.source;
+      const tgt = typeof e.target === "object" ? e.target.id : e.target;
+      degreeMap.set(src, (degreeMap.get(src) || 0) + 1);
+      degreeMap.set(tgt, (degreeMap.get(tgt) || 0) + 1);
+
+      if (!nMap.has(src)) nMap.set(src, new Set());
+      if (!nMap.has(tgt)) nMap.set(tgt, new Set());
+      nMap.get(src)!.add(tgt);
+      nMap.get(tgt)!.add(src);
+
+      lMap.add(`${src}___${tgt}`);
+      lMap.add(`${tgt}___${src}`);
+    });
+
+    const parsedNodes: Node3DData[] = rawNodes.map((n: any) => {
+      const label = n.data?.label || n.id;
+      const parts = label.split("/");
+      const shortLabel = parts[parts.length - 1] || label;
+      const langKey = resolveLanguageKey(n);
+      const palette = LANGUAGE_PALETTE[langKey] || LANGUAGE_PALETTE.other;
+      const degree = degreeMap.get(n.id) || 0;
+      const isRoot = langKey === "root";
+
+      // Importance / Volume scale based on degree & hub standing
+      const val = isRoot ? 32 : n.type === "folder" ? 16 + degree * 2 : 4 + Math.min(degree * 2.5, 20);
+
+      return {
+        id: n.id,
+        label,
+        shortLabel,
+        type: n.type || "file",
+        language: palette.label,
+        languageKey: langKey,
+        color: palette.color,
+        val,
+        degree,
+        isRoot,
+      };
+    });
+
+    const validIds = new Set(parsedNodes.map((n) => n.id));
+    const parsedLinks: Link3DData[] = rawEdges
+      .map((e: any) => {
+        const src = typeof e.source === "object" ? e.source.id : e.source;
+        const tgt = typeof e.target === "object" ? e.target.id : e.target;
+        return { id: e.id || `e-${src}-${tgt}`, source: src, target: tgt, animated: !!e.animated };
+      })
+      .filter((e) => validIds.has(e.source as string) && validIds.has(e.target as string));
+
+    return { nodes: parsedNodes, links: parsedLinks, neighborMap: nMap, linkMap: lMap };
+  }, [graphData]);
+
+  // Keep ref to hoveredNode for dynamic graph accessor updates
+  const hoveredNodeRef = useRef<Node3DData | null>(null);
+  useEffect(() => {
+    hoveredNodeRef.current = hoveredNode;
+  }, [hoveredNode]);
+
+  // ── Initialize & Manage 3d-force-graph Instance ──────────────────────────
+  useEffect(() => {
+    setIsMounted(true);
+    let forceGraphInstance: any = null;
+    let isSubscribed = true;
+
+    const initGraph = async () => {
+      if (!containerRef.current) return;
+
+      // Dynamic import to prevent SSR window issues in Next.js
+      const ForceGraph3DModule = ((await import("3d-force-graph")).default || (await import("3d-force-graph"))) as any;
+      if (!isSubscribed || !containerRef.current) return;
+
+      containerRef.current.innerHTML = "";
+
+      const graph = ForceGraph3DModule()(containerRef.current)
+        .backgroundColor("#121316")
+        .width(containerRef.current.clientWidth || 800)
+        .height(containerRef.current.clientHeight || 540)
+        .graphData({ nodes, links })
+        .nodeId("id")
+        .nodeLabel((n: any) => `<div style="font-family: monospace; font-size: 11px; padding: 4px 8px; background: rgba(18,19,22,0.9); border: 1px solid rgba(91,130,166,0.4); border-radius: 6px; color: #fff;">
+          <strong>${n.label}</strong> <span style="color: ${n.color};">(${n.language})</span><br/>
+          <span style="color: #94A3B8; font-size: 10px;">Connections: ${n.degree}</span>
+        </div>`)
+        .nodeThreeObject((node: any) => {
+          const group = new THREE.Group();
+          const radius = Math.max(2.2, Math.min(11, Math.sqrt(node.val) * 1.8));
+
+          // Core Sphere Mesh
+          const geometry = new THREE.SphereGeometry(radius, 24, 24);
+          const material = new THREE.MeshStandardMaterial({
+            color: node.color,
+            emissive: node.color,
+            emissiveIntensity: 0.5,
+            roughness: 0.35,
+            metalness: 0.15,
+          });
+          const sphere = new THREE.Mesh(geometry, material);
+          group.add(sphere);
+
+          // P1-3D Requirement 5: Soft selective glow ONLY for hub nodes & repo root (not uniform blurred halos)
+          if (node.isRoot || node.degree >= 4) {
+            const haloGeo = new THREE.SphereGeometry(radius * 1.5, 16, 16);
+            const haloMat = new THREE.MeshBasicMaterial({
+              color: node.color,
+              transparent: true,
+              opacity: 0.18,
+              depthWrite: false,
+            });
+            const halo = new THREE.Mesh(haloGeo, haloMat);
+            group.add(halo);
+          }
+
+          return group;
+        })
+        // P1-3D Requirement 6: Thin edge lines with subgraph hover tracing
+        .linkColor((link: any) => {
+          const activeHover = hoveredNodeRef.current;
+          if (!activeHover) return "rgba(91, 130, 166, 0.35)";
+
+          const srcId = typeof link.source === "object" ? link.source.id : link.source;
+          const tgtId = typeof link.target === "object" ? link.target.id : link.target;
+          const isConnected = srcId === activeHover.id || tgtId === activeHover.id;
+
+          return isConnected ? "#D97736" : "rgba(91, 130, 166, 0.08)";
+        })
+        .linkWidth((link: any) => {
+          const activeHover = hoveredNodeRef.current;
+          if (!activeHover) return 1.0;
+
+          const srcId = typeof link.source === "object" ? link.source.id : link.source;
+          const tgtId = typeof link.target === "object" ? link.target.id : link.target;
+          return srcId === activeHover.id || tgtId === activeHover.id ? 2.5 : 0.5;
+        })
+        .linkOpacity((link: any) => {
+          const activeHover = hoveredNodeRef.current;
+          if (!activeHover) return 0.4;
+
+          const srcId = typeof link.source === "object" ? link.source.id : link.source;
+          const tgtId = typeof link.target === "object" ? link.target.id : link.target;
+          return srcId === activeHover.id || tgtId === activeHover.id ? 0.95 : 0.08;
+        })
+        .onNodeClick((node: any) => {
+          if (onNodeClick) onNodeClick(node.id);
+        })
+        .onNodeHover((node: any) => {
+          setHoveredNode(node || null);
+          if (graph) {
+            graph.linkColor(graph.linkColor());
+            graph.linkWidth(graph.linkWidth());
+            graph.linkOpacity(graph.linkOpacity());
+          }
+        });
+
+      // Configure d3-force-3d forces for organic hub-and-spoke separation
+      graph.d3Force("charge")?.strength(-120);
+      graph.d3Force("link")?.distance(35);
+
+      // P1-3D Requirement 4: Camera idle auto-rotate & touch controls
+      const controls = graph.controls();
+      if (controls) {
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.dampingFactor = 0.08;
+      }
+
+      graphInstanceRef.current = graph;
+      forceGraphInstance = graph;
+    };
+
+    initGraph();
+
+    // Resize Observer for responsive graph canvas
+    const handleResize = () => {
+      if (containerRef.current && graphInstanceRef.current) {
+        graphInstanceRef.current.width(containerRef.current.clientWidth);
+        graphInstanceRef.current.height(containerRef.current.clientHeight);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener("resize", handleResize);
+      if (forceGraphInstance && typeof forceGraphInstance._destructor === "function") {
+        forceGraphInstance._destructor();
+      }
+    };
+  }, [nodes, links, onNodeClick]);
+
+  const handleResetCamera = useCallback(() => {
+    if (graphInstanceRef.current) {
+      graphInstanceRef.current.cameraPosition({ x: 0, y: 0, z: 240 }, { x: 0, y: 0, z: 0 }, 800);
+    }
+  }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[440px] bg-graphite-canvas rounded-b-xl overflow-hidden font-sans">
-      <Canvas
-        camera={{ position: [0, 2.5, 9], fov: 50 }}
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: false }}
-        onCreated={({ gl }) => gl.setClearColor("#121316")}
-      >
-        <Scene
-          nodes={nodes}
-          edges={edges}
-          hoveredNode={hoveredNode}
-          setHoveredNode={setHoveredNode}
-          onNodeClick={handleNodeClick}
-          orbitControlsRef={orbitControlsRef}
-        />
-        <LabelPositionTracker nodes={nodes} onUpdate={setLabelPositions} />
-      </Canvas>
+    <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] bg-[#121316] rounded-b-xl overflow-hidden font-sans select-none">
+      {/* 3D Force Graph WebGL Container */}
+      <div ref={containerRef} className="w-full h-full min-h-[460px] sm:min-h-[540px]" />
 
-      <LabelOverlay nodes={nodes} hoveredId={hoveredNode?.id ?? null} positions={labelPositions} />
-
-      {/* Controls */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-graphite-panel border border-graphite-border backdrop-blur-md shadow-lg pointer-events-auto">
-        <span className="p-1.5 text-graphite-muted" title="Scroll to zoom in">
-          <ZoomIn className="w-4 h-4 text-[#5B82A6]" />
-        </span>
-        <span className="p-1.5 text-graphite-muted" title="Scroll to zoom out">
-          <ZoomOut className="w-4 h-4 text-[#5B82A6]" />
-        </span>
+      {/* Top-Right HUD Camera & View Controls */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-graphite-panel/90 border border-graphite-border backdrop-blur-md shadow-xl z-10 pointer-events-auto">
         <button
-          onClick={() => orbitControlsRef.current?.reset()}
-          className="p-1.5 rounded hover:bg-copper/30 text-white transition"
-          title="Reset 3D Camera"
+          onClick={() => {
+            if (graphInstanceRef.current) {
+              const currentPos = graphInstanceRef.current.cameraPosition();
+              graphInstanceRef.current.cameraPosition(
+                { x: currentPos.x * 0.8, y: currentPos.y * 0.8, z: currentPos.z * 0.8 },
+                null,
+                300
+              );
+            }
+          }}
+          className="p-2 sm:p-1.5 rounded hover:bg-[#5B82A6]/20 text-[#5B82A6] transition min-h-[44px] sm:min-h-[32px] flex items-center justify-center"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => {
+            if (graphInstanceRef.current) {
+              const currentPos = graphInstanceRef.current.cameraPosition();
+              graphInstanceRef.current.cameraPosition(
+                { x: currentPos.x * 1.25, y: currentPos.y * 1.25, z: currentPos.z * 1.25 },
+                null,
+                300
+              );
+            }
+          }}
+          className="p-2 sm:p-1.5 rounded hover:bg-[#5B82A6]/20 text-[#5B82A6] transition min-h-[44px] sm:min-h-[32px] flex items-center justify-center"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleResetCamera}
+          className="p-2 sm:p-1.5 rounded hover:bg-copper/20 text-white transition min-h-[44px] sm:min-h-[32px] flex items-center justify-center"
+          title="Reset Camera View"
         >
           <RefreshCw className="w-4 h-4 text-graphite-muted hover:rotate-180 transition-transform duration-300" />
         </button>
       </div>
 
-      {/* Hover HUD */}
+      {/* Hover HUD Inspector Card (Fixed Left Corner) */}
       {hoveredNode && (
-        <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-graphite-panel border border-[#5B82A6]/30 backdrop-blur-md shadow-2xl text-xs text-white font-mono flex items-center gap-2.5 max-w-md animate-in fade-in duration-200 pointer-events-none">
-          <Sparkles className="w-4 h-4 text-[#5B82A6] shrink-0" />
-          <div>
-            <div className="font-bold text-white flex items-center gap-1.5 font-display">
-              <span>{hoveredNode.label}</span>
-              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/30">
-                {hoveredNode.type}
+        <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-graphite-panel/95 border border-[#5B82A6]/40 backdrop-blur-md shadow-2xl text-xs text-white font-mono flex items-center gap-3 max-w-xs sm:max-w-md animate-in fade-in duration-200 pointer-events-none z-10">
+          <div
+            className="w-3.5 h-3.5 rounded-full shrink-0 shadow-lg"
+            style={{ backgroundColor: hoveredNode.color, boxShadow: `0 0 10px ${hoveredNode.color}` }}
+          />
+          <div className="overflow-hidden">
+            <div className="font-bold text-white flex items-center gap-2 font-display truncate">
+              <span className="truncate">{hoveredNode.label}</span>
+              <span
+                className="text-[10px] uppercase px-1.5 py-0.5 rounded border shrink-0 font-mono"
+                style={{
+                  backgroundColor: `${hoveredNode.color}20`,
+                  color: hoveredNode.color,
+                  borderColor: `${hoveredNode.color}40`,
+                }}
+              >
+                {hoveredNode.language}
               </span>
             </div>
-            {hoveredNode.type === "folder" ? (
-              <p className="text-[11px] text-[#38BDF8] mt-1 flex items-center gap-1 font-semibold">
-                <FolderOpen className="w-3.5 h-3.5 text-[#38BDF8]" />
-                <span>Click folder to toggle expansion</span>
-              </p>
-            ) : (
-              <p className="text-[11px] text-graphite-muted mt-0.5">Click to inspect file content in code viewer</p>
-            )}
+            <p className="text-[11px] text-graphite-muted mt-0.5 font-mono flex items-center gap-2">
+              <span>Type: {hoveredNode.type}</span>
+              <span>•</span>
+              <span className="text-white font-semibold">{hoveredNode.degree} Edges</span>
+            </p>
           </div>
         </div>
       )}
 
-      {/* Drag & Zoom Instructions */}
-      <div className="absolute bottom-3 right-3 p-2 rounded-md bg-graphite-panel border border-graphite-border backdrop-blur-md text-[11px] text-graphite-muted font-mono flex items-center gap-2 pointer-events-none">
-        <Move className="w-3.5 h-3.5 text-[#5B82A6]" />
-        <span>Drag to orbit • Scroll to zoom • Auto-rotates when idle</span>
+      {/* Part 2: Collapsible Language Legend Overlay (Bottom-Right Corner) */}
+      <div className="absolute bottom-3 right-3 z-10 pointer-events-auto">
+        <div className="bg-graphite-panel/95 border border-graphite-border rounded-lg backdrop-blur-md shadow-2xl overflow-hidden font-mono text-[11px] transition-all duration-300">
+          {/* Legend Header */}
+          <button
+            onClick={() => setIsLegendOpen(!isLegendOpen)}
+            className="w-full px-3 py-2 bg-graphite-canvas/60 border-b border-graphite-border/60 flex items-center justify-between gap-3 text-graphite-muted hover:text-white transition min-h-[44px] sm:min-h-[36px]"
+          >
+            <span className="flex items-center gap-1.5 font-semibold text-white">
+              <Palette className="w-3.5 h-3.5 text-copper" /> Language Legend
+            </span>
+            {isLegendOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </button>
+
+          {/* Legend Body */}
+          {isLegendOpen && (
+            <div className="p-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5 max-w-[280px]">
+              {Object.entries(LANGUAGE_PALETTE).map(([key, item]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}80` }}
+                  />
+                  <span className="text-graphite-muted truncate text-[10px]">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Orbit Gesture Guidance */}
+      <div className="absolute top-3 left-3 p-2 rounded-md bg-graphite-panel/80 border border-graphite-border/60 backdrop-blur-md text-[10px] text-graphite-muted font-mono hidden sm:flex items-center gap-2 pointer-events-none">
+        <Move className="w-3 h-3 text-[#5B82A6]" />
+        <span>Drag to orbit • Scroll/pinch to zoom • Connected nodes cluster</span>
       </div>
     </div>
   );

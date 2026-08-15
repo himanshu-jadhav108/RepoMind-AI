@@ -1,7 +1,10 @@
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-from supabase import Client
+try:
+    from supabase import Client
+except ImportError:
+    Client = Any  # type: ignore
 
 from app.core.logging import logger
 from app.models.analysis import AgentStatus, AnalysisRunDetail, RunStatus
