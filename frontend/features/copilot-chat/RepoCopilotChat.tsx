@@ -106,22 +106,22 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
-            className="fixed bottom-6 right-6 z-50 w-[95vw] sm:w-[440px] h-[580px] max-h-[85vh] rounded-xl border border-graphite-border bg-graphite-canvas shadow-2xl flex flex-col overflow-hidden font-sans selection:bg-copper selection:text-white"
+            className="fixed bottom-6 right-6 z-50 w-[95vw] sm:w-[440px] h-[580px] max-h-[85vh] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden font-sans selection:bg-copper selection:text-white"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-3.5 border-b border-graphite-border bg-graphite-panel">
+            <div className="flex items-center justify-between p-3.5 border-b border-border bg-card">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-lg bg-copper text-white shadow">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white flex items-center gap-1.5 font-display">
+                  <h3 className="font-bold text-sm text-foreground flex items-center gap-1.5 font-display">
                     <span>Repository Copilot</span>
                     <Badge className="bg-copper/10 text-copper border-copper/30 text-[10px] font-mono">
                       Grounded RAG
                     </Badge>
                   </h3>
-                  <p className="text-[10px] text-graphite-muted font-mono">
+                  <p className="text-[10px] text-muted-foreground font-mono">
                     Answers strictly grounded in repository AST graph
                   </p>
                 </div>
@@ -132,7 +132,7 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsOpen(false)}
-                  className="h-8 w-8 p-0 text-graphite-muted hover:text-white"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -140,13 +140,13 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
             </div>
 
             {/* Quick Prompts Bar */}
-            <div className="p-2 border-b border-graphite-border bg-graphite-canvas flex items-center gap-1.5 overflow-x-auto no-scrollbar font-mono text-[11px]">
+            <div className="p-2 border-b border-border bg-background flex items-center gap-1.5 overflow-x-auto no-scrollbar font-mono text-[11px]">
               {QUICK_PROMPTS.map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(prompt)}
                   disabled={loading}
-                  className="px-2.5 py-1 rounded bg-graphite-panel border border-graphite-border text-graphite-muted hover:text-white hover:border-copper/40 transition shrink-0 whitespace-nowrap"
+                  className="px-2.5 py-1 rounded bg-card border border-border text-muted-foreground hover:text-foreground hover:border-copper/40 transition shrink-0 whitespace-nowrap"
                 >
                   {prompt}
                 </button>
@@ -166,7 +166,7 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
                   <div
                     className={`w-6 h-6 rounded flex items-center justify-center shrink-0 shadow text-white ${
                       msg.sender === "user"
-                        ? "bg-[#5B82A6]"
+                        ? "bg-category-arch"
                         : "bg-copper"
                     }`}
                   >
@@ -181,32 +181,32 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
                   <div
                     className={`max-w-[82%] space-y-2 p-3 rounded-lg border text-xs ${
                       msg.sender === "user"
-                        ? "bg-[#5B82A6]/15 border-[#5B82A6]/40 text-white rounded-tr-none"
-                        : "bg-graphite-panel border-graphite-border text-foreground/90 rounded-tl-none"
+                        ? "bg-category-arch/15 border-category-arch/40 text-foreground rounded-tr-none"
+                        : "bg-background border-border text-foreground/90 rounded-tl-none"
                     }`}
                   >
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
                     {/* Referenced Files Badges */}
                     {msg.referenced_files && msg.referenced_files.length > 0 && (
-                      <div className="pt-1 border-t border-graphite-border flex flex-wrap gap-1">
+                      <div className="pt-1 border-t border-border flex flex-wrap gap-1">
                         {msg.referenced_files.map((file: string, fIdx: number) => (
                           <button
                             key={fIdx}
                             onClick={() => onSelectFile && onSelectFile(file)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-graphite-canvas border border-graphite-border text-[#5B82A6] text-[10px] font-mono hover:border-[#5B82A6]"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-card border border-category-arch/30 text-category-arch text-[10px] font-mono hover:border-category-arch"
                           >
-                            <FileCode className="w-3 h-3 text-[#5B82A6]" />
+                            <FileCode className="w-3 h-3 text-category-arch" />
                             <span>{file}</span>
                           </button>
                         ))}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[9px] text-graphite-muted font-mono pt-0.5">
+                    <div className="flex items-center justify-between text-[9px] text-muted-foreground font-mono pt-0.5">
                       <span>{msg.timestamp}</span>
                       {msg.confidence && (
-                        <span className="text-emerald-400 font-semibold">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                           Confidence: {(msg.confidence * 100).toFixed(0)}%
                         </span>
                       )}
@@ -220,7 +220,7 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
                   <div className="w-6 h-6 rounded bg-copper text-white flex items-center justify-center">
                     <Bot className="w-3.5 h-3.5 animate-spin" />
                   </div>
-                  <div className="bg-graphite-panel p-2.5 rounded-lg border border-graphite-border text-graphite-muted text-xs font-mono flex items-center gap-2">
+                  <div className="bg-background p-2.5 rounded-lg border border-border text-muted-foreground text-xs font-mono flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-copper animate-pulse" />
                     <span>Analyzing repository AST & findings graph...</span>
                   </div>
@@ -230,7 +230,7 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
             </div>
 
             {/* Input Box */}
-            <div className="p-3 border-t border-graphite-border bg-graphite-panel flex items-center gap-2">
+            <div className="p-3 border-t border-border bg-card flex items-center gap-2">
               <input
                 type="text"
                 value={input}
@@ -238,7 +238,7 @@ export function RepoCopilotChat({ runId, onSelectFile }: RepoCopilotChatProps) {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Ask about architecture, auth flow, JWT, bugs..."
                 disabled={loading}
-                className="flex-1 bg-graphite-canvas border border-graphite-border rounded-lg px-3 py-2 text-xs text-white placeholder:text-graphite-muted focus:outline-none focus:border-copper font-mono"
+                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-copper font-mono"
               />
               <Button
                 variant="default"

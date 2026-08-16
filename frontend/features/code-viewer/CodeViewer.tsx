@@ -173,12 +173,12 @@ export function CodeViewer({
   };
 
   return (
-    <Card className="w-full h-[650px] border border-graphite-border shadow-lg bg-graphite-canvas flex flex-col font-sans">
-      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-graphite-border bg-graphite-panel shrink-0">
-        <CardTitle className="flex items-center gap-2 text-xs font-mono text-white">
+    <Card className="w-full h-[650px] border border-border shadow-lg bg-card flex flex-col font-sans">
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border bg-card shrink-0">
+        <CardTitle className="flex items-center gap-2 text-xs font-mono text-foreground">
           <Code2 className="w-4 h-4 text-copper" />
-          <span className="truncate max-w-[260px]">{filePath}</span>
-          {loadingFile && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#5B82A6]" />}
+          <span className="truncate max-w-[260px] font-semibold">{filePath}</span>
+          {loadingFile && <Loader2 className="w-3.5 h-3.5 animate-spin text-category-arch" />}
         </CardTitle>
 
         <Button
@@ -200,7 +200,7 @@ export function CodeViewer({
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
         {/* Learning Agent Explanation Box */}
         {explanation && (
-          <div className="p-3.5 bg-graphite-panel border-b border-copper/30 text-xs text-white font-mono leading-relaxed animate-in fade-in duration-200 shrink-0 relative space-y-2">
+          <div className="p-3.5 bg-card border-b border-copper/30 text-xs text-foreground font-mono leading-relaxed animate-in fade-in duration-200 shrink-0 relative space-y-2">
             <div className="flex items-center justify-between font-bold text-copper font-display">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-copper" />
@@ -208,33 +208,33 @@ export function CodeViewer({
               </div>
               <button
                 onClick={() => setExplanation(null)}
-                className="text-graphite-muted hover:text-white transition p-0.5 rounded cursor-pointer"
+                className="text-muted-foreground hover:text-foreground transition p-0.5 rounded cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <p className="p-2.5 rounded-lg bg-graphite-canvas border border-graphite-border text-foreground/90 leading-relaxed font-sans">
+            <p className="p-2.5 rounded-lg bg-background border border-border text-foreground leading-relaxed font-sans">
               {explanation.summary}
             </p>
             {explanation.analogy && (
-              <p className="p-2 rounded bg-graphite-canvas border border-graphite-border text-graphite-muted text-[11px] font-sans">
+              <p className="p-2 rounded bg-background border border-border text-muted-foreground text-[11px] font-sans">
                 💡 {explanation.analogy}
               </p>
             )}
             {explanation.common_pitfalls && explanation.common_pitfalls.length > 0 && (
               <ul className="list-disc list-inside text-[11px] text-severity-warning space-y-0.5 pl-1 font-sans">
-                {explanation.common_pitfalls.map((p, i) => (
-                  <li key={i}>{p}</li>
+                {explanation.common_pitfalls.map((pitfall, idx) => (
+                  <li key={idx}>{pitfall}</li>
                 ))}
               </ul>
             )}
           </div>
         )}
 
-        {/* Syntax-Highlighted Code Display stretching to fill container */}
+        {/* Syntax-Highlighted Code Display stretching to fill container with dedicated dark IDE editor styling */}
         <div
           ref={containerRef}
-          className="flex-1 bg-graphite-canvas font-mono text-xs overflow-x-auto overflow-y-auto text-foreground/90 rounded-b-xl min-h-0"
+          className="flex-1 bg-[#18191E] border-t border-border font-mono text-xs overflow-x-auto overflow-y-auto text-slate-100 rounded-b-xl min-h-0"
         >
           <SyntaxHighlighter
             language={language}

@@ -41,20 +41,20 @@ function renderFormattedMarkdown(markdown: string) {
         );
 
         elements.push(
-          <div key={`table-${i}`} className="my-4 overflow-x-auto rounded-xl border border-graphite-border bg-graphite-panel shadow-xl">
+          <div key={`table-${i}`} className="my-4 overflow-x-auto rounded-xl border border-border bg-card shadow-xl">
             <table className="w-full text-xs font-mono text-left border-collapse">
-              <thead className="bg-graphite-canvas border-b border-graphite-border text-white">
+              <thead className="bg-background border-b border-border text-foreground">
                 <tr>
                   {headerRow.map((cell, cIdx) => (
-                    <th key={cIdx} className="px-3.5 py-2.5 font-bold text-[#5B82A6]">
+                    <th key={cIdx} className="px-3.5 py-2.5 font-bold text-category-arch">
                       {parseInlineFormatting(cell)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-graphite-border">
+              <tbody className="divide-y divide-border">
                 {dataRows.map((r, rIdx) => (
-                  <tr key={rIdx} className="hover:bg-graphite-panel/60 transition-colors">
+                  <tr key={rIdx} className="hover:bg-muted/60 transition-colors">
                     {r.map((cell, cIdx) => (
                       <td key={cIdx} className="px-3.5 py-2 text-foreground/90">
                         {parseInlineFormatting(cell)}
@@ -73,7 +73,7 @@ function renderFormattedMarkdown(markdown: string) {
     // 2. Headings
     if (trimmed.startsWith("# ")) {
       elements.push(
-        <h1 key={`h1-${i}`} className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-copper to-[#5B82A6] border-b border-graphite-border pb-3 mt-6 mb-4 flex items-center gap-2 font-display">
+        <h1 key={`h1-${i}`} className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-copper to-category-arch border-b border-border pb-3 mt-6 mb-4 flex items-center gap-2 font-display">
           <span>{trimmed.replace("# ", "")}</span>
         </h1>
       );
@@ -83,7 +83,7 @@ function renderFormattedMarkdown(markdown: string) {
 
     if (trimmed.startsWith("## ")) {
       elements.push(
-        <h2 key={`h2-${i}`} className="text-lg font-bold text-[#5B82A6] border-b border-graphite-border pb-2 mt-6 mb-3 flex items-center gap-2 font-display">
+        <h2 key={`h2-${i}`} className="text-lg font-bold text-category-arch border-b border-border pb-2 mt-6 mb-3 flex items-center gap-2 font-display">
           <span>{trimmed.replace("## ", "")}</span>
         </h2>
       );
@@ -102,7 +102,7 @@ function renderFormattedMarkdown(markdown: string) {
     }
 
     if (trimmed.startsWith("---")) {
-      elements.push(<hr key={`hr-${i}`} className="border-graphite-border my-5" />);
+      elements.push(<hr key={`hr-${i}`} className="border-border my-5" />);
       i++;
       continue;
     }
@@ -170,28 +170,28 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
     }
     if (part === "[LOW]") {
       return (
-        <span key={i} className="px-2 py-0.5 rounded bg-[#5B82A6]/15 border border-[#5B82A6]/30 text-[#5B82A6] text-[10px] font-bold">
+        <span key={i} className="px-2 py-0.5 rounded bg-category-arch/15 border border-category-arch/30 text-category-arch text-[10px] font-bold">
           LOW
         </span>
       );
     }
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} className="text-white font-bold">
+        <strong key={i} className="text-foreground font-bold">
           {part.slice(2, -2)}
         </strong>
       );
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="px-1.5 py-0.5 rounded bg-graphite-panel text-copper border border-graphite-border font-mono text-[11px]">
+        <code key={i} className="px-1.5 py-0.5 rounded bg-card text-copper border border-border font-mono text-[11px]">
           {part.slice(1, -1)}
         </code>
       );
     }
     if (part.startsWith("*") && part.endsWith("*")) {
       return (
-        <em key={i} className="text-graphite-muted italic">
+        <em key={i} className="text-muted-foreground italic">
           {part.slice(1, -1)}
         </em>
       );
@@ -639,8 +639,8 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
         </div>
       </div>
 
-      <Card className="w-full space-y-4 border border-graphite-border shadow-2xl bg-graphite-canvas">
-        <CardHeader className="py-4 px-5 flex flex-wrap items-center justify-between border-b border-graphite-border bg-graphite-panel gap-3">
+      <Card className="w-full space-y-4 border border-border shadow-2xl bg-card">
+        <CardHeader className="py-4 px-5 flex flex-wrap items-center justify-between border-b border-border bg-card gap-3">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -649,13 +649,13 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               className="w-9 h-9 rounded-xl object-cover border border-copper/40 shadow-lg"
             />
             <div>
-              <CardTitle className="text-sm font-bold font-display text-white flex items-center gap-2">
+              <CardTitle className="text-sm font-bold font-display text-foreground flex items-center gap-2">
                 <span>Exportable Engineering Audit Report</span>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
+                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono">
                   Verified & Approved
                 </span>
               </CardTitle>
-              <p className="text-[11px] text-graphite-muted font-mono">Run ID: {runId}</p>
+              <p className="text-[11px] text-muted-foreground font-mono">Run ID: {runId}</p>
             </div>
           </div>
 
@@ -694,17 +694,17 @@ Report automatically verified and approved by Reviewer Agent Loop (Confidence Sc
               onClick={() => window.print()}
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 transition cursor-pointer"
+              className="gap-1.5 text-xs border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-emerald-400" />
+              <Printer className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Print / Browser PDF</span>
             </Button>
           </div>
 
         </CardHeader>
 
-        <CardContent className="p-6 bg-graphite-canvas rounded-b-xl border-t border-graphite-border font-mono text-xs text-foreground/90">
-          <div className="p-5 rounded-xl bg-graphite-panel border border-graphite-border space-y-2 max-h-[520px] overflow-y-auto leading-relaxed shadow-inner">
+        <CardContent className="p-6 bg-background rounded-b-xl border-t border-border font-mono text-xs text-foreground/90">
+          <div className="p-5 rounded-xl bg-card border border-border space-y-2 max-h-[520px] overflow-y-auto leading-relaxed shadow-inner">
             {formattedUIElements}
           </div>
         </CardContent>

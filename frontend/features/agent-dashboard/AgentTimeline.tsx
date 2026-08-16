@@ -28,15 +28,15 @@ interface AgentTimelineProps {
 
 const AGENT_ICONS: Record<string, React.ReactNode> = {
   planner_agent: <Sparkles className="w-4 h-4 text-copper" />,
-  repository_analyzer: <Layers className="w-4 h-4 text-[#5B82A6]" />,
-  architect_agent: <Cpu className="w-4 h-4 text-[#5B82A6]" />,
+  repository_analyzer: <Layers className="w-4 h-4 text-category-arch" />,
+  architect_agent: <Cpu className="w-4 h-4 text-category-arch" />,
   bug_hunter_agent: <Code2 className="w-4 h-4 text-severity-warning" />,
   security_agent: <ShieldCheck className="w-4 h-4 text-severity-critical" />,
   performance_agent: <Zap className="w-4 h-4 text-amber-500" />,
-  documentation_agent: <FileText className="w-4 h-4 text-emerald-400" />,
+  documentation_agent: <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
   feature_suggestion_agent: <Activity className="w-4 h-4 text-copper" />,
-  reviewer_agent: <ShieldCheck className="w-4 h-4 text-[#5B82A6]" />,
-  report_generator: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
+  reviewer_agent: <ShieldCheck className="w-4 h-4 text-category-arch" />,
+  report_generator: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
 };
 
 const AGENT_LABELS: Record<string, string> = {
@@ -99,34 +99,28 @@ const AGENT_THOUGHTS: Record<string, string[]> = {
     "Checking JSDoc presence on complex TypeScript hooks...",
     "Generating supplementary documentation for undocumented modules...",
   ],
-  reviewer_agent: [
-    "Verifying all agent claims against AST call graphs...",
-    "Running Review → Feedback → Rewrite loop...",
-    "Filtering low-confidence findings below 0.75 threshold...",
-    "Cross-referencing security and performance report intersections...",
-    "Generating final engineering quality verdict...",
-  ],
   feature_suggestion_agent: [
-    "Analyzing architecture gaps for enhancement opportunities...",
-    "Generating prioritized feature backlog from codebase patterns...",
-    "Identifying quick-win refactoring candidates...",
+    "Analyzing architectural modernization opportunities...",
+    "Evaluating automated CI/CD and PR triage integration...",
+    "Formulating non-breaking scalability improvements...",
+  ],
+  reviewer_agent: [
+    "Executing multi-agent verification quality gate...",
+    "Validating AST evidence claims against findings...",
+    "Checking confidence thresholds (re-running low-confidence agents)...",
+    "Synthesizing final engineering review verdict...",
   ],
   report_generator: [
-    "Compiling full engineering audit report...",
-    "Rendering health score breakdown by category...",
-    "Formatting findings with severity tiers and confidence scores...",
-    "Generating interactive 3D knowledge graph data...",
+    "Compiling structured executive engineering audit...",
+    "Formatting PDF-ready and Markdown documentation reports...",
+    "Finalizing repository health scores across 7 dimensions...",
   ],
 };
 
 export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps) {
-  // Find active running agent or default to latest/completed
-  const activeAgent = agents.find((a) => a.status === "running") ||
-    agents.filter((a) => a.status === "completed").pop() ||
-    agents[0];
-
   const completedCount = agents.filter((a) => a.status === "completed").length;
-  const overallProgress = Math.round((completedCount / (agents.length || 1)) * 100);
+  const overallProgress = agents.length > 0 ? Math.round((completedCount / agents.length) * 100) : 0;
+  const activeAgent = agents.find((a) => a.status === "running") || agents.find((a) => a.status === "queued") || agents[agents.length - 1];
   const isPipelineComplete = completedCount === agents.length && agents.length > 0;
 
   // Rotating "thinking" message for the active running agent
@@ -151,10 +145,10 @@ export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps
     : activeAgent?.current_task || "Executing automated AST parsing & AI reasoning pass...";
 
   return (
-    <Card className="w-full border-graphite-border bg-graphite-panel shadow-lg font-sans">
-      <CardHeader className="pb-3 border-b border-graphite-border">
+    <Card className="w-full border-border bg-card shadow-lg font-sans">
+      <CardHeader className="pb-3 border-b border-border">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold font-display">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold font-display text-foreground">
             <Users className="w-5 h-5 text-copper animate-pulse" />
             <span>Agentic Engineering Collaboration</span>
           </CardTitle>
@@ -172,43 +166,43 @@ export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps
       <CardContent className="space-y-4 pt-4 font-mono">
         {/* Active Agent Live Monitor Card */}
         {activeAgent && (
-          <div className="p-3.5 rounded-xl bg-graphite-canvas border border-copper/30 space-y-2.5 shadow-inner">
+          <div className="p-3.5 rounded-xl bg-background border border-copper/30 space-y-2.5 shadow-inner">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 font-medium text-copper">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${activeAgent.status === "running" ? "bg-copper" : "bg-emerald-400"} opacity-75`}></span>
                   <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${activeAgent.status === "running" ? "bg-copper" : "bg-emerald-500"}`}></span>
                 </span>
-                <span>Active Agent: <strong className="text-white">{AGENT_LABELS[activeAgent.name] || activeAgent.name}</strong></span>
+                <span>Active Agent: <strong className="text-foreground">{AGENT_LABELS[activeAgent.name] || activeAgent.name}</strong></span>
               </div>
-              <span className="font-mono text-[11px] text-graphite-muted uppercase tracking-wider">
+              <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
                 [{activeAgent.status}]
               </span>
             </div>
 
             {/* Rotating thought message */}
-            <div className="text-xs text-graphite-muted space-y-1">
-              <p className="flex items-center gap-1.5 font-sans text-white/90">
-                <Activity className="w-3.5 h-3.5 text-[#5B82A6] shrink-0" />
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="flex items-center gap-1.5 font-sans text-foreground/90">
+                <Activity className="w-3.5 h-3.5 text-category-arch shrink-0" />
                 <span className="transition-all duration-300 font-mono text-[11px]">{activeThought}</span>
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-              <div className="flex items-center gap-1.5 bg-graphite-panel px-2.5 py-1 rounded-md border border-graphite-border text-graphite-muted">
-                <FileSearch className="w-3.5 h-3.5 text-[#5B82A6]" />
-                <span>Files Analyzed: <strong className="text-white font-mono">{activeAgent.files_analyzed ?? (isPipelineComplete ? 24 : 12)}</strong></span>
+              <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-md border border-border text-muted-foreground">
+                <FileSearch className="w-3.5 h-3.5 text-category-arch" />
+                <span>Files Analyzed: <strong className="text-foreground font-mono">{activeAgent.files_analyzed ?? (isPipelineComplete ? 24 : 12)}</strong></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-graphite-panel px-2.5 py-1 rounded-md border border-graphite-border text-graphite-muted">
+              <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-md border border-border text-muted-foreground">
                 <Hourglass className="w-3.5 h-3.5 text-severity-warning" />
-                <span>Est. Remaining: <strong className="text-white font-mono">{isPipelineComplete ? "0s" : `${activeAgent.estimated_remaining_sec ?? 6}s`}</strong></span>
+                <span>Est. Remaining: <strong className="text-foreground font-mono">{isPipelineComplete ? "0s" : `${activeAgent.estimated_remaining_sec ?? 6}s`}</strong></span>
               </div>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-graphite-border h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden border border-border">
               <div
-                className="bg-gradient-to-r from-copper to-[#5B82A6] h-full transition-all duration-500 ease-out"
+                className="bg-gradient-to-r from-copper to-category-arch h-full transition-all duration-500 ease-out"
                 style={{ width: `${activeAgent.progress ?? (isPipelineComplete ? 100 : Math.max(overallProgress, 25))}%` }}
               />
             </div>
@@ -217,13 +211,13 @@ export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps
 
         {/* Execution Rationale Callout */}
         {executionRationale && (
-          <div className="p-3 rounded-lg bg-copper/10 border border-copper/20 text-xs text-white/90 font-sans">
+          <div className="p-3 rounded-lg bg-copper/10 border border-copper/20 text-xs text-foreground/90 font-sans">
             <span className="font-semibold text-copper font-mono">Planner Strategy:</span> {executionRationale}
           </div>
         )}
 
         {/* Sequence Agent Timeline List */}
-        <div className="relative border-l border-graphite-border ml-3 pl-6 space-y-3.5">
+        <div className="relative border-l border-border ml-3 pl-6 space-y-3.5">
           {agents.map((agent, index) => {
             const isCompleted = agent.status === "completed";
             const isRunning = agent.status === "running";
@@ -235,22 +229,22 @@ export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps
 
             return (
               <div key={agent.name || index} className="relative group">
-                <div className="absolute -left-[31px] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-graphite-canvas border border-graphite-border">
+                <div className="absolute -left-[31px] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-background border border-border">
                   {isCompleted ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   ) : isRunning ? (
                     <Clock className="w-4 h-4 text-copper animate-spin" />
                   ) : isDegraded ? (
                     <AlertTriangle className="w-4 h-4 text-severity-warning" />
                   ) : (
-                    <Clock className="w-4 h-4 text-graphite-muted" />
+                    <Clock className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    {AGENT_ICONS[agent.name] || <Code2 className="w-4 h-4 text-graphite-muted" />}
-                    <span className={`font-medium ${isRunning ? "text-copper font-semibold" : "text-white"}`}>
+                    {AGENT_ICONS[agent.name] || <Code2 className="w-4 h-4 text-muted-foreground" />}
+                    <span className={`font-medium ${isRunning ? "text-copper font-semibold" : "text-foreground"}`}>
                       {AGENT_LABELS[agent.name] || agent.name}
                     </span>
                   </div>
@@ -274,7 +268,7 @@ export function AgentTimeline({ agents, executionRationale }: AgentTimelineProps
 
                 {/* Review Loop Callout */}
                 {agent.name === "reviewer_agent" && isCompleted && (
-                  <div className="mt-1.5 p-2 rounded-lg bg-[#5B82A6]/10 border border-[#5B82A6]/20 text-[11px] text-[#5B82A6] font-mono">
+                  <div className="mt-1.5 p-2 rounded-lg bg-category-arch/10 border border-category-arch/20 text-[11px] text-category-arch font-mono">
                     <span className="font-semibold">Reviewer Verification:</span> Verified claim evidence. Review → Feedback → Rewrite → Approve passed.
                   </div>
                 )}

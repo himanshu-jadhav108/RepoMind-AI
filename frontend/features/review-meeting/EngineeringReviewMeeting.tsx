@@ -268,18 +268,16 @@ export function EngineeringReviewMeeting({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, meetingData.presentations.length]);
-
-  return (
-    <div className="rounded-2xl border border-graphite-border bg-graphite-panel backdrop-blur-xl p-5 shadow-2xl flex flex-col space-y-5 selection:bg-copper selection:text-white font-sans">
+  }, [isPlaying, meetingData.presentations.length]);  return (
+    <div className="rounded-2xl border border-border bg-card backdrop-blur-xl p-5 shadow-2xl flex flex-col space-y-5 selection:bg-copper selection:text-white font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-graphite-border pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-copper/10 border border-copper/30 text-copper">
             <Users className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2 font-display">
+            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 font-display">
               <span>Engineering Review Meeting</span>
               {isPlaying ? (
                 <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-severity-critical/20 border border-severity-critical/40 text-xs font-mono text-severity-critical animate-pulse">
@@ -292,20 +290,20 @@ export function EngineeringReviewMeeting({
                 </Badge>
               )}
             </h2>
-            <p className="text-xs text-graphite-muted font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               Autonomous multi-agent findings presentation & final verdict.
             </p>
           </div>
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-2 bg-graphite-canvas p-1.5 rounded-xl border border-graphite-border font-mono text-xs">
+        <div className="flex items-center gap-2 bg-background p-1.5 rounded-xl border border-border font-mono text-xs">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentIndex((p) => Math.max(0, p - 1))}
             disabled={currentIndex === 0}
-            className="h-8 px-2 text-graphite-muted hover:text-white"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -344,7 +342,7 @@ export function EngineeringReviewMeeting({
               setCurrentIndex((p) => Math.min(meetingData.presentations.length - 1, p + 1))
             }
             disabled={currentIndex === meetingData.presentations.length - 1}
-            className="h-8 px-2 text-graphite-muted hover:text-white"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -352,7 +350,7 @@ export function EngineeringReviewMeeting({
       </div>
 
       {/* Agent Nav Stepper Bar - All 10 Specialized Agents */}
-      <div className="flex flex-nowrap overflow-x-auto gap-1.5 bg-graphite-canvas p-2 rounded-xl border border-graphite-border scrollbar-none w-full items-center">
+      <div className="flex flex-nowrap overflow-x-auto gap-1.5 bg-background p-2 rounded-xl border border-border scrollbar-none w-full items-center">
         {meetingData.presentations.map((pres, idx) => {
           const isActive = idx === currentIndex;
           const isPassed = idx < currentIndex;
@@ -368,7 +366,7 @@ export function EngineeringReviewMeeting({
                   ? "bg-copper text-white shadow-lg shadow-copper/20 scale-[1.02]"
                   : isPassed
                   ? "bg-copper/15 text-copper hover:bg-copper/25"
-                  : "bg-graphite-panel text-graphite-muted hover:bg-graphite-panel/80 hover:text-white"
+                  : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
               }`}
             >
               {(pres.agent_id && AGENT_ICON_MAP[pres.agent_id]) || <Sparkles className="w-3.5 h-3.5 text-copper" />}
@@ -378,7 +376,6 @@ export function EngineeringReviewMeeting({
         })}
       </div>
 
-
       {/* Active Presentation Content Card */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -387,22 +384,22 @@ export function EngineeringReviewMeeting({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
           transition={{ duration: 0.25 }}
-          className="bg-graphite-canvas border border-graphite-border rounded-xl p-5 shadow-xl space-y-4 relative overflow-hidden"
+          className="bg-background border border-border rounded-xl p-5 shadow-xl space-y-4 relative overflow-hidden"
         >
           {/* Agent Header Info */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-graphite-border pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-graphite-panel border border-graphite-border shadow-md">
+              <div className="p-3 rounded-xl bg-card border border-border shadow-md">
                 {(currentAgent.agent_id && AGENT_ICON_MAP[currentAgent.agent_id]) || <Sparkles className="w-6 h-6 text-copper" />}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2 font-display">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2 font-display">
                   <span>{currentAgent.agent_name}</span>
-                  <Badge variant="outline" className="border-graphite-border text-graphite-muted text-xs font-mono">
+                  <Badge variant="outline" className="border-border text-muted-foreground text-xs font-mono">
                     {currentAgent.role}
                   </Badge>
                 </h3>
-                <p className="text-xs text-graphite-muted font-mono">
+                <p className="text-xs text-muted-foreground font-mono">
                   Agent Presentation {currentIndex + 1} of {meetingData.presentations.length}
                 </p>
               </div>
@@ -410,12 +407,12 @@ export function EngineeringReviewMeeting({
 
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-xs text-graphite-muted font-mono">Confidence Score</div>
-                <div className="text-sm font-extrabold text-emerald-400 font-mono">
+                <div className="text-xs text-muted-foreground font-mono">Confidence Score</div>
+                <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
                   {((currentAgent.confidence ?? 0.95) * 100).toFixed(0)}%
                 </div>
                 {/* Animated confidence bar */}
-                <div className="mt-1 w-20 h-1 rounded-full bg-graphite-border overflow-hidden">
+                <div className="mt-1 w-20 h-1 rounded-full bg-border overflow-hidden">
                   <motion.div
                     key={(currentAgent.agent_id || "agent") + "-conf"}
                     initial={{ width: 0 }}
@@ -435,7 +432,7 @@ export function EngineeringReviewMeeting({
                 className={`${
                   currentAgent.severity === "high" || currentAgent.severity === "critical"
                     ? "bg-severity-critical/15 text-severity-critical border-severity-critical/30"
-                    : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                 } text-xs font-mono px-2.5 py-1`}
               >
                 Severity: {(currentAgent.severity || "normal").toUpperCase()}
@@ -451,16 +448,16 @@ export function EngineeringReviewMeeting({
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-copper font-mono mb-1 font-display">
                   Executive Summary
                 </h4>
-                <p className="text-foreground/90 text-sm leading-relaxed bg-graphite-panel p-3 rounded-lg border border-graphite-border">
+                <p className="text-foreground/90 text-sm leading-relaxed bg-card p-3 rounded-lg border border-border">
                   {currentAgent.summary}
                 </p>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#5B82A6] font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch font-mono mb-1 font-display">
                   Architectural Reasoning
                 </h4>
-                <p className="text-graphite-muted text-xs leading-relaxed font-mono bg-graphite-panel p-3 rounded-lg border border-graphite-border">
+                <p className="text-muted-foreground text-xs leading-relaxed font-mono bg-card p-3 rounded-lg border border-border">
                   {currentAgent.reasoning || currentAgent.speech || "Verified agent finding details recorded."}
                 </p>
               </div>
@@ -469,26 +466,26 @@ export function EngineeringReviewMeeting({
             {/* Evidence & Recommended Actions */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#38BDF8] font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch font-mono mb-1 font-display">
                   Empirical Evidence
                 </h4>
-                <div className="bg-graphite-panel p-3 rounded-lg border border-[#38BDF8]/20 font-mono text-xs text-[#38BDF8] flex items-start gap-2">
-                  <FileCode className="w-4 h-4 text-[#38BDF8] shrink-0 mt-0.5" />
+                <div className="bg-card p-3 rounded-lg border border-category-arch/30 font-mono text-xs text-category-arch flex items-start gap-2">
+                  <FileCode className="w-4 h-4 text-category-arch shrink-0 mt-0.5" />
                   <span className="truncate">{currentAgent.evidence || currentAgent.key_point || "AST evidence verified by quality gate."}</span>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono mb-1 font-display">
                   Recommended Engineering Actions
                 </h4>
                 <div className="space-y-1.5">
                   {(currentAgent.recommended_actions || [currentAgent.key_point || "Apply recommended fixes."]).map((act, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 text-xs text-foreground/90 bg-graphite-panel p-2 rounded-lg border border-graphite-border"
+                      className="flex items-center gap-2 text-xs text-foreground/90 bg-card p-2 rounded-lg border border-border"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span>{act}</span>
                     </div>
                   ))}
@@ -498,7 +495,7 @@ export function EngineeringReviewMeeting({
               {/* Referenced Files */}
               {(currentAgent.referenced_files || (currentAgent.code_reference ? [currentAgent.code_reference] : [])).length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-graphite-muted font-mono mb-1 font-display">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono mb-1 font-display">
                     Referenced Code Modules
                   </h4>
                   <div className="flex flex-wrap gap-1.5 font-mono">
@@ -506,9 +503,9 @@ export function EngineeringReviewMeeting({
                       <button
                         key={i}
                         onClick={() => onSelectFile && onSelectFile(file)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-graphite-panel border border-[#5B82A6]/30 text-[#5B82A6] text-xs hover:bg-graphite-panel/80 transition cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-card border border-category-arch/30 text-category-arch text-xs hover:bg-muted transition cursor-pointer"
                       >
-                        <FileCode className="w-3 h-3 text-[#5B82A6]" />
+                        <FileCode className="w-3 h-3 text-category-arch" />
                         <span>{file}</span>
                       </button>
                     ))}
@@ -523,7 +520,7 @@ export function EngineeringReviewMeeting({
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 p-4 rounded-xl bg-graphite-panel border border-copper/40 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans"
+              className="mt-4 p-4 rounded-xl bg-card border border-copper/40 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans"
             >
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-full bg-copper text-white shadow-lg shadow-copper/20">
@@ -533,13 +530,13 @@ export function EngineeringReviewMeeting({
                   <div className="text-xs font-mono text-copper uppercase tracking-widest font-bold font-display">
                     Final Engineering Review Verdict
                   </div>
-                  <div className="text-base font-extrabold text-white font-display">{meetingData.verdict}</div>
-                  <div className="text-xs text-graphite-muted font-mono mt-0.5 max-w-2xl">
+                  <div className="text-base font-extrabold text-foreground font-display">{meetingData.verdict}</div>
+                  <div className="text-xs text-muted-foreground font-mono mt-0.5 max-w-2xl">
                     {meetingData.verdict_reasoning}
                   </div>
                 </div>
               </div>
-              <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 px-3 py-1 font-mono text-xs whitespace-nowrap">
+              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 px-3 py-1 font-mono text-xs whitespace-nowrap">
                 Reviewer Verdict: PASSED
               </Badge>
             </motion.div>

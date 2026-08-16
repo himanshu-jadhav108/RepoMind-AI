@@ -129,11 +129,21 @@ export function AnalysisLoadingOverlay({
   const [runningAgent, setRunningAgent] = useState<string | null>(null);
   const [completedCount, setCompletedCount] = useState(0);
   const [isAllDone, setIsAllDone] = useState(false);
+  const [isColdStart, setIsColdStart] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const repoName = repoUrl
     .replace("https://github.com/", "")
     .replace(".git", "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (completedCount === 0 && !isAllDone) {
+        setIsColdStart(true);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [completedCount, isAllDone]);
 
   // Connect to SSE stream or run accelerated simulation for demo mode
   useEffect(() => {
@@ -348,6 +358,20 @@ export function AnalysisLoadingOverlay({
               </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Cold-Start Advisory for Sleeping Containers */}
+          {isColdStart && !isAllDone && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-2xl px-4 py-2.5 rounded-xl border border-copper/30 bg-graphite-panel/90 text-xs font-mono text-graphite-muted flex items-center gap-2.5 shadow-lg"
+            >
+              <div className="w-2 h-2 rounded-full bg-copper animate-ping shrink-0" />
+              <span>
+                <strong className="text-white">Waking up the analysis engine</strong> — this can take up to 30 seconds on the first request after a period of inactivity.
+              </span>
+            </motion.div>
+          )}
 
           {/* Progress Bar */}
           <motion.div
