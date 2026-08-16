@@ -23,9 +23,16 @@ mock_repo_repo = MagicMock()
 mock_repo_repo.get_by_id = AsyncMock(return_value=None)
 mock_service.repo_repository = mock_repo_repo
 
-app.dependency_overrides[get_analysis_service] = lambda: mock_service
-
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def clean_rate_limit_state():
+    _ip_last_request.clear()
+    app.dependency_overrides[get_analysis_service] = lambda: mock_service
+    yield
+    _ip_last_request.clear()
+    app.dependency_overrides.pop(get_analysis_service, None)
 
 
 def test_rate_limiter_blocks_consecutive_requests(monkeypatch):
