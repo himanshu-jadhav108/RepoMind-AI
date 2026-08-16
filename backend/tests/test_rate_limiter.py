@@ -1,15 +1,29 @@
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 
-pytest.importorskip("supabase", reason="supabase package required for API endpoint tests")
-
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.v1.routes_analysis import _ip_last_request, router
+from app.api.v1.routes_analysis import _ip_last_request
 from app.core.config import settings
+from app.core.dependency_injection import get_analysis_service
+from app.main import app
+from app.models.analysis import AnalysisRunResponse, RunStatus
 
-app = FastAPI()
-app.include_router(router, prefix="/api/v1")
+# Setup mock analysis service so rate limiter is tested in pure isolation
+mock_service = MagicMock()
+mock_service.start_analysis_run = AsyncMock(
+    return_value=AnalysisRunResponse(
+        run_id="test-run-id",
+        repo_id="test-repo-id",
+        status=RunStatus.QUEUED,
+        created_at="2026-08-16T00:00:00Z",
+    )
+)
+mock_repo_repo = MagicMock()
+mock_repo_repo.get_by_id = AsyncMock(return_value=None)
+mock_service.repo_repository = mock_repo_repo
+
+app.dependency_overrides[get_analysis_service] = lambda: mock_service
 
 client = TestClient(app)
 
@@ -19,11 +33,10 @@ def test_rate_limiter_blocks_consecutive_requests(monkeypatch):
     monkeypatch.setattr(settings, "ANALYSIS_RATE_LIMIT_SECONDS", 600)
     monkeypatch.setattr(settings, "RATE_LIMIT_BYPASS_LOCALHOST", False)
 
-    # 1. First trigger returns 202 (or triggers endpoint logic past rate limiter)
-    # Note: repo registration is bypassed since we are testing rate limit layer directly
+    # 1. First trigger returns 202 Accepted
     payload = {"repo_id": "test-repo-id"}
     res1 = client.post("/api/v1/analysis/run", json=payload)
-    # Even if start_analysis_run raises 404/error, the rate limiter allowed it past the check
+    assert res1.status_code == 202
     assert res1.status_code != 429
 
     # 2. Second trigger immediately after must return 429 Too Many Requests
@@ -48,8 +61,8 @@ def test_rate_limiter_bypass_localhost(monkeypatch):
 
     payload = {"repo_id": "test-repo-id"}
     res1 = client.post("/api/v1/analysis/run", json=payload)
-    assert res1.status_code != 429
+    assert res1.status_code == 202
 
     # With bypass enabled for localhost ("testclient"), second request also passes rate limiter
     res2 = client.post("/api/v1/analysis/run", json=payload)
-    assert res2.status_code != 429
+    assert res2.status_code == 202

@@ -58,12 +58,14 @@ async def repomind_exception_handler(request: Request, exc: RepoMindException):
 async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
+        headers=exc.headers,
         content={
             "error": {
                 "code": f"HTTP_{exc.status_code}",
                 "message": str(exc.detail),
                 "details": {},
-            }
+            },
+            "detail": str(exc.detail),
         },
     )
 
