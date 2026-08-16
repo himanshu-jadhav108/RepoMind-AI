@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReportExportView } from "@/features/report-export/ReportExportView";
 import { getFinalReport } from "@/lib/api-client";
 
@@ -31,10 +32,10 @@ export default function StandaloneReportPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col p-4 sm:p-6 space-y-6 max-w-6xl mx-auto selection:bg-copper selection:text-white">
-      <div className="flex items-center justify-between border-b border-graphite-border pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
           <Link href={`/analyze/${runId}`}>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono border-graphite-border text-graphite-muted hover:text-white">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono border-border text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" /> Return to Workspace
             </Button>
           </Link>
@@ -43,14 +44,16 @@ export default function StandaloneReportPage({
             <img
               src="/RepoMind_AI_logo.jpeg"
               alt="RepoMind AI Logo"
-              className="w-8 h-8 rounded-xl object-cover border border-graphite-border shadow"
+              className="w-8 h-8 rounded-xl object-cover border border-border shadow"
             />
 
-            <h1 className="text-xl font-bold flex items-center gap-2 font-sans text-white">
+            <h1 className="text-xl font-bold flex items-center gap-2 font-sans text-foreground">
               <span>Executive Audit Report & Export Center</span>
             </h1>
           </div>
         </div>
+
+        <ThemeToggle />
       </div>
 
       <ReportExportView runId={runId} reportMarkdown={reportMd} />

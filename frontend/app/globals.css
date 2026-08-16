@@ -34,11 +34,79 @@
 
     --radius: 0.5rem;
 
-    /* Semantic Agent Category Tokens */
+    /* Theme-Aware Custom Tokens (Dark) */
+    --copper-default: 24 67% 53%;
+    --copper-hover: 24 65% 48%;
+    --copper-light: 25 73% 59%;
+    --copper-dim: 24 67% 53%;
+
+    --graphite-canvas: 225 8% 7%;
+    --graphite-panel: 231 11% 12%;
+    --graphite-border: 233 9% 18%;
+    --graphite-muted: 233 7% 46%;
+
+    /* Semantic Agent Category Tokens (Dark) */
     --category-arch: 212 29% 50%;
     --category-security: 3 100% 60%;
     --category-performance: 41 100% 50%;
     --category-qa: 151 100% 45%;
+
+    /* Severity Colors (Dark) */
+    --severity-critical: 3 100% 60%;
+    --severity-warning: 41 100% 50%;
+    --severity-info: 151 100% 45%;
+  }
+
+  .light {
+    --background: 40 20% 97%;       /* #F8F7F4 warm stone off-white */
+    --foreground: 225 15% 12%;      /* #1A1C22 dark warm graphite */
+
+    --card: 40 16% 93%;             /* #ECE9E2 light warm panel */
+    --card-foreground: 225 15% 12%;
+
+    --popover: 40 16% 93%;
+    --popover-foreground: 225 15% 12%;
+
+    --primary: 22 76% 43%;          /* #C2561A high-contrast industrial copper */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 14% 88%;
+    --secondary-foreground: 225 15% 12%;
+
+    --muted: 40 12% 88%;
+    --muted-foreground: 230 8% 40%;  /* #5C5E6B readable medium gray */
+
+    --accent: 40 14% 88%;
+    --accent-foreground: 225 15% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 10% 82%;           /* #D6D3CB subtle warm border */
+    --input: 40 10% 82%;
+    --ring: 22 76% 43%;
+
+    /* Theme-Aware Custom Tokens (Light) */
+    --copper-default: 22 76% 43%;
+    --copper-hover: 22 76% 38%;
+    --copper-light: 24 67% 53%;
+    --copper-dim: 22 76% 43%;
+
+    --graphite-canvas: 40 20% 97%;
+    --graphite-panel: 40 16% 93%;
+    --graphite-border: 40 10% 82%;
+    --graphite-muted: 230 8% 40%;
+
+    /* Semantic Agent Category Tokens (Light — WCAG Contrast Tuned) */
+    --category-arch: 210 37% 38%;     /* #3D6284 deep steel blue */
+    --category-security: 0 72% 51%;   /* #DC2626 crimson */
+    --category-performance: 38 92% 40%; /* #C96E06 rich amber bronze */
+    --category-qa: 160 84% 31%;       /* #059669 deep emerald */
+
+    /* Severity Colors (Light) */
+    --severity-critical: 0 72% 51%;
+    --severity-warning: 38 92% 40%;
+    --severity-info: 160 84% 31%;
   }
 }
 
@@ -47,18 +115,18 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Structural Panel Utilities */
+/* Structural Panel Utilities (Theme-Aware) */
 .panel-slate {
-  background: #1B1C22;
-  border: 1px solid #2A2B33;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
 }
 
 .panel-header {
-  background: #16171C;
-  border-bottom: 1px solid #2A2B33;
+  background: hsl(var(--popover));
+  border-bottom: 1px solid hsl(var(--border));
 }

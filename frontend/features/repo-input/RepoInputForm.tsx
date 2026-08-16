@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Github, Loader2, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Github, Loader2, Sparkles, Zap, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerRepository, startAnalysisRun, startHackathonDemoRun } from "@/lib/api-client";
 import { AnalysisLoadingOverlay } from "@/features/agent-dashboard/AnalysisLoadingOverlay";
@@ -11,9 +11,25 @@ export function RepoInputForm() {
   const router = useRouter();
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isColdStart, setIsColdStart] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [activeRepoUrl, setActiveRepoUrl] = useState<string>("");
+  const coldStartTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (loading) {
+      coldStartTimerRef.current = setTimeout(() => {
+        setIsColdStart(true);
+      }, 5000);
+    } else {
+      if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
+      setIsColdStart(false);
+    }
+    return () => {
+      if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
+    };
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +107,7 @@ export function RepoInputForm() {
           disabled={loading || !!activeRunId}
           variant="outline"
           size="lg"
-          className="w-full gap-2.5 bg-graphite-panel border-2 border-copper/60 text-white hover:border-copper font-mono text-sm shadow-xl px-6 py-3.5 rounded-xl transition ring-1 ring-copper/30 cursor-pointer"
+          className="w-full gap-2.5 bg-card border-2 border-copper text-foreground hover:bg-muted font-mono text-sm shadow-xl px-6 py-3.5 rounded-xl transition ring-1 ring-copper/30 cursor-pointer"
         >
           {loading && activeRepoUrl.includes("Demo") ? (
             <>
@@ -100,7 +116,7 @@ export function RepoInputForm() {
             </>
           ) : (
             <>
-              <Zap className="w-5 h-5 text-amber-400 animate-bounce" />
+              <Zap className="w-5 h-5 text-amber-500 animate-bounce" />
               <span className="font-bold">⚡ Hackathon Judge Demo Mode (Instant Pre-Analyzed Workspace)</span>
             </>
           )}
@@ -109,7 +125,7 @@ export function RepoInputForm() {
         {/* Repository GitHub Input Form */}
         <form onSubmit={handleSubmit} className="relative flex items-center font-mono">
           <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-graphite-muted">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground">
               <Github className="w-5 h-5" />
             </div>
             <input
@@ -118,7 +134,7 @@ export function RepoInputForm() {
               onChange={(e) => setRepoUrl(e.target.value)}
               placeholder="Paste public GitHub URL (e.g. https://github.com/fastapi/fastapi)"
               required
-              className="w-full h-14 pl-12 pr-36 rounded-xl bg-graphite-canvas text-sm text-foreground placeholder:text-graphite-muted focus:outline-none focus:ring-2 focus:ring-copper/50 border border-graphite-border transition-all"
+              className="w-full h-14 pl-12 pr-36 rounded-xl bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-copper/50 border border-border transition-all"
             />
             <div className="absolute inset-y-1.5 right-1.5 flex items-center">
               <Button
@@ -143,6 +159,16 @@ export function RepoInputForm() {
             </div>
           </div>
         </form>
+
+        {/* Cold-Start Notice for Free-Tier Sleep */}
+        {isColdStart && loading && (
+          <div className="p-3.5 rounded-xl bg-card border border-copper/30 text-xs font-mono text-muted-foreground flex items-center gap-3 animate-in fade-in duration-300 shadow-lg">
+            <Info className="w-4 h-4 text-copper shrink-0" />
+            <span>
+              <strong className="text-foreground">Waking up the analysis engine</strong> — this can take up to 30 seconds on the first request after a period of inactivity.
+            </span>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 text-sm rounded-lg bg-destructive/10 border border-destructive/20 text-destructive font-mono">

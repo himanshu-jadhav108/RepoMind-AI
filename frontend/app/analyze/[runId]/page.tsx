@@ -17,6 +17,7 @@ import { PathFinderPanel } from "@/features/architecture-graph/components/PathFi
 import { ArchitectureLayerSwimlanes } from "@/features/architecture-graph/components/ArchitectureLayerSwimlanes";
 import { NodeInspectorSidebar } from "@/features/architecture-graph/components/NodeInspectorSidebar";
 import { SmartLearningPanel } from "@/features/code-viewer/SmartLearningPanel";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import {
   getAnalysisRunStatus,
@@ -389,6 +390,8 @@ export default function AnalyzeWorkspacePage({
               Audit Report
             </Button>
           </Link>
+
+          <ThemeToggle />
         </div>
       </div>
 
