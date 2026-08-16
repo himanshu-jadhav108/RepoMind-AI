@@ -54,18 +54,18 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
 
-        // Extended Custom Design System Tokens
+        // Extended Custom Design System Tokens (Theme-Aware)
         copper: {
-          DEFAULT: "#D97736",
-          hover: "#C86A2B",
-          light: "#E08B4F",
-          dim: "rgba(217, 119, 54, 0.15)",
+          DEFAULT: "hsl(var(--copper-default) / <alpha-value>)",
+          hover: "hsl(var(--copper-hover) / <alpha-value>)",
+          light: "hsl(var(--copper-light) / <alpha-value>)",
+          dim: "hsl(var(--copper-dim) / <alpha-value>)",
         },
         graphite: {
-          canvas: "#121316",
-          panel: "#1B1C22",
-          border: "#2A2B33",
-          muted: "#6E707E",
+          canvas: "hsl(var(--graphite-canvas) / <alpha-value>)",
+          panel: "hsl(var(--graphite-panel) / <alpha-value>)",
+          border: "hsl(var(--graphite-border) / <alpha-value>)",
+          muted: "hsl(var(--graphite-muted) / <alpha-value>)",
         },
         category: {
           arch: "hsl(var(--category-arch) / <alpha-value>)",
@@ -74,9 +74,9 @@ const config: Config = {
           qa: "hsl(var(--category-qa) / <alpha-value>)",
         },
         severity: {
-          critical: "#FF3B30",
-          warning: "#FFB000",
-          info: "#00E676",
+          critical: "hsl(var(--severity-critical) / <alpha-value>)",
+          warning: "hsl(var(--severity-warning) / <alpha-value>)",
+          info: "hsl(var(--severity-info) / <alpha-value>)",
         },
       },
       fontFamily: {
