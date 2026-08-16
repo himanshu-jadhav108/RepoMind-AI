@@ -65,37 +65,37 @@ const LAYERS_SPEC = [
   {
     id: "frontend",
     title: "1. Presentation Layer (Frontend)",
-    color: "from-[#38BDF8]/20 to-graphite-panel border-[#38BDF8]/30 text-[#38BDF8]",
-    badgeColor: "bg-[#38BDF8]/10 text-[#38BDF8] border-[#38BDF8]/40",
-    icon: <Globe className="w-4 h-4 text-[#38BDF8]" />,
+    color: "from-sky-500/15 to-card border-sky-500/30 text-sky-600 dark:text-sky-400",
+    badgeColor: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/40",
+    icon: <Globe className="w-4 h-4 text-sky-600 dark:text-sky-400" />,
   },
   {
     id: "api",
     title: "2. API Controller & Gateway Layer",
-    color: "from-copper/20 to-graphite-panel border-copper/30 text-copper",
+    color: "from-copper/15 to-card border-copper/30 text-copper",
     badgeColor: "bg-copper/10 text-copper border-copper/40",
     icon: <Layers className="w-4 h-4 text-copper" />,
   },
   {
     id: "services",
     title: "3. Domain Services Layer",
-    color: "from-[#5B82A6]/20 to-graphite-panel border-[#5B82A6]/30 text-[#5B82A6]",
-    badgeColor: "bg-[#5B82A6]/10 text-[#5B82A6] border-[#5B82A6]/40",
-    icon: <Cpu className="w-4 h-4 text-[#5B82A6]" />,
+    color: "from-category-arch/15 to-card border-category-arch/30 text-category-arch",
+    badgeColor: "bg-category-arch/10 text-category-arch border-category-arch/40",
+    icon: <Cpu className="w-4 h-4 text-category-arch" />,
   },
   {
     id: "agents",
     title: "4. Multi-Agent AI Engineering Intelligence",
-    color: "from-severity-warning/20 to-graphite-panel border-severity-warning/30 text-severity-warning",
+    color: "from-severity-warning/15 to-card border-severity-warning/30 text-severity-warning",
     badgeColor: "bg-severity-warning/10 text-severity-warning border-severity-warning/40",
     icon: <Zap className="w-4 h-4 text-severity-warning" />,
   },
   {
     id: "repositories",
     title: "5. Repository & Data Access Abstractions",
-    color: "from-emerald-500/20 to-graphite-panel border-emerald-500/30 text-emerald-400",
-    badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/40",
-    icon: <Database className="w-4 h-4 text-emerald-400" />,
+    color: "from-emerald-500/15 to-card border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40",
+    icon: <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
   },
 ];
 
@@ -132,15 +132,15 @@ export function ArchitectureLayerSwimlanes({ graphData, onNodeClick }: Architect
   };
 
   return (
-    <div className="w-full p-5 bg-graphite-panel rounded-2xl border border-graphite-border space-y-4 font-sans selection:bg-copper selection:text-white shadow-2xl">
+    <div className="w-full p-5 bg-card rounded-2xl border border-border space-y-4 font-sans text-foreground shadow-xl">
 
-      <div className="flex items-center justify-between border-b border-graphite-border pb-3">
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2 font-display">
-            <Layers className="w-5 h-5 text-[#5B82A6]" />
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2 font-display">
+            <Layers className="w-5 h-5 text-category-arch" />
             <span>Architecture Layer View</span>
           </h3>
-          <p className="text-xs text-graphite-muted font-mono">
+          <p className="text-xs text-muted-foreground font-mono">
             Nodes grouped into color-coded Clean Architecture swimlanes
           </p>
         </div>
@@ -154,22 +154,22 @@ export function ArchitectureLayerSwimlanes({ graphData, onNodeClick }: Architect
           return (
             <div
               key={layer.id}
-              className={`rounded-xl border bg-gradient-to-r ${layer.color} shadow-lg overflow-hidden transition-all`}
+              className={`rounded-xl border bg-gradient-to-r ${layer.color} shadow-sm overflow-hidden transition-all`}
             >
               {/* Layer Swimlane Header */}
               <button
                 onClick={() => toggleLayer(layer.id)}
-                className="w-full p-3 flex items-center justify-between bg-graphite-canvas/80 hover:bg-graphite-canvas transition text-left cursor-pointer"
+                className="w-full p-3 flex items-center justify-between bg-card/90 hover:bg-card transition text-left cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   {layer.icon}
-                  <span className="text-sm font-bold font-display text-white">{layer.title}</span>
-                  <Badge className={`${layer.badgeColor} text-[10px] font-mono`}>
+                  <span className="text-sm font-bold font-display text-foreground">{layer.title}</span>
+                  <Badge className={`${layer.badgeColor} text-[10px] font-mono font-semibold`}>
                     {layerNodes.length} Modules
                   </Badge>
                 </div>
 
-                <div className="text-graphite-muted">
+                <div className="text-muted-foreground">
                   {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
               </button>
@@ -181,28 +181,28 @@ export function ArchitectureLayerSwimlanes({ graphData, onNodeClick }: Architect
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="p-3 bg-graphite-canvas border-t border-graphite-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 font-mono text-xs"
+                    className="p-3 bg-background/80 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 font-mono text-xs"
                   >
                     {layerNodes.length > 0 ? (
                       layerNodes.map((n: any) => (
                         <button
                           key={n.id}
                           onClick={() => onNodeClick && onNodeClick(n.data?.label || n.id)}
-                          className="flex items-center justify-between p-2.5 rounded-lg bg-graphite-panel border border-graphite-border hover:border-[#5B82A6]/50 hover:bg-graphite-panel/90 text-left transition group shadow-sm cursor-pointer"
+                          className="flex items-center justify-between p-2.5 rounded-lg bg-card border border-border hover:border-copper/60 hover:bg-muted text-left transition group shadow-sm cursor-pointer"
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <FileCode className="w-3.5 h-3.5 text-[#5B82A6] shrink-0 group-hover:scale-110 transition-transform" />
-                            <span className="truncate text-white font-semibold">
+                            <FileCode className="w-3.5 h-3.5 text-category-arch shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="truncate text-foreground font-semibold">
                               {n.data?.label || n.id}
                             </span>
                           </div>
-                          <Badge variant="outline" className="text-[9px] border-graphite-border text-graphite-muted shrink-0">
+                          <Badge variant="outline" className="text-[9px] border-border text-muted-foreground shrink-0 font-mono">
                             {n.data?.language || "Module"}
                           </Badge>
                         </button>
                       ))
                     ) : (
-                      <div className="col-span-full py-2 text-center text-xs text-graphite-muted font-mono italic">
+                      <div className="col-span-full py-2 text-center text-xs text-muted-foreground font-mono italic">
                         Clean layer abstraction — no direct violations.
                       </div>
                     )}

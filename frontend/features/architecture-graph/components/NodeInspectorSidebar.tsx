@@ -76,13 +76,13 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
 
   if (!selectedNodeId && inline) {
     return (
-      <div className="w-full h-full min-h-[420px] rounded-xl bg-graphite-panel border border-graphite-border p-6 flex flex-col items-center justify-center text-center font-mono text-xs text-graphite-muted gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#5B82A6]/10 border border-[#5B82A6]/30 flex items-center justify-center text-[#5B82A6]">
+      <div className="w-full h-full min-h-[420px] rounded-xl bg-card border border-border p-6 flex flex-col items-center justify-center text-center font-mono text-xs text-muted-foreground gap-3">
+        <div className="w-10 h-10 rounded-xl bg-category-arch/10 border border-category-arch/30 flex items-center justify-center text-category-arch">
           <BookOpen className="w-5 h-5" />
         </div>
         <div className="space-y-1 max-w-xs">
-          <span className="font-bold text-white block text-sm font-display">Learning Agent Analysis</span>
-          <p className="text-graphite-muted text-[11px] leading-relaxed font-mono">
+          <span className="font-bold text-foreground block text-sm font-display">Learning Agent Analysis</span>
+          <p className="text-muted-foreground text-[11px] leading-relaxed font-mono">
             Click any node in the Architecture Graph or select a file to view instant AI code explanations & line-by-line breakdowns.
           </p>
         </div>
@@ -98,8 +98,8 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
   );
 
   const containerClasses = inline
-    ? "w-full rounded-xl bg-graphite-panel border border-graphite-border p-5 font-mono text-foreground shadow-xl overflow-y-auto max-h-[520px] flex flex-col space-y-4"
-    : "fixed top-0 right-0 h-full w-96 bg-graphite-canvas border-l border-graphite-border shadow-2xl z-[999] flex flex-col font-mono text-foreground p-5 overflow-y-auto";
+    ? "w-full rounded-xl bg-card border border-border p-5 font-mono text-foreground shadow-xl overflow-y-auto max-h-[520px] flex flex-col space-y-4"
+    : "fixed top-0 right-0 h-full w-96 bg-card border-l border-border shadow-2xl z-[999] flex flex-col font-mono text-foreground p-5 overflow-y-auto";
 
   return (
     <AnimatePresence>
@@ -112,42 +112,42 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
       >
 
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-graphite-border">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <FileCode className="w-5 h-5 text-[#5B82A6]" />
-            <h2 className="font-bold text-sm text-white truncate max-w-[220px] font-display" title={label || undefined}>
+            <FileCode className="w-5 h-5 text-category-arch" />
+            <h2 className="font-bold text-sm text-foreground truncate max-w-[220px] font-display" title={label || undefined}>
               {label}
             </h2>
           </div>
           <button
             onClick={() => setSelectedNodeId(null)}
-            className="p-1.5 rounded-lg hover:bg-graphite-border text-graphite-muted hover:text-white transition"
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Section 1: Overview Badges */}
-        <div className="py-4 space-y-3 border-b border-graphite-border">
+        <div className="py-4 space-y-3 border-b border-border">
           <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-graphite-muted">Node Identifier:</span>
-            <span className="font-bold text-[#5B82A6] truncate max-w-[180px]" title={selectedNodeId || undefined}>
+            <span className="text-muted-foreground">Node Identifier:</span>
+            <span className="font-bold text-category-arch truncate max-w-[180px]" title={selectedNodeId || undefined}>
               {selectedNodeId}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-graphite-muted">Language / Type:</span>
-            <span className="px-2 py-0.5 rounded bg-[#5B82A6]/10 text-[#5B82A6] border border-[#5B82A6]/30 font-semibold uppercase">
+            <span className="text-muted-foreground">Language / Type:</span>
+            <span className="px-2 py-0.5 rounded bg-category-arch/10 text-category-arch border border-category-arch/30 font-semibold uppercase">
               {language}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-graphite-muted">File Findings:</span>
+            <span className="text-muted-foreground">File Findings:</span>
             <span
               className={`font-bold px-2 py-0.5 rounded text-xs border ${
                 nodeFindings.length > 0
                   ? "bg-severity-warning/15 text-severity-warning border-severity-warning/30"
-                  : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                  : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
               }`}
             >
               {nodeFindings.length > 0 ? `${nodeFindings.length} Issues` : "0 Issues"}
@@ -156,16 +156,16 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
         </div>
 
         {/* Section 2: AI Code Explanation & Learning Agent Analysis */}
-        <div className="py-4 border-b border-graphite-border space-y-3">
-          <h3 className="text-xs font-semibold text-[#5B82A6] flex items-center gap-1.5 font-display">
-            <BookOpen className="w-4 h-4 text-[#5B82A6]" /> Learning Agent Analysis
+        <div className="py-4 border-b border-border space-y-3">
+          <h3 className="text-xs font-semibold text-category-arch flex items-center gap-1.5 font-display">
+            <BookOpen className="w-4 h-4 text-category-arch" /> Learning Agent Analysis
           </h3>
 
           {loading && (
-            <div className="space-y-2 p-3 rounded-lg bg-graphite-canvas border border-graphite-border animate-pulse">
-              <div className="h-3 bg-graphite-border rounded w-3/4"></div>
-              <div className="h-3 bg-graphite-border rounded w-full"></div>
-              <div className="h-3 bg-graphite-border rounded w-5/6"></div>
+            <div className="space-y-2 p-3 rounded-lg bg-background border border-border animate-pulse">
+              <div className="h-3 bg-muted rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-full"></div>
+              <div className="h-3 bg-muted rounded w-5/6"></div>
             </div>
           )}
 
@@ -179,15 +179,15 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
             <div className="space-y-3 font-mono">
               {/* Summary */}
               {explanation.summary && (
-                <p className="text-xs text-foreground/90 leading-relaxed p-3 rounded-lg bg-graphite-canvas border border-graphite-border font-sans">
+                <p className="text-xs text-foreground/90 leading-relaxed p-3 rounded-lg bg-background border border-border font-sans">
                   {explanation.summary}
                 </p>
               )}
 
               {/* Analogy Callout Box */}
               {explanation.analogy && (
-                <div className="p-3 rounded-lg bg-[#5B82A6]/10 border border-[#5B82A6]/30 text-xs text-[#5B82A6] space-y-1">
-                  <div className="font-semibold text-[#5B82A6] flex items-center gap-1.5">
+                <div className="p-3 rounded-lg bg-category-arch/10 border border-category-arch/30 text-xs text-category-arch space-y-1">
+                  <div className="font-semibold text-category-arch flex items-center gap-1.5">
                     <Lightbulb className="w-3.5 h-3.5 text-copper" /> Intuitive Analogy
                   </div>
                   <p className="text-[11px] text-foreground/80 leading-normal font-sans">{explanation.analogy}</p>
@@ -196,27 +196,27 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
 
               {/* Expandable Line-by-Line Breakdown */}
               {explanation.line_by_line && explanation.line_by_line.length > 0 && (
-                <div className="rounded-lg bg-graphite-canvas border border-graphite-border overflow-hidden">
+                <div className="rounded-lg bg-background border border-border overflow-hidden">
                   <button
                     onClick={() => setExpandedLines(!expandedLines)}
-                    className="w-full flex items-center justify-between p-2.5 text-xs font-semibold text-white hover:bg-graphite-panel transition"
+                    className="w-full flex items-center justify-between p-2.5 text-xs font-semibold text-foreground hover:bg-muted transition"
                   >
                     <span className="flex items-center gap-1.5">
                       <Code2 className="w-3.5 h-3.5 text-copper" /> Line-by-Line Breakdown
                     </span>
                     {expandedLines ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-graphite-muted" />
+                      <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-graphite-muted" />
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
                   </button>
 
                   {expandedLines && (
-                    <div className="p-2.5 pt-0 space-y-2 border-t border-graphite-border">
+                    <div className="p-2.5 pt-0 space-y-2 border-t border-border">
                       {explanation.line_by_line.map((item, idx) => (
                         <div key={idx} className="text-[11px] space-y-0.5">
                           <span className="font-bold text-copper">Lines {item.lines}:</span>
-                          <p className="text-graphite-muted leading-normal font-sans">{item.explanation}</p>
+                          <p className="text-muted-foreground leading-normal font-sans">{item.explanation}</p>
                         </div>
                       ))}
                     </div>
@@ -244,7 +244,7 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
                   {explanation.related_concepts.map((concept, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-0.5 rounded text-[10px] bg-graphite-canvas text-[#5B82A6] border border-graphite-border font-semibold font-mono"
+                      className="px-2 py-0.5 rounded text-[10px] bg-background text-category-arch border border-border font-semibold font-mono"
                     >
                       {concept}
                     </span>
@@ -266,15 +266,15 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
               {nodeFindings.map((f: any, idx: number) => (
                 <div
                   key={idx}
-                  className="p-3 rounded-lg bg-graphite-canvas border border-severity-warning/30 text-xs space-y-1"
+                  className="p-3 rounded-lg bg-background border border-severity-warning/30 text-xs space-y-1"
                 >
                   <div className="font-semibold flex items-center justify-between">
                     <span className="uppercase text-[10px] font-bold text-severity-warning px-1.5 py-0.5 rounded bg-severity-warning/10">
                       {f.severity || "medium"}
                     </span>
-                    <span className="text-[10px] text-graphite-muted">Lines {f.line_start || 1}-{f.line_end || 10}</span>
+                    <span className="text-[10px] text-muted-foreground">Lines {f.line_start || 1}-{f.line_end || 10}</span>
                   </div>
-                  <p className="text-xs text-white font-sans">{f.description}</p>
+                  <p className="text-xs text-foreground font-sans">{f.description}</p>
                   {f.suggested_fix && (
                     <p className="text-[11px] text-severity-warning/90 italic mt-1 font-sans">Fix: {f.suggested_fix}</p>
                   )}
@@ -282,11 +282,11 @@ export function NodeInspectorSidebar({ graphData, runId, findings = [], inline =
               ))}
             </div>
           ) : (
-            <div className="p-3 rounded-lg bg-graphite-canvas border border-graphite-border text-xs text-graphite-muted space-y-1">
-              <div className="font-semibold text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Sanitization Verified
+            <div className="p-3 rounded-lg bg-background border border-border text-xs text-muted-foreground space-y-1">
+              <div className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Sanitization Verified
               </div>
-              <p className="text-[11px] text-graphite-muted">No findings for this file.</p>
+              <p className="text-[11px] text-muted-foreground">No findings for this file.</p>
             </div>
           )}
         </div>

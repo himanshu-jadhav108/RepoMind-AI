@@ -17,7 +17,7 @@ export function FileNode({ id, data }: { id: string; data: any }) {
 
   // Health Status Ring Color
   let ringColor = "border-emerald-500/60 shadow-emerald-500/20";
-  let badgeBg = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+  let badgeBg = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
 
   if (health === "warning") {
     ringColor = "border-severity-warning/60 shadow-severity-warning/20";
@@ -37,11 +37,11 @@ export function FileNode({ id, data }: { id: string; data: any }) {
       onClick={() => setSelectedNodeId(id)}
       className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl border backdrop-blur-xl transition-all duration-300 shadow-md cursor-pointer ${
         isSelected
-          ? "bg-graphite-panel border-[#5B82A6] ring-2 ring-[#5B82A6]/50 shadow-lg"
-          : `bg-graphite-canvas ${ringColor} hover:border-[#5B82A6]/60`
+          ? "bg-card border-category-arch ring-2 ring-category-arch/50 shadow-lg"
+          : `bg-card/95 ${ringColor} hover:border-category-arch/60`
       }`}
     >
-      <Handle type="target" position={Position.Top} className="!bg-[#5B82A6] !w-2 !h-2" />
+      <Handle type="target" position={Position.Top} className="!bg-category-arch !w-2 !h-2" />
 
       {/* Language / Health Icon */}
       <div className={`p-1.5 rounded-lg border ${badgeBg}`}>
@@ -50,27 +50,27 @@ export function FileNode({ id, data }: { id: string; data: any }) {
         ) : health === "ai_generated" ? (
           <Sparkles className="w-4 h-4 text-copper animate-pulse" />
         ) : (
-          <FileCode className="w-4 h-4 text-[#5B82A6]" />
+          <FileCode className="w-4 h-4 text-category-arch" />
         )}
       </div>
 
       <div className="flex flex-col">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-white font-mono tracking-tight max-w-[140px] truncate">
+          <span className="text-xs font-bold text-foreground font-mono tracking-tight max-w-[140px] truncate">
             {data.label}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded font-mono bg-graphite-panel text-graphite-muted border border-graphite-border">
+          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded font-mono bg-background text-muted-foreground border border-border">
             {language}
           </span>
-          <span className="text-[9px] font-mono text-[#5B82A6] flex items-center gap-0.5">
+          <span className="text-[9px] font-mono text-category-arch flex items-center gap-0.5">
             <ShieldCheck className="w-2.5 h-2.5" /> {(confidence * 100).toFixed(0)}% AI
           </span>
         </div>
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-[#5B82A6] !w-2 !h-2" />
+      <Handle type="source" position={Position.Bottom} className="!bg-category-arch !w-2 !h-2" />
     </div>
   );
 }

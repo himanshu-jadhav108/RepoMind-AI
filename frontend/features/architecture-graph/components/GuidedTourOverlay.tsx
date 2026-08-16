@@ -107,16 +107,16 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
       <motion.div
         initial={{ opacity: 0, y: -20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="rounded-xl border border-copper/40 bg-graphite-canvas shadow-2xl p-4 backdrop-blur-2xl space-y-3 selection:bg-copper selection:text-white"
+        className="rounded-xl border border-copper/40 bg-card shadow-2xl p-4 backdrop-blur-2xl space-y-3 selection:bg-copper selection:text-white text-foreground"
       >
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between border-b border-graphite-border pb-2.5">
+        <div className="flex items-center justify-between border-b border-border pb-2.5">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-copper text-white shadow-md">
               <Compass className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white font-display flex items-center gap-1.5">
+              <h4 className="text-xs font-bold text-foreground font-display flex items-center gap-1.5">
                 <span>Guided Repository Tour</span>
                 <Badge className="bg-copper/10 text-copper border-copper/30 text-[10px] font-mono">
                   Step {activeStep.step} of 8
@@ -129,16 +129,16 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-7 w-7 p-0 text-graphite-muted hover:text-white"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Step Progress Bar */}
-        <div className="w-full bg-graphite-border rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
           <div
-            className="bg-gradient-to-r from-copper to-[#5B82A6] h-full transition-all duration-300"
+            className="bg-gradient-to-r from-copper to-category-arch h-full transition-all duration-300"
             style={{ width: `${((currentStepIdx + 1) / TOUR_STEPS.length) * 100}%` }}
           />
         </div>
@@ -154,24 +154,24 @@ export function GuidedTourOverlay({ onHighlightNode, onClose }: GuidedTourOverla
             className="space-y-2.5"
           >
             <h5 className="text-sm font-bold text-copper font-display">{activeStep.title}</h5>
-            <p className="text-xs text-foreground/90 leading-relaxed font-sans bg-graphite-panel p-2.5 rounded-lg border border-graphite-border">
+            <p className="text-xs text-foreground/90 leading-relaxed font-sans bg-background p-2.5 rounded-lg border border-border">
               {activeStep.description}
             </p>
-            <div className="text-[11px] text-[#38BDF8] font-mono bg-graphite-panel p-2 rounded-lg border border-graphite-border flex items-start gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#38BDF8] shrink-0 mt-0.5" />
+            <div className="text-[11px] text-sky-600 dark:text-sky-400 font-mono bg-background p-2 rounded-lg border border-border flex items-start gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
               <span>Pro Tip: {activeStep.tip}</span>
             </div>
           </motion.div>
         </AnimatePresence>
 
         {/* Footer Stepper Controls */}
-        <div className="flex items-center justify-between pt-2 border-t border-graphite-border">
+        <div className="flex items-center justify-between pt-2 border-t border-border">
           <Button
             variant="outline"
             size="sm"
             onClick={handlePrev}
             disabled={currentStepIdx === 0}
-            className="h-7 text-xs font-mono gap-1 border-graphite-border text-graphite-muted"
+            className="h-7 text-xs font-mono gap-1 border-border text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Previous
           </Button>

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen, Sparkles, Layers, ChevronDown, ChevronUp, Palette, Cpu } from "lucide-react";
+import { Move, ZoomIn, ZoomOut, RefreshCw, FolderOpen, Sparkles, Layers, ChevronDown, ChevronUp, Palette, Cpu, X, FileCode, ExternalLink } from "lucide-react";
 import * as THREE from "three";
+import { useGraphStore } from "./store/useGraphStore";
 
 interface KnowledgeGraph3DProps {
   graphData?: { nodes: any[]; edges: any[] } | null;
@@ -184,6 +185,7 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
   const containerRef = useRef<HTMLDivElement>(null);
   const graphInstanceRef = useRef<any>(null);
   const [hoveredNode, setHoveredNode] = useState<Node3DData | null>(null);
+  const [selectedNode, setSelectedNode] = useState<Node3DData | null>(null);
   const [isLegendOpen, setIsLegendOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -339,7 +341,26 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           return srcId === activeHover.id || tgtId === activeHover.id ? 0.95 : 0.08;
         })
         .onNodeClick((node: any) => {
+          if (!node) return;
+          setSelectedNode(node);
+          useGraphStore.getState().setSelectedNodeId(node.id);
           if (onNodeClick) onNodeClick(node.id);
+
+          // Smoothly frame camera on clicked node
+          if (graph && typeof node.x === "number") {
+            const distance = 80;
+            const hyp = Math.hypot(node.x, node.y, node.z) || 1;
+            const distRatio = 1 + distance / hyp;
+            graph.cameraPosition(
+              { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+              node,
+              1000
+            );
+          }
+        })
+        .onBackgroundClick(() => {
+          setSelectedNode(null);
+          useGraphStore.getState().setSelectedNodeId(null);
         })
         .onNodeHover((node: any) => {
           setHoveredNode(node || null);
@@ -442,32 +463,64 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
         </button>
       </div>
 
-      {/* Hover HUD Inspector Card (Fixed Left Corner) */}
-      {hoveredNode && (
-        <div className="absolute bottom-3 left-3 p-3 rounded-lg bg-graphite-panel/95 border border-[#5B82A6]/40 backdrop-blur-md shadow-2xl text-xs text-white font-mono flex items-center gap-3 max-w-xs sm:max-w-md animate-in fade-in duration-200 pointer-events-none z-10">
-          <div
-            className="w-3.5 h-3.5 rounded-full shrink-0 shadow-lg"
-            style={{ backgroundColor: hoveredNode.color, boxShadow: `0 0 10px ${hoveredNode.color}` }}
-          />
-          <div className="overflow-hidden">
-            <div className="font-bold text-white flex items-center gap-2 font-display truncate">
-              <span className="truncate">{hoveredNode.label}</span>
-              <span
-                className="text-[10px] uppercase px-1.5 py-0.5 rounded border shrink-0 font-mono"
+      {/* Selected / Hover HUD Inspector Card (Fixed Left Corner) */}
+      {(selectedNode || hoveredNode) && (
+        <div
+          className={`absolute bottom-3 left-3 p-3.5 rounded-xl border backdrop-blur-md shadow-2xl text-xs font-mono max-w-xs sm:max-w-md animate-in fade-in duration-200 z-20 ${
+            selectedNode
+              ? "bg-card/95 border-copper/60 text-foreground pointer-events-auto ring-1 ring-copper/40"
+              : "bg-card/90 border-border text-foreground pointer-events-none"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5 overflow-hidden">
+              <div
+                className="w-4 h-4 rounded-full shrink-0 shadow-lg mt-0.5"
                 style={{
-                  backgroundColor: `${hoveredNode.color}20`,
-                  color: hoveredNode.color,
-                  borderColor: `${hoveredNode.color}40`,
+                  backgroundColor: (selectedNode || hoveredNode)!.color,
+                  boxShadow: `0 0 10px ${(selectedNode || hoveredNode)!.color}`,
                 }}
-              >
-                {hoveredNode.language}
-              </span>
+              />
+              <div className="overflow-hidden">
+                <div className="font-bold text-foreground flex items-center gap-2 font-display truncate">
+                  <span className="truncate">{(selectedNode || hoveredNode)!.label}</span>
+                  <span
+                    className="text-[10px] uppercase px-1.5 py-0.5 rounded border shrink-0 font-mono font-semibold"
+                    style={{
+                      backgroundColor: `${(selectedNode || hoveredNode)!.color}20`,
+                      color: (selectedNode || hoveredNode)!.color,
+                      borderColor: `${(selectedNode || hoveredNode)!.color}40`,
+                    }}
+                  >
+                    {(selectedNode || hoveredNode)!.language}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1 font-mono flex flex-wrap items-center gap-2">
+                  <span className="capitalize">Type: {(selectedNode || hoveredNode)!.type}</span>
+                  <span>•</span>
+                  <span className="text-foreground font-semibold">{(selectedNode || hoveredNode)!.degree} Connections</span>
+                  {selectedNode && (
+                    <>
+                      <span>•</span>
+                      <span className="text-copper font-semibold">Selected</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-graphite-muted mt-0.5 font-mono flex items-center gap-2">
-              <span>Type: {hoveredNode.type}</span>
-              <span>•</span>
-              <span className="text-white font-semibold">{hoveredNode.degree} Edges</span>
-            </p>
+
+            {selectedNode && (
+              <button
+                onClick={() => {
+                  setSelectedNode(null);
+                  useGraphStore.getState().setSelectedNodeId(null);
+                }}
+                className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer shrink-0"
+                title="Deselect Node"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       )}

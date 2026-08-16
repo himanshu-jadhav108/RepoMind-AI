@@ -140,7 +140,7 @@ export function AgentReplayController() {
   const progressPct = Math.round(((currentStepIndex + 1) / REPLAY_STEPS.length) * 100);
 
   return (
-    <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 font-mono text-xs text-white flex flex-wrap items-center justify-between gap-3 shadow-lg">
+    <div className="w-full bg-card border-b border-border p-3 font-mono text-xs text-foreground flex flex-wrap items-center justify-between gap-3 shadow-lg">
       <div className="flex items-center gap-2">
         <Button
           variant="gradient"
@@ -153,28 +153,28 @@ export function AgentReplayController() {
         </Button>
 
         {isPlaying ? (
-          <Button variant="outline" size="sm" onClick={handleTogglePause} className="gap-1 text-xs border-graphite-border">
+          <Button variant="outline" size="sm" onClick={handleTogglePause} className="gap-1 text-xs border-border">
             <Pause className="w-3.5 h-3.5 text-severity-warning" /> Pause
           </Button>
         ) : currentStepIndex > 0 ? (
-          <Button variant="outline" size="sm" onClick={() => setIsPlaying(true)} className="gap-1 text-xs border-graphite-border">
-            <Play className="w-3.5 h-3.5 text-emerald-400" /> Resume
+          <Button variant="outline" size="sm" onClick={() => setIsPlaying(true)} className="gap-1 text-xs border-border">
+            <Play className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Resume
           </Button>
         ) : null}
 
-        <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 text-xs text-graphite-muted">
+        <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 text-xs text-muted-foreground hover:text-foreground">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
         </Button>
       </div>
 
-      <div className="flex-1 min-w-[260px] bg-graphite-canvas px-3 py-1.5 rounded-lg border border-graphite-border flex items-center justify-between gap-3">
+      <div className="flex-1 min-w-[260px] bg-background px-3 py-1.5 rounded-lg border border-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 truncate">
           <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-copper" : "bg-graphite-muted"} opacity-75`}></span>
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPlaying ? "bg-copper" : "bg-graphite-muted"}`}></span>
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-copper" : "bg-muted-foreground"} opacity-75`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPlaying ? "bg-copper" : "bg-muted-foreground"}`}></span>
           </span>
           <span className="font-bold text-copper truncate">{activeStep.title}:</span>
-          <span className="text-graphite-muted text-[11px] truncate">{activeStep.description}</span>
+          <span className="text-muted-foreground text-[11px] truncate">{activeStep.description}</span>
         </div>
         <Badge variant="outline" className="text-[10px] shrink-0 border-copper/30 text-copper bg-copper/10">
           {progressPct}%
@@ -182,16 +182,16 @@ export function AgentReplayController() {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <FastForward className="w-3.5 h-3.5 text-[#5B82A6]" />
-        <span className="text-graphite-muted text-[11px]">Speed:</span>
+        <FastForward className="w-3.5 h-3.5 text-category-arch" />
+        <span className="text-muted-foreground text-[11px]">Speed:</span>
         {[1, 1.5, 2].map((spd) => (
           <button
             key={spd}
             onClick={() => setPlaybackSpeed(spd)}
             className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
               playbackSpeed === spd
-                ? "bg-[#5B82A6]/20 text-[#5B82A6] border-[#5B82A6]/40"
-                : "bg-graphite-canvas text-graphite-muted border-graphite-border hover:text-white"
+                ? "bg-category-arch/20 text-category-arch border-category-arch/40"
+                : "bg-background text-muted-foreground border-border hover:text-foreground"
             }`}
           >
             {spd}x

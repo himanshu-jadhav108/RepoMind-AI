@@ -40,16 +40,16 @@ export function GraphToolbar() {
   const setSelectedRisk = useGraphStore((s) => s.setSelectedRisk);
 
   return (
-    <div className="w-full bg-graphite-panel border-b border-graphite-border p-3 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 font-mono text-xs">
+    <div className="w-full bg-card border-b border-border p-3 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 font-mono text-xs">
       {/* Search Input */}
       <div className="relative flex-1 min-w-[200px] w-full sm:max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-3 text-graphite-muted" />
+        <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Instant search by file, function, class..."
-          className="w-full pl-9 pr-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-graphite-canvas border border-graphite-border text-white placeholder:text-graphite-muted focus:outline-none focus:border-copper transition"
+          className="w-full pl-9 pr-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-copper transition"
         />
       </div>
 
@@ -57,13 +57,13 @@ export function GraphToolbar() {
       <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
         {/* Top 5 Layout Mode Selector */}
         <div className="flex items-center justify-between sm:justify-start gap-2 min-h-[44px] sm:min-h-[36px]">
-          <span className="text-graphite-muted flex items-center gap-1 font-semibold shrink-0">
-            <Layers className="w-3.5 h-3.5 text-[#5B82A6]" /> Layout:
+          <span className="text-muted-foreground flex items-center gap-1 font-semibold shrink-0">
+            <Layers className="w-3.5 h-3.5 text-category-arch" /> Layout:
           </span>
           <select
             value={layoutMode}
             onChange={(e) => setLayoutMode(e.target.value as LayoutMode)}
-            className="flex-1 sm:flex-initial px-2.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-graphite-canvas border border-graphite-border text-[#5B82A6] font-bold focus:outline-none focus:border-copper cursor-pointer shadow"
+            className="flex-1 sm:flex-initial px-2.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-background border border-border text-category-arch font-bold focus:outline-none focus:border-copper cursor-pointer shadow"
           >
             {TOP_5_LAYOUT_OPTIONS.map((opt) => (
               <option key={opt.id} value={opt.id}>
@@ -75,13 +75,13 @@ export function GraphToolbar() {
 
         {/* AI Agent Traversal View Selector */}
         <div className="flex items-center justify-between sm:justify-start gap-2 min-h-[44px] sm:min-h-[36px]">
-          <span className="text-[#5B82A6] flex items-center gap-1 font-semibold shrink-0">
-            <Bot className="w-3.5 h-3.5 text-[#5B82A6]" /> Agent View:
+          <span className="text-category-arch flex items-center gap-1 font-semibold shrink-0">
+            <Bot className="w-3.5 h-3.5 text-category-arch" /> Agent View:
           </span>
           <select
             value={selectedAgent || ""}
             onChange={(e) => setSelectedAgent(e.target.value ? (e.target.value as AgentName) : null)}
-            className="flex-1 sm:flex-initial px-2.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-[#5B82A6]/10 border border-[#5B82A6]/30 text-[#5B82A6] font-semibold focus:outline-none focus:border-[#5B82A6] cursor-pointer"
+            className="flex-1 sm:flex-initial px-2.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-category-arch/10 border border-category-arch/30 text-category-arch font-semibold focus:outline-none focus:border-category-arch cursor-pointer"
           >
             <option value="">Off (Standard View)</option>
             {AGENT_OPTIONS.map((agent) => (
@@ -94,13 +94,13 @@ export function GraphToolbar() {
 
         {/* Risk Level Filter */}
         <div className="flex items-center justify-between sm:justify-start gap-2 min-h-[44px] sm:min-h-[36px]">
-          <span className="text-graphite-muted flex items-center gap-1 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-graphite-muted" /> Risk:
+          <span className="text-muted-foreground flex items-center gap-1 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground" /> Risk:
           </span>
           <select
             value={selectedRisk}
             onChange={(e) => setSelectedRisk(e.target.value as any)}
-            className="flex-1 sm:flex-initial px-2 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-graphite-canvas border border-graphite-border text-foreground focus:outline-none focus:border-copper cursor-pointer"
+            className="flex-1 sm:flex-initial px-2 py-2 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg bg-background border border-border text-foreground focus:outline-none focus:border-copper cursor-pointer"
           >
             <option value="all">All Risks</option>
             <option value="critical">Critical Only</option>

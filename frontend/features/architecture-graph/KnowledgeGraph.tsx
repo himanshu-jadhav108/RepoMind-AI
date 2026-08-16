@@ -326,7 +326,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
     return getDagreLayout(filteredNodes, filteredEdges, "TB");
   }, [filteredNodes, filteredEdges, layoutMode]);
 
-  // Handle Node Click
+  // Handle Node Click for 2D ReactFlow
   const handleNodeClickInternal = useCallback(
     (e: any, node: Node) => {
       if (e) {
@@ -341,8 +341,19 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
     [setSelectedNodeId, onNodeClick]
   );
 
+  // Handle Node Click for 3D Galaxy Force Graph
+  const handle3DNodeClick = useCallback(
+    (nodeId: string) => {
+      setSelectedNodeId(nodeId);
+      if (onNodeClick) {
+        onNodeClick(nodeId);
+      }
+    },
+    [setSelectedNodeId, onNodeClick]
+  );
+
   return (
-    <Card className="w-full flex flex-col border border-graphite-border shadow-2xl overflow-hidden bg-graphite-canvas font-sans">
+    <Card className="w-full flex flex-col border border-border shadow-2xl overflow-hidden bg-card font-sans">
       {/* 1. Top Repository AI Statistics Panel */}
       <GraphHeaderStats />
 
@@ -352,8 +363,8 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
       {/* 3. Agent Replay Controller Bar */}
       <AgentReplayController />
 
-      {/* 4. Main Visualization Canvas (2D ReactFlow or 3D WebGL Galaxy) */}
-      <CardContent className="h-[540px] p-0 relative overflow-hidden bg-graphite-canvas">
+      {/* 4. Main Visualization Canvas (2D ReactFlow or 3D WebGL Galaxy — Explicitly Framed Dark Viewport) */}
+      <CardContent className="h-[540px] p-0 relative overflow-hidden bg-[#121316] border-t border-border shadow-inner">
         {/* Agent Reasoning Traversal Overlay Card */}
         {selectedAgent && <AgentTraversalOverlay agentName={selectedAgent} />}
 
@@ -367,7 +378,7 @@ export function KnowledgeGraph({ graphData, onNodeClick, runId, findings = [] }:
 
 
         {layoutMode === "galaxy" ? (
-          <KnowledgeGraph3D graphData={rawData} onNodeClick={onNodeClick} />
+          <KnowledgeGraph3D graphData={rawData} onNodeClick={handle3DNodeClick} />
         ) : (
           <ReactFlow
             nodes={layoutedNodes}
