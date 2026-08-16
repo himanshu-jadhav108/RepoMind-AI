@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     ANALYSIS_RATE_LIMIT_SECONDS: int = 600
     RATE_LIMIT_BYPASS_LOCALHOST: bool = False
 
+    # Demo Seeding Settings
+    SEED_DEMO_ON_STARTUP: bool = False
+
     # Repository Ingestion Limits
     REPO_MAX_SIZE_MB: int = 75
     MAX_FILES_TO_ANALYZE: int = 3000

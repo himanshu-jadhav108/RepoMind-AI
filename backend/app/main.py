@@ -1,5 +1,4 @@
 import time
-from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
@@ -127,44 +126,16 @@ async def favicon():
 @app.on_event("startup")
 async def seed_demo_workspace():
     """
-    Seed a complete demo workspace run on backend startup so demo mode requests always succeed.
+    Conditionally seed a demo workspace on backend startup only if SEED_DEMO_ON_STARTUP is enabled.
     """
-    try:
-        from app.core.dependency_injection import get_analysis_service
-        analysis_service = get_analysis_service()
-        demo_run_id = "demo-hackathon-workspace"
-
-        existing = await analysis_service.analysis_repository.get_by_id(demo_run_id)
-        if not existing:
-            from app.models.analysis import (
-                AgentStatus,
-                AgentStatusEnum,
-                AnalysisRunDetail,
-                RunStatus,
-            )
-            _now = datetime.now(timezone.utc)
-            demo_run = AnalysisRunDetail(
-                run_id=demo_run_id,
-                repo_id="repo-repomind-ai",
-                status=RunStatus.COMPLETED,
-                agents=[
-                    AgentStatus(name="planner_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="repository_analyzer", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="architect_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="bug_hunter_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="security_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="performance_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="documentation_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="reviewer_agent", status=AgentStatusEnum.COMPLETED),
-                    AgentStatus(name="report_generator", status=AgentStatusEnum.COMPLETED),
-                ],
-                started_at=_now,
-                completed_at=_now,
-            )
-            await analysis_service.analysis_repository.create(demo_run)
-            logger.info("Successfully seeded demo workspace 'demo-hackathon-workspace' on startup.")
-    except Exception as e:
-        logger.warning(f"Could not seed demo workspace: {e}")
+    if settings.SEED_DEMO_ON_STARTUP:
+        try:
+            from app.db.seed import seed_demo_workspace_data
+            await seed_demo_workspace_data()
+        except Exception as e:
+            logger.warning(f"Could not execute startup demo seeding: {e}")
+    else:
+        logger.info("Startup demo seeding disabled (SEED_DEMO_ON_STARTUP=False). Run 'python -m app.db.seed' on demand.")
 
 
 @app.get("/health", tags=["Health"])

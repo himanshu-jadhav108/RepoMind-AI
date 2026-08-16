@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 try:
     from supabase import Client, create_client

@@ -8,7 +8,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 
-
 from app.agents.learning_agent import LearningAgent
 from app.core.concurrency import analysis_concurrency_manager
 from app.core.config import settings
