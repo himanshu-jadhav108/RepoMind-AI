@@ -118,7 +118,10 @@ def test_analysis_run_lifecycle_and_endpoints(monkeypatch):
     assert "sub_scores" in score_res.json()
 
     # 7. POST /analysis/{runId}/explain (200 OK)
-    explain_res = client.post(f"/api/v1/analysis/{run_id}/explain", json={"file": "black.py", "line_start": 1, "line_end": 10})
+    explain_res = client.post(
+        f"/api/v1/analysis/{run_id}/explain",
+        json={"file": "black.py", "line_start": 1, "line_end": 10, "code_snippet": "def hello(): pass"},
+    )
     assert explain_res.status_code == 200
     assert "summary" in explain_res.json()
 
