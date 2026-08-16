@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import AsyncMock
 
 pytest.importorskip("supabase", reason="supabase package required for API endpoint integration tests")
 
@@ -7,6 +8,17 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def clean_rate_limit_state():
+    from app.api.v1.routes_analysis import _ip_last_request
+    from app.core.concurrency import analysis_concurrency_manager
+    _ip_last_request.clear()
+    analysis_concurrency_manager.reset()
+    yield
+    _ip_last_request.clear()
+    analysis_concurrency_manager.reset()
 
 
 def test_health_endpoints():
@@ -56,7 +68,12 @@ def test_repo_registration_and_get():
     assert res_404.status_code == 404
 
 
-def test_analysis_run_lifecycle_and_endpoints():
+def test_analysis_run_lifecycle_and_endpoints(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.routes_analysis.repomind_app.ainvoke",
+        AsyncMock(return_value={}),
+    )
+
     # Register repo first
     repo_res = client.post("/api/v1/repos", json={"repo_url": "https://github.com/psf/black"})
     repo_id = repo_res.json()["repo_id"]
@@ -74,9 +91,13 @@ def test_analysis_run_lifecycle_and_endpoints():
     assert status_res.json()["run_id"] == run_id
 
     # 3. GET /analysis/{runId}/stream (200 SSE Stream)
-    stream_res = client.get(f"/api/v1/analysis/{run_id}/stream")
-    assert stream_res.status_code == 200
-    assert "text/event-stream" in stream_res.headers["content-type"]
+    from app.orchestration.graph import _run_live_statuses
+    _run_live_statuses[run_id] = {"planner_agent": "completed"}
+    with client.stream("GET", f"/api/v1/analysis/{run_id}/stream") as stream_res:
+        assert stream_res.status_code == 200
+        assert "text/event-stream" in stream_res.headers["content-type"]
+        first_chunk = next(stream_res.iter_text())
+        assert "data:" in first_chunk
 
     # 4. GET /analysis/{runId}/results (200 OK)
     results_res = client.get(f"/api/v1/analysis/{run_id}/results")
@@ -120,9 +141,13 @@ def test_analysis_run_lifecycle_and_endpoints():
 def test_analysis_rate_limiting_and_bypass(monkeypatch):
     from app.api.v1.routes_analysis import _ip_last_request
     from app.core.config import settings
+    from app.core.concurrency import analysis_concurrency_manager
 
-    # Clear in-memory rate limit state for test reproducibility
+    # Clear in-memory rate limit and concurrency state for test reproducibility
     _ip_last_request.clear()
+    analysis_concurrency_manager.reset()
+    monkeypatch.setattr(settings, "ANALYSIS_RATE_LIMIT_SECONDS", 600)
+    monkeypatch.setattr(settings, "RATE_LIMIT_BYPASS_LOCALHOST", False)
 
     # Register repo
     repo_res = client.post("/api/v1/repos", json={"repo_url": "https://github.com/pallets/flask"})
@@ -136,12 +161,13 @@ def test_analysis_rate_limiting_and_bypass(monkeypatch):
     res2 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
     assert res2.status_code == 429
     assert "Retry-After" in res2.headers
-    err_detail = res2.json()["detail"]
+    err_detail = res2.json().get("detail") or res2.json().get("error", {}).get("message", "")
     assert "Rate limit reached." in err_detail
     assert "To keep our free-tier AI services available for everyone" in err_detail
 
     # 3. Enable RATE_LIMIT_BYPASS_LOCALHOST -> subsequent trigger should succeed
     monkeypatch.setattr(settings, "RATE_LIMIT_BYPASS_LOCALHOST", True)
+    analysis_concurrency_manager.reset()
     res3 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
     assert res3.status_code == 202
 

@@ -25,6 +25,13 @@ class AnalysisConcurrencyManager:
     def is_queue_full(self) -> bool:
         return len(self._queue) >= self.max_queued
 
+    def reset(self):
+        """Resets concurrency manager state for test isolation."""
+        self._semaphore = asyncio.Semaphore(self.max_concurrent)
+        self._active_runs.clear()
+        self._queue.clear()
+        self._run_meta.clear()
+
     def register_run(self, run_id: str) -> Dict:
         """
         Registers a new run. If execution concurrency slot is free, marks as 'running'.
