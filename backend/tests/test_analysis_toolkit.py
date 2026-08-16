@@ -150,3 +150,53 @@ def test_dependency_graph_performance_large_repo():
     # (b) Regression guard: must complete in well under 1-2 seconds (usually < 0.1s)
     assert elapsed < 2.0, f"build_knowledge_graph took too long ({elapsed:.3f}s) for {total_files_count} files"
 
+
+def test_knowledge_graph_single_connected_component():
+    import networkx as nx
+
+    builder = DependencyGraphBuilder()
+
+    # Synthetic multi-root folder structure with at least 3 distinct top-level folders and a root file
+    repo_structure = {
+        "repo_name": "RepoMind-AI",
+        "files": [
+            {"path": "backend/app/main.py", "name": "main.py", "language": "Python", "size_bytes": 500},
+            {"path": "backend/app/services/calc.py", "name": "calc.py", "language": "Python", "size_bytes": 300},
+            {"path": "frontend/src/App.tsx", "name": "App.tsx", "language": "TypeScript", "size_bytes": 400},
+            {"path": "docs/architecture.md", "name": "architecture.md", "language": "Markdown", "size_bytes": 200},
+            {"path": "README.md", "name": "README.md", "language": "Markdown", "size_bytes": 150},
+        ],
+    }
+
+    symbol_map = {
+        "backend/app/main.py": {"classes": ["App"], "functions": ["start"], "imports": ["backend.app.services.calc"]},
+        "backend/app/services/calc.py": {"classes": [], "functions": ["add"], "imports": []},
+        "frontend/src/App.tsx": {"classes": [], "functions": ["App"], "imports": []},
+        "docs/architecture.md": {"classes": [], "functions": [], "imports": []},
+        "README.md": {"classes": [], "functions": [], "imports": []},
+    }
+
+    graph = builder.build_knowledge_graph(repo_structure, symbol_map)
+
+    # 1. Assert root node exists with type root
+    assert "__repo_root__" in graph
+    assert graph.nodes["__repo_root__"]["type"] == "root"
+
+    # 2. Assert top-level folders connect to root via "contains"
+    assert graph.has_edge("__repo_root__", "backend")
+    assert graph.edges["__repo_root__", "backend"]["relation"] == "contains"
+    assert graph.has_edge("__repo_root__", "frontend")
+    assert graph.edges["__repo_root__", "frontend"]["relation"] == "contains"
+    assert graph.has_edge("__repo_root__", "docs")
+    assert graph.edges["__repo_root__", "docs"]["relation"] == "contains"
+    assert graph.has_edge("__repo_root__", "README.md")
+    assert graph.edges["__repo_root__", "README.md"]["relation"] == "contains"
+
+    # 3. Assert subfolder and file contains edges
+    assert graph.has_edge("backend", "backend/app")
+    assert graph.has_edge("backend/app", "backend/app/main.py")
+
+    # 4. Assert graph is a single weakly-connected component (no disconnected floating clusters)
+    assert nx.is_weakly_connected(graph), "Graph should be a single weakly connected component"
+    assert nx.number_weakly_connected_components(graph) == 1
+

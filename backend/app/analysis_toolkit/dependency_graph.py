@@ -17,6 +17,18 @@ class DependencyGraphBuilder:
         G = nx.DiGraph()
 
         files_list = repo_structure.get("files", [])
+        if not files_list:
+            return G
+
+        # 0. Add synthetic root node representing the repository itself
+        root_id = "__repo_root__"
+        repo_name = repo_structure.get("repo_name") or repo_structure.get("name") or "RepoMind-AI"
+        G.add_node(
+            root_id,
+            type="root",
+            label=f"{repo_name}/",
+            language="Root",
+        )
 
         # 1. Add file and folder nodes
         folders_added = set()
@@ -33,17 +45,18 @@ class DependencyGraphBuilder:
             # Folder hierarchy containment edges
             parts = Path(file_path).parts
             if len(parts) > 1:
-                current_parent = ""
+                current_parent = root_id
                 for part in parts[:-1]:
-                    folder_path = f"{current_parent}/{part}" if current_parent else part
+                    folder_path = f"{current_parent}/{part}" if current_parent != root_id else part
                     if folder_path not in folders_added:
                         G.add_node(folder_path, type="folder", label=part)
                         folders_added.add(folder_path)
-                        if current_parent:
-                            G.add_edge(current_parent, folder_path, relation="contains")
+                        G.add_edge(current_parent, folder_path, relation="contains")
                     current_parent = folder_path
-                if current_parent:
-                    G.add_edge(current_parent, file_path, relation="contains")
+                G.add_edge(current_parent, file_path, relation="contains")
+            else:
+                # Top-level root file (e.g. README.md, package.json)
+                G.add_edge(root_id, file_path, relation="contains")
 
 
         # 2. Add symbols (classes & functions) and import edges

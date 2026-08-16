@@ -100,7 +100,7 @@ function resolveLanguageKey(n: any): string {
   const type = n.type || "file";
   const label = (n.data?.label || n.id || "").toLowerCase();
   
-  if (n.id === "root" || label === "repomind-ai/" || label === "root") return "root";
+  if (n.id === "root" || n.id === "__repo_root__" || type === "root" || label === "repomind-ai/" || label === "root") return "root";
   if (type === "folder") return "folder";
 
   const rawLang = (n.data?.language || "").toLowerCase();
