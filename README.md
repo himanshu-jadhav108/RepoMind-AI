@@ -12,8 +12,7 @@
     <a href="https://repomind-ai-ten.vercel.app"><img src="https://img.shields.io/badge/Live_Demo-Vercel-6366f1?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo"></a>
     <a href="https://drive.google.com/file/d/1g_Yn8KqOkwU885FHPlcIRyduYLXCfFFE/view?usp=drive_link"><img src="https://img.shields.io/badge/Demo_Video-Google_Drive-FF8800?style=for-the-badge&logo=googledrive&logoColor=white" alt="Demo Video"></a>
     <a href="https://repomind-ai-tktf.onrender.com/docs"><img src="https://img.shields.io/badge/API_Docs-Swagger-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Swagger Docs"></a>
-    <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/ChatGPT_Codex_Hackathon-2026-purple?style=for-the-badge&logo=openai&logoColor=white" alt="Hackathon 2026"></a>
-    <a href="https://github.com/himanshu-jadhav108/RepoMind-AI"><img src="https://img.shields.io/badge/Pytest-26%2F26%20Passing-emerald?style=for-the-badge&logo=pytest&logoColor=white" alt="Test Suite"></a>
+    <a href="https://github.com/himanshu-jadhav108/RepoMind-AI/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/himanshu-jadhav108/RepoMind-AI/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI%20Pipeline" alt="CI Pipeline Status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"></a>
   </p>
 
