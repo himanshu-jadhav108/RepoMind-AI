@@ -127,7 +127,7 @@ export function SmartLearningPanel({ runId, filePath }: SmartLearningPanelProps)
           {/* Best Practices vs Anti-Patterns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans">
             <div>
-              <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono uppercase tracking-wider mb-1 flex items-center gap-1 font-display">
+              <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1 font-display">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Best Practices Used
               </h4>
               <div className="space-y-1 text-xs">
@@ -140,7 +140,7 @@ export function SmartLearningPanel({ runId, filePath }: SmartLearningPanelProps)
             </div>
 
             <div>
-              <h4 className="text-xs font-semibold text-severity-warning font-mono uppercase tracking-wider mb-1 flex items-center gap-1 font-display">
+              <h4 className="text-xs font-semibold text-severity-warning uppercase tracking-wider mb-1 flex items-center gap-1 font-display">
                 <AlertTriangle className="w-3.5 h-3.5" /> Anti-Patterns to Avoid
               </h4>
               <div className="space-y-1 text-xs">

@@ -445,7 +445,7 @@ export function EngineeringReviewMeeting({
             {/* Summary & Reasoning */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-copper font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-copper mb-1 font-display">
                   Executive Summary
                 </h4>
                 <p className="text-foreground/90 text-sm leading-relaxed bg-card p-3 rounded-lg border border-border">
@@ -454,7 +454,7 @@ export function EngineeringReviewMeeting({
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch mb-1 font-display">
                   Architectural Reasoning
                 </h4>
                 <p className="text-muted-foreground text-xs leading-relaxed font-mono bg-card p-3 rounded-lg border border-border">
@@ -466,7 +466,7 @@ export function EngineeringReviewMeeting({
             {/* Evidence & Recommended Actions */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-category-arch mb-1 font-display">
                   Empirical Evidence
                 </h4>
                 <div className="bg-card p-3 rounded-lg border border-category-arch/30 font-mono text-xs text-category-arch flex items-start gap-2">
@@ -476,7 +476,7 @@ export function EngineeringReviewMeeting({
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono mb-1 font-display">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1 font-display">
                   Recommended Engineering Actions
                 </h4>
                 <div className="space-y-1.5">
@@ -495,7 +495,7 @@ export function EngineeringReviewMeeting({
               {/* Referenced Files */}
               {(currentAgent.referenced_files || (currentAgent.code_reference ? [currentAgent.code_reference] : [])).length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono mb-1 font-display">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 font-display">
                     Referenced Code Modules
                   </h4>
                   <div className="flex flex-wrap gap-1.5 font-mono">
@@ -527,7 +527,7 @@ export function EngineeringReviewMeeting({
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs font-mono text-copper uppercase tracking-widest font-bold font-display">
+                  <div className="text-xs text-copper uppercase tracking-widest font-bold font-display">
                     Final Engineering Review Verdict
                   </div>
                   <div className="text-base font-extrabold text-foreground font-display">{meetingData.verdict}</div>
