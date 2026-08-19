@@ -346,7 +346,7 @@ export default function AnalyzeWorkspacePage({
             />
 
             <div>
-              <h1 className="text-xl font-bold flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold flex flex-wrap items-center gap-2">
                 <span>Autonomous Engineering Workspace</span>
                 <Badge className="bg-copper/10 text-copper border-copper/30 text-xs font-mono">
                   Multi-Agent Team
@@ -363,7 +363,7 @@ export default function AnalyzeWorkspacePage({
             variant={activeTab === "meeting" ? "gradient" : "outline"}
             size="sm"
             onClick={() => setActiveTab("meeting")}
-            className="gap-1.5 text-xs font-mono"
+            className="gap-1.5 text-xs font-mono min-h-[36px]"
           >
             <Users className="w-3.5 h-3.5" /> Engineering Review Meeting
           </Button>
@@ -372,7 +372,7 @@ export default function AnalyzeWorkspacePage({
             variant={activeTab === "workspace" ? "gradient" : "outline"}
             size="sm"
             onClick={() => setActiveTab("workspace")}
-            className="gap-1.5 text-xs font-mono"
+            className="gap-1.5 text-xs font-mono min-h-[36px]"
           >
             <Zap className="w-3.5 h-3.5" /> Live Workspace
           </Button>
@@ -381,7 +381,7 @@ export default function AnalyzeWorkspacePage({
             variant={activeTab === "layers" ? "gradient" : "outline"}
             size="sm"
             onClick={() => setActiveTab("layers")}
-            className="gap-1.5 text-xs font-mono"
+            className="gap-1.5 text-xs font-mono min-h-[36px]"
           >
             <Layers className="w-3.5 h-3.5" /> Layer View
           </Button>
@@ -390,13 +390,13 @@ export default function AnalyzeWorkspacePage({
             variant={activeTab === "learning" ? "gradient" : "outline"}
             size="sm"
             onClick={() => setActiveTab("learning")}
-            className="gap-1.5 text-xs font-mono"
+            className="gap-1.5 text-xs font-mono min-h-[36px]"
           >
             <GraduationCap className="w-3.5 h-3.5" /> Smart Learning
           </Button>
 
           <Link href={`/reports/${runId}`}>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono text-copper border-copper/30">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-mono text-copper border-copper/30 min-h-[36px]">
               Audit Report
             </Button>
           </Link>
@@ -456,14 +456,14 @@ export default function AnalyzeWorkspacePage({
       {activeTab === "workspace" && (
         <>
           {/* Feature Toolbar for Graph Additions */}
-          <div className="flex items-center justify-between bg-graphite-panel p-2.5 rounded-xl border border-graphite-border font-mono text-xs">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-graphite-panel p-2.5 rounded-xl border border-graphite-border font-mono text-xs">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-graphite-muted">Interactive Tools:</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGuidedTour(!showGuidedTour)}
-                className="h-7 text-[11px] gap-1.5 border-copper/30 text-copper bg-copper/10"
+                className="min-h-[32px] sm:h-7 text-[11px] gap-1.5 border-copper/30 text-copper bg-copper/10"
               >
                 <Compass className="w-3.5 h-3.5" /> {showGuidedTour ? "Close Tour" : "Start Guided Tour"}
               </Button>
@@ -472,7 +472,7 @@ export default function AnalyzeWorkspacePage({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPathFinder(!showPathFinder)}
-                className="h-7 text-[11px] gap-1.5 border-[#5B82A6]/30 text-[#5B82A6] bg-[#5B82A6]/10"
+                className="min-h-[32px] sm:h-7 text-[11px] gap-1.5 border-[#5B82A6]/30 text-[#5B82A6] bg-[#5B82A6]/10"
               >
                 <GitBranch className="w-3.5 h-3.5" /> {showPathFinder ? "Close Path Finder" : "Dependency Path Finder"}
               </Button>

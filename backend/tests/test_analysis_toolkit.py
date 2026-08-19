@@ -277,3 +277,80 @@ public class Service_{i} {{
     # (b) Regression guard on timing
     assert par_duration < 5.0, f"Parallel parsing took too long: {par_duration:.3f}s"
 
+
+def test_git_clone_retry_on_transient_failure(monkeypatch, tmp_path):
+    import os
+    from pathlib import Path
+    from unittest.mock import MagicMock
+    from git.exc import GitCommandError
+    from app.analysis_toolkit.git_ingestion import GitIngestionService
+
+    service = GitIngestionService(workspace_base_dir=str(tmp_path), clone_timeout_sec=5.0)
+
+    call_count = 0
+
+    def mock_clone_from(url, to_path, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise GitCommandError("clone", 128, stderr="fatal: unable to access 'https://github.com/foo/bar': Could not resolve host: github.com")
+        # Second attempt succeeds
+        mock_repo = MagicMock()
+        mock_repo.head.commit.hexsha = "abc12345"
+        (Path(to_path) / "README.md").write_text("hello", encoding="utf-8")
+        return mock_repo
+
+    monkeypatch.setattr("git.Repo.clone_from", mock_clone_from)
+
+    cloned_dir, commit_sha = service.clone_repository("https://github.com/foo/bar", max_retries=1, retry_delay_sec=0.01)
+    assert call_count == 2
+    assert commit_sha == "abc12345"
+    assert os.path.exists(cloned_dir)
+    service.cleanup(cloned_dir)
+
+
+def test_git_clone_no_retry_on_404_permanent_failure(monkeypatch, tmp_path):
+    from git.exc import GitCommandError
+    from app.analysis_toolkit.git_ingestion import GitIngestionService
+    from app.core.exceptions import RepositoryNotFoundException
+
+    service = GitIngestionService(workspace_base_dir=str(tmp_path), clone_timeout_sec=5.0)
+    call_count = 0
+
+    def mock_clone_from(url, to_path, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        raise GitCommandError("clone", 128, stderr="fatal: repository 'https://github.com/foo/notfound.git/' not found")
+
+    monkeypatch.setattr("git.Repo.clone_from", mock_clone_from)
+
+    with pytest.raises(RepositoryNotFoundException) as exc_info:
+        service.clone_repository("https://github.com/foo/notfound", max_retries=2, retry_delay_sec=0.01)
+
+    # Must fail fast on 404 without retrying
+    assert call_count == 1
+    assert "was not found or is private" in str(exc_info.value)
+
+
+def test_git_clone_exhausted_retries_transient_failure(monkeypatch, tmp_path):
+    from git.exc import GitCommandError
+    from app.analysis_toolkit.git_ingestion import GitIngestionService
+    from app.core.exceptions import UnprocessableRepoException
+
+    service = GitIngestionService(workspace_base_dir=str(tmp_path), clone_timeout_sec=5.0)
+    call_count = 0
+
+    def mock_clone_from(url, to_path, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        raise GitCommandError("clone", 128, stderr="fatal: unable to access 'https://github.com/foo/bar': Connection timed out")
+
+    monkeypatch.setattr("git.Repo.clone_from", mock_clone_from)
+
+    with pytest.raises(UnprocessableRepoException) as exc_info:
+        service.clone_repository("https://github.com/foo/bar", max_retries=1, retry_delay_sec=0.01)
+
+    # 1 initial attempt + 1 retry = 2 total attempts
+    assert call_count == 2
+    assert "Unable to reach GitHub" in str(exc_info.value)
+

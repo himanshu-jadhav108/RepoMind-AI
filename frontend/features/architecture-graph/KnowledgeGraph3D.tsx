@@ -433,18 +433,27 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
 
     initGraph();
 
-    // Resize Observer for responsive graph canvas
-    const handleResize = () => {
-      if (containerRef.current && graphInstanceRef.current) {
-        graphInstanceRef.current.width(containerRef.current.clientWidth);
-        graphInstanceRef.current.height(containerRef.current.clientHeight);
-      }
-    };
-    window.addEventListener("resize", handleResize);
+    // ResizeObserver watching containerRef directly for reliable responsive canvas sizing on mobile & desktop
+    let resizeObserver: ResizeObserver | null = null;
+    if (containerRef.current && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          // Guard: Only apply valid non-zero measurements (avoid broken tiny/0px sizing while hidden/animating)
+          if (width > 0 && height > 0 && graphInstanceRef.current) {
+            graphInstanceRef.current.width(width);
+            graphInstanceRef.current.height(height);
+          }
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+    }
 
     return () => {
       isSubscribed = false;
-      window.removeEventListener("resize", handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (forceGraphInstance && typeof forceGraphInstance._destructor === "function") {
         forceGraphInstance._destructor();
       }
@@ -458,9 +467,9 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] bg-[#121316] rounded-b-xl overflow-hidden font-sans select-none">
-      {/* 3D Force Graph WebGL Container */}
-      <div ref={containerRef} className="w-full h-full min-h-[460px] sm:min-h-[540px]" />
+    <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] bg-[#121316] rounded-b-xl overflow-hidden font-sans select-none touch-none" style={{ touchAction: "none" }}>
+      {/* 3D Force Graph WebGL Container with Touch-Action None */}
+      <div ref={containerRef} className="w-full h-full min-h-[460px] sm:min-h-[540px] touch-none" style={{ touchAction: "none" }} />
 
       {/* Large Repository Top-Level Degradation Notice (Fix 3) */}
       {isLargeGraph && (

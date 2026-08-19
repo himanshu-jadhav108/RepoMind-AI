@@ -3,10 +3,12 @@ import os
 import re
 import shutil
 import tempfile
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from git import Repo
+from git.exc import GitCommandError, GitError
 
 from app.core.config import settings
 from app.core.exceptions import RepositoryNotFoundException, UnprocessableRepoException
@@ -54,12 +56,62 @@ LANGUAGE_EXTENSIONS = {
 }
 
 
+def _is_permanent_clone_error(err_str: str) -> bool:
+    """
+    Detects errors that will never succeed on retry (404, private repo, auth failure, invalid repo).
+    """
+    err_lower = err_str.lower()
+    permanent_patterns = [
+        "not found",
+        "repository not found",
+        "could not read username",
+        "authentication failed",
+        "permission denied",
+        "invalid repository",
+        "does not exist",
+        "remote error: uploadpack: not our ref",
+        "fatal: remote error: access denied",
+    ]
+    return any(p in err_lower for p in permanent_patterns)
+
+
+def _is_transient_clone_error(err_str: str) -> bool:
+    """
+    Detects transient network / socket / server-side errors that should be retried.
+    """
+    err_lower = err_str.lower()
+    transient_patterns = [
+        "could not resolve host",
+        "failed to connect",
+        "connection timed out",
+        "operation timed out",
+        "connection reset",
+        "connection refused",
+        "early eof",
+        "hung up unexpectedly",
+        "unexpected disconnect",
+        "rpc failed",
+        "network is unreachable",
+        "temporary failure in name resolution",
+        "ssl",
+        "tls",
+        "gnutls",
+        "handshake",
+        "502",
+        "503",
+        "504",
+        "bad gateway",
+        "service unavailable",
+    ]
+    return any(p in err_lower for p in transient_patterns)
+
+
 class GitIngestionService:
     """
     Handles cloning GitHub repositories using GitPython, walking the file tree,
     and classifying file types and language mix.
     Includes security hardening: URL validation (SSRF prevention), wall-clock timeouts,
-    and max repository size limits.
+    transient retry logic, and max repository size limits.
     """
 
     def __init__(
@@ -168,49 +220,101 @@ class GitIngestionService:
         res = self._walk_repository(repo_path)
         return res["total_size_bytes"]
 
-    def clone_repository(self, repo_url: str) -> Tuple[str, str]:
+    def clone_repository(
+        self,
+        repo_url: str,
+        max_retries: int = 1,
+        retry_delay_sec: float = 2.0,
+    ) -> Tuple[str, str]:
         """
         Clones a public repo into a temporary workspace directory with security validation,
-        timeout handling, and size limit checks. Returns (cloned_path, commit_sha).
+        bounded transient retry logic (2 total attempts with 2s delay), timeout handling,
+        and size limit checks. Returns (cloned_path, commit_sha).
         """
         target_url = clean_github_url(repo_url)
         self.validate_repo_url(target_url)
 
-        temp_dir = None
-        try:
-            temp_dir = tempfile.mkdtemp(prefix="repomind_clone_", dir=self.workspace_base_dir)
-            logger.info(f"Cloning repository '{target_url}' into '{temp_dir}' (Timeout: {self.clone_timeout_sec}s)")
+        max_attempts = 1 + max(0, max_retries)
 
-            def _do_clone():
-                return Repo.clone_from(target_url, temp_dir, depth=1, single_branch=True)
+        for attempt in range(1, max_attempts + 1):
+            temp_dir = None
+            try:
+                temp_dir = tempfile.mkdtemp(prefix="repomind_clone_", dir=self.workspace_base_dir)
+                logger.info(
+                    f"Cloning repository '{target_url}' (Attempt {attempt}/{max_attempts}, Timeout: {self.clone_timeout_sec}s)"
+                )
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(_do_clone)
-                repo = future.result(timeout=self.clone_timeout_sec)
+                def _do_clone():
+                    return Repo.clone_from(target_url, temp_dir, depth=1, single_branch=True)
 
-            commit_sha = repo.head.commit.hexsha if repo and repo.head else "unknown"
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(_do_clone)
+                    repo = future.result(timeout=self.clone_timeout_sec)
 
-            # Enforce max directory size check (single-pass walk)
-            self.check_repo_size(temp_dir)
+                commit_sha = repo.head.commit.hexsha if repo and repo.head else "unknown"
 
-            return temp_dir, commit_sha
-        except concurrent.futures.TimeoutError:
-            if temp_dir:
-                self.cleanup(temp_dir)
-            logger.error(f"Clone timed out after {self.clone_timeout_sec} seconds for '{repo_url}'")
-            raise UnprocessableRepoException(
-                f"Cloning repository '{repo_url}' exceeded the {self.clone_timeout_sec}s wall-clock timeout."
-            )
-        except Exception as e:
-            if temp_dir:
-                self.cleanup(temp_dir)
-            if isinstance(e, UnprocessableRepoException):
-                raise e
-            logger.error(f"Failed to clone repository '{repo_url}': {str(e)}")
-            raise RepositoryNotFoundException(
-                message=f"Failed to clone repository '{repo_url}'. Ensure URL is public and valid.",
-                details={"raw_error": str(e)},
-            )
+                # Enforce max directory size check (single-pass walk)
+                self.check_repo_size(temp_dir)
+
+                return temp_dir, commit_sha
+
+            except concurrent.futures.TimeoutError:
+                if temp_dir:
+                    self.cleanup(temp_dir)
+                logger.error(
+                    f"Clone timed out after {self.clone_timeout_sec}s for '{repo_url}' (Attempt {attempt}/{max_attempts})"
+                )
+                if attempt < max_attempts:
+                    logger.info(f"Retrying clone in {retry_delay_sec}s...")
+                    time.sleep(retry_delay_sec)
+                    continue
+                raise UnprocessableRepoException(
+                    f"Cloning repository '{repo_url}' exceeded the {self.clone_timeout_sec}s wall-clock timeout."
+                )
+
+            except Exception as e:
+                if temp_dir:
+                    self.cleanup(temp_dir)
+
+                if isinstance(e, UnprocessableRepoException):
+                    # Size check failure or URL format error — never retry
+                    raise e
+
+                raw_err_msg = ""
+                if isinstance(e, GitCommandError):
+                    raw_err_msg = str(e.stderr) if e.stderr else str(e)
+                else:
+                    raw_err_msg = str(e)
+
+                # Branch 1: Permanent failure (404 / Private / Auth / Bad URL) -> Fail fast without retrying
+                if _is_permanent_clone_error(raw_err_msg):
+                    logger.error(f"Clone failed with permanent repository error for '{repo_url}': {raw_err_msg}")
+                    raise RepositoryNotFoundException(
+                        message=f"Repository '{repo_url}' was not found or is private. Please ensure the repository is public and the URL is correct.",
+                        details={"raw_error": raw_err_msg},
+                    )
+
+                # Branch 2: Transient network/connection error -> Retry if attempts remain
+                if attempt < max_attempts and (
+                    _is_transient_clone_error(raw_err_msg) or isinstance(e, (GitError, OSError, ConnectionError))
+                ):
+                    logger.warning(
+                        f"Git clone attempt {attempt}/{max_attempts} for '{target_url}' encountered transient network issue ({raw_err_msg}). Retrying in {retry_delay_sec}s..."
+                    )
+                    time.sleep(retry_delay_sec)
+                    continue
+
+                # Branch 3: All retries exhausted or non-retryable error
+                logger.error(f"Failed to clone repository '{repo_url}' after {attempt} attempt(s): {raw_err_msg}")
+                if _is_transient_clone_error(raw_err_msg):
+                    raise UnprocessableRepoException(
+                        f"Unable to reach GitHub to clone '{repo_url}' due to network/connectivity issues after {attempt} attempt(s). Please try again in a few moments."
+                    )
+                else:
+                    raise RepositoryNotFoundException(
+                        message=f"Failed to clone repository '{repo_url}'. Ensure the URL is valid, public, and accessible.",
+                        details={"raw_error": raw_err_msg},
+                    )
 
     def scan_repository(self, repo_path: str) -> Dict:
         """
