@@ -200,3 +200,80 @@ def test_knowledge_graph_single_connected_component():
     assert nx.is_weakly_connected(graph), "Graph should be a single weakly connected component"
     assert nx.number_weakly_connected_components(graph) == 1
 
+
+def test_parallel_symbol_parsing_performance_and_equivalence(tmp_path):
+    import time
+    from app.analysis_toolkit.code_parser import CodeParser
+
+    parser = CodeParser()
+    files_list = []
+
+    # Generate 200 synthetic source files with Python, TypeScript, and Java snippets
+    for i in range(200):
+        if i % 3 == 0:
+            filename = f"module_{i}.py"
+            code = f"""
+import os
+import sys
+from app.services import service_{i}
+
+class Controller_{i}:
+    def __init__(self):
+        pass
+
+def handle_request_{i}():
+    return {i}
+"""
+            lang = "Python"
+        elif i % 3 == 1:
+            filename = f"component_{i}.tsx"
+            code = f"""
+import React from 'react';
+import {{ Button }} from '@/components/ui/button';
+
+export class Widget_{i} {{}}
+export function renderWidget_{i}() {{ return null; }}
+"""
+            lang = "TypeScript"
+        else:
+            filename = f"Service_{i}.java"
+            code = f"""
+import java.util.List;
+
+public class Service_{i} {{
+    public void execute_{i}() {{}}
+}}
+"""
+            lang = "Java"
+
+        file_path = tmp_path / filename
+        file_path.write_text(code, encoding="utf-8")
+        files_list.append({
+            "path": filename,
+            "name": filename,
+            "language": lang,
+            "size_bytes": len(code),
+        })
+
+    # Sequential baseline parsing (max_workers=1)
+    t0 = time.perf_counter()
+    sequential_map = parser.parse_repository_symbols(str(tmp_path), files_list, max_workers=1)
+    seq_duration = time.perf_counter() - t0
+
+    # Parallel parsing (max_workers=8)
+    t1 = time.perf_counter()
+    parallel_map = parser.parse_repository_symbols(str(tmp_path), files_list, max_workers=8)
+    par_duration = time.perf_counter() - t1
+
+    # (a) Assert equivalence: parallel parsing produces exact identical structure and content
+    assert len(parallel_map) == 200
+    assert parallel_map == sequential_map
+
+    # Check specific symbol extractions
+    assert "Controller_0" in parallel_map["module_0.py"]["classes"]
+    assert "handle_request_0" in parallel_map["module_0.py"]["functions"]
+    assert "Widget_1" in parallel_map["component_1.tsx"]["classes"]
+
+    # (b) Regression guard on timing
+    assert par_duration < 5.0, f"Parallel parsing took too long: {par_duration:.3f}s"
+

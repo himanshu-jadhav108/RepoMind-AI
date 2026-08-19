@@ -91,20 +91,36 @@ class CodeParser:
             "line_count": len(content.splitlines()),
         }
 
-    def parse_repository_symbols(self, repo_path: str, files_list: List[Dict]) -> Dict[str, Dict]:
+    def parse_repository_symbols(self, repo_path: str, files_list: List[Dict], max_workers: int | None = None) -> Dict[str, Dict]:
         """
-        Parses symbols for all source code files in a repository.
+        Parses symbols for all source code files in a repository concurrently using ThreadPoolExecutor.
         Returns a dictionary mapping relative_file_path -> symbol summary.
         """
-        symbol_map: Dict[str, Dict] = {}
-        for f in files_list:
-            rel_path = f["path"]
-            lang = f["language"]
-            if lang in ["Other", "JSON", "Markdown", "YAML"]:
-                continue
+        from concurrent.futures import ThreadPoolExecutor
+        from app.core.config import settings
 
+        eligible_files = [
+            f for f in files_list
+            if f.get("language") not in ["Other", "JSON", "Markdown", "YAML"]
+        ]
+
+        if not eligible_files:
+            return {}
+
+        def _process_single_file(f: Dict) -> tuple[str, Dict]:
+            rel_path = f["path"]
+            lang = f.get("language", "Other")
             full_file_path = str(Path(repo_path) / rel_path)
             symbols = self.parse_file(full_file_path, lang)
-            symbol_map[rel_path] = symbols
+            return rel_path, symbols
+
+        worker_limit = max_workers if max_workers is not None else getattr(settings, "SYMBOL_PARSER_MAX_WORKERS", 8)
+        workers = max(1, min(worker_limit, len(eligible_files)))
+        symbol_map: Dict[str, Dict] = {}
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            results = executor.map(_process_single_file, eligible_files)
+            for rel_path, symbols in results:
+                symbol_map[rel_path] = symbols
 
         return symbol_map
