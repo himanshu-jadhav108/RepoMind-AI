@@ -181,16 +181,19 @@ const FALLBACK_DEMO_EDGES = [
   { id: "e20", source: "f_dep_graph", target: "f_code_parser" },
 ];
 
+const MAX_RENDER_NODES = 500;
+
 export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphInstanceRef = useRef<any>(null);
   const [hoveredNode, setHoveredNode] = useState<Node3DData | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node3DData | null>(null);
+  const [activeFolderDrill, setActiveFolderDrill] = useState<string | null>(null);
   const [isLegendOpen, setIsLegendOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   // ── Prepare Nodes & Edges with Degree Calculations & Language Colors ────
-  const { nodes, links, neighborMap, linkMap } = useMemo(() => {
+  const { nodes, links, neighborMap, linkMap, isLargeGraph } = useMemo(() => {
     const rawNodes = graphData?.nodes && graphData.nodes.length > 0 ? graphData.nodes : FALLBACK_DEMO_NODES;
     const rawEdges = graphData?.edges && graphData.edges.length > 0 ? graphData.edges : FALLBACK_DEMO_EDGES;
 
@@ -213,7 +216,41 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       lMap.add(`${tgt}___${src}`);
     });
 
-    const parsedNodes: Node3DData[] = rawNodes.map((n: any) => {
+    const isLarge = rawNodes.length > MAX_RENDER_NODES;
+
+    // Filter nodes if large repo exceeds render cap (Fix 3)
+    let effectiveRawNodes = rawNodes;
+    if (isLarge) {
+      const essentialNodes = rawNodes.filter((n: any) => {
+        const type = n.type || "file";
+        const langKey = resolveLanguageKey(n);
+        return langKey === "root" || type === "folder" || n.id === "__repo_root__" || n.id === "root";
+      });
+      const essentialIds = new Set(essentialNodes.map((n: any) => n.id));
+
+      let additionalFiles: any[] = [];
+      if (activeFolderDrill) {
+        additionalFiles = rawNodes.filter((n: any) => {
+          if (essentialIds.has(n.id)) return false;
+          const idStr = String(n.id);
+          const labelStr = String(n.data?.label || n.id);
+          return idStr.startsWith(`${activeFolderDrill}/`) || labelStr.startsWith(`${activeFolderDrill}/`);
+        });
+      } else {
+        const remainingBudget = Math.max(0, MAX_RENDER_NODES - essentialNodes.length);
+        const nonEssentialFiles = rawNodes.filter((n: any) => !essentialIds.has(n.id));
+        nonEssentialFiles.sort((a: any, b: any) => {
+          const degA = degreeMap.get(a.id) || 0;
+          const degB = degreeMap.get(b.id) || 0;
+          return degB - degA;
+        });
+        additionalFiles = nonEssentialFiles.slice(0, remainingBudget);
+      }
+
+      effectiveRawNodes = [...essentialNodes, ...additionalFiles];
+    }
+
+    const parsedNodes: Node3DData[] = effectiveRawNodes.map((n: any) => {
       const label = n.data?.label || n.id;
       const parts = label.split("/");
       const shortLabel = parts[parts.length - 1] || label;
@@ -248,8 +285,8 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
       })
       .filter((e) => validIds.has(e.source as string) && validIds.has(e.target as string));
 
-    return { nodes: parsedNodes, links: parsedLinks, neighborMap: nMap, linkMap: lMap };
-  }, [graphData]);
+    return { nodes: parsedNodes, links: parsedLinks, neighborMap: nMap, linkMap: lMap, isLargeGraph: isLarge };
+  }, [graphData, activeFolderDrill]);
 
   // Keep ref to hoveredNode for dynamic graph accessor updates
   const hoveredNodeRef = useRef<Node3DData | null>(null);
@@ -346,6 +383,11 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
           useGraphStore.getState().setSelectedNodeId(node.id);
           if (onNodeClick) onNodeClick(node.id);
 
+          // Support drilldown into folder for large graphs
+          if (node.type === "folder" && isLargeGraph) {
+            setActiveFolderDrill((prev) => (prev === node.id ? null : node.id));
+          }
+
           // Smoothly frame camera on clicked node
           if (graph && typeof node.x === "number") {
             const distance = 80;
@@ -419,6 +461,30 @@ export function KnowledgeGraph3D({ graphData, onNodeClick }: KnowledgeGraph3DPro
     <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] bg-[#121316] rounded-b-xl overflow-hidden font-sans select-none">
       {/* 3D Force Graph WebGL Container */}
       <div ref={containerRef} className="w-full h-full min-h-[460px] sm:min-h-[540px]" />
+
+      {/* Large Repository Top-Level Degradation Notice (Fix 3) */}
+      {isLargeGraph && (
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2 p-2 px-3 rounded-lg bg-graphite-panel/95 border border-[#5B82A6]/40 backdrop-blur-md shadow-xl z-10 pointer-events-auto text-xs font-mono max-w-[85%] sm:max-w-md">
+          <FolderOpen className="w-3.5 h-3.5 text-[#5B82A6] shrink-0" />
+          <span className="text-graphite-muted leading-tight">
+            {activeFolderDrill ? (
+              <>
+                Drilling into: <strong className="text-white">{activeFolderDrill}</strong>
+              </>
+            ) : (
+              "Showing top-level structure — this repository is large, drill into a folder to see files"
+            )}
+          </span>
+          {activeFolderDrill && (
+            <button
+              onClick={() => setActiveFolderDrill(null)}
+              className="ml-auto px-2 py-0.5 rounded bg-[#5B82A6]/20 hover:bg-[#5B82A6]/30 text-[#5B82A6] transition text-[10px] font-semibold"
+            >
+              Reset View
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Top-Right HUD Camera & View Controls */}
       <div className="absolute top-3 right-3 flex items-center gap-1.5 p-1.5 rounded-lg bg-graphite-panel/90 border border-graphite-border backdrop-blur-md shadow-xl z-10 pointer-events-auto">
