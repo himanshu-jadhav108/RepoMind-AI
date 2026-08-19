@@ -29,7 +29,7 @@ from app.models.finding import (
     ReviewStatus,
 )
 from app.models.report import HealthScoreResponse
-from app.orchestration.graph import _run_live_statuses, repomind_app
+from app.orchestration.graph import _run_live_statuses, invoke_repomind_pipeline, repomind_app
 from app.services.analysis_service import AnalysisService
 
 
@@ -137,17 +137,14 @@ async def trigger_analysis_run(
 
             # Execute LangGraph pipeline with wall-clock timeout
             try:
-                final_state = await asyncio.wait_for(
-                    repomind_app.ainvoke(
-                        {
-                            "run_id": run_res.run_id,
-                            "repo_url": repo_url,
-                            "commit_sha": payload.commit_sha or "latest",
-                            "agent_statuses": {},
-                            "errors": [],
-                        }
-                    ),
-                    timeout=float(settings.ANALYSIS_RUN_TIMEOUT_SECONDS),
+                final_state = await invoke_repomind_pipeline(
+                    {
+                        "run_id": run_res.run_id,
+                        "repo_url": repo_url,
+                        "commit_sha": payload.commit_sha or "latest",
+                        "agent_statuses": {},
+                        "errors": [],
+                    }
                 )
             except asyncio.TimeoutError:
                 logger.error(f"Analysis run '{run_res.run_id}' exceeded wall-clock timeout of {settings.ANALYSIS_RUN_TIMEOUT_SECONDS}s.")

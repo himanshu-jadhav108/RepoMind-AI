@@ -174,3 +174,45 @@ def test_analysis_rate_limiting_and_bypass(monkeypatch):
     res3 = client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
     assert res3.status_code == 202
 
+
+@pytest.mark.asyncio
+async def test_analysis_run_wall_clock_timeout_handling(monkeypatch):
+    import asyncio
+    import httpx
+    from app.core.config import settings
+    from app.core.concurrency import analysis_concurrency_manager
+    from app.api.v1.routes_analysis import _ip_last_request
+
+    # Clear rate limit and reset concurrency
+    _ip_last_request.clear()
+    analysis_concurrency_manager.reset()
+    monkeypatch.setattr(settings, "RATE_LIMIT_BYPASS_LOCALHOST", True)
+    monkeypatch.setattr(settings, "ANALYSIS_RUN_TIMEOUT_SECONDS", 0.05)
+
+    # Mock repomind_app.ainvoke to simulate a slow pipeline step that exceeds the timeout
+    async def mock_slow_ainvoke(*args, **kwargs):
+        await asyncio.sleep(0.3)
+        return {"agent_statuses": {}}
+
+    monkeypatch.setattr("app.orchestration.graph.repomind_app.ainvoke", mock_slow_ainvoke)
+
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as async_client:
+        # Register repo and trigger analysis
+        repo_res = await async_client.post("/api/v1/repos", json={"repo_url": "https://github.com/fastapi/fastapi"})
+        repo_id = repo_res.json()["repo_id"]
+
+        run_res = await async_client.post("/api/v1/analysis/run", json={"repo_id": repo_id})
+        assert run_res.status_code == 202
+        run_id = run_res.json()["run_id"]
+
+        # Yield control to the event loop so background task completes timeout
+        await asyncio.sleep(0.15)
+
+        # Assert the run ended up with status 'timed_out'
+        status_res = await async_client.get(f"/api/v1/analysis/{run_id}")
+        assert status_res.status_code == 200
+        assert status_res.json()["status"] == "timed_out"
+
+        # Assert concurrency slot was released properly in finally block
+        assert run_id not in analysis_concurrency_manager._active_runs
+

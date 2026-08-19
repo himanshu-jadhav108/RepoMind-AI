@@ -58,14 +58,18 @@ class SupabaseAnalysisRepository(BaseRepository[AnalysisRunDetail]):
 
     async def get_by_id(self, item_id: str) -> Optional[AnalysisRunDetail]:
         try:
+            from app.orchestration.graph import _run_live_statuses
             res = self.client.table(self.runs_table).select("*").eq("id", item_id).execute()
             if res.data and len(res.data) > 0:
                 row = res.data[0]
                 agents = [AgentStatus(**a) for a in row.get("agents_status", [])]
+                status_raw = row["status"]
+                if self._live_statuses.get(item_id, {}).get("__timeout__") or _run_live_statuses.get(item_id, {}).get("__timeout__"):
+                    status_raw = "timed_out"
                 return AnalysisRunDetail(
                     run_id=row["id"],
                     repo_id=row["repo_id"],
-                    status=RunStatus(row["status"]),
+                    status=RunStatus(status_raw),
                     agents=agents,
                     started_at=row["started_at"],
                     completed_at=row.get("completed_at"),
@@ -90,7 +94,19 @@ class SupabaseAnalysisRepository(BaseRepository[AnalysisRunDetail]):
         payload = dict(data)
         if "agents" in payload:
             payload["agents_status"] = payload.pop("agents")
-        self.client.table(self.runs_table).update(payload).eq("id", item_id).execute()
+        try:
+            self.client.table(self.runs_table).update(payload).eq("id", item_id).execute()
+        except Exception as e:
+            if "analysis_runs_status_check" in str(e) and payload.get("status") == "timed_out":
+                # Fallback to 'failed' for remote DB instances where migration hasn't been applied
+                payload_fallback = dict(payload)
+                payload_fallback["status"] = "failed"
+                try:
+                    self.client.table(self.runs_table).update(payload_fallback).eq("id", item_id).execute()
+                except Exception:
+                    pass
+            else:
+                raise e
         return await self.get_by_id(item_id)
 
     async def delete(self, item_id: str) -> bool:

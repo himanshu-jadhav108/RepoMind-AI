@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS analysis_runs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     repo_id UUID NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
     commit_sha TEXT,
-    status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+    status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'completed', 'failed', 'timed_out')),
     agents_status JSONB NOT NULL DEFAULT '[]'::jsonb,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ
