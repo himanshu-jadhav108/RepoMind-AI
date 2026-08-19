@@ -159,6 +159,9 @@ async def trigger_analysis_run(
                     )
                 if run_res.run_id in _run_live_statuses:
                     _run_live_statuses[run_res.run_id]["__timeout__"] = True
+                    _run_live_statuses[run_res.run_id]["__message__"] = (
+                        "Analysis exceeded the maximum allowed time and was stopped. This can happen with very large repositories on free-tier hosting."
+                    )
                     _run_live_statuses[run_res.run_id]["__error__"] = (
                         f"Analysis pipeline timed out after {settings.ANALYSIS_RUN_TIMEOUT_SECONDS} seconds."
                     )
@@ -332,9 +335,15 @@ async def stream_analysis_updates(
                             seen_agents.add(agent_name)
                             yield f"data: {json.dumps({'agent': agent_name, 'status': agent_status, 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
                     # Emit final pipeline_complete event with the accurate terminal status
+                    msg = (
+                        "Analysis exceeded the maximum allowed time and was stopped. This can happen with very large repositories on free-tier hosting."
+                        if run_detail.status == RunStatus.TIMED_OUT
+                        else None
+                    )
                     completion_event = {
                         "event": "pipeline_complete",
                         "status": run_detail.status.value,
+                        "message": msg,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                     yield f"data: {json.dumps(completion_event)}\n\n"

@@ -182,6 +182,7 @@ async def test_analysis_run_wall_clock_timeout_handling(monkeypatch):
     from app.core.config import settings
     from app.core.concurrency import analysis_concurrency_manager
     from app.api.v1.routes_analysis import _ip_last_request
+    from app.orchestration.graph import invoke_repomind_pipeline
 
     # Clear rate limit and reset concurrency
     _ip_last_request.clear()
@@ -196,6 +197,11 @@ async def test_analysis_run_wall_clock_timeout_handling(monkeypatch):
 
     monkeypatch.setattr("app.orchestration.graph.repomind_app.ainvoke", mock_slow_ainvoke)
 
+    # 1. Verify invoke_repomind_pipeline directly raises asyncio.TimeoutError with custom timeout_seconds
+    with pytest.raises(asyncio.TimeoutError):
+        await invoke_repomind_pipeline({"test": "state"}, timeout_seconds=0.02)
+
+    # 2. Verify end-to-end API run triggers timeout and updates status to 'timed_out'
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as async_client:
         # Register repo and trigger analysis
         repo_res = await async_client.post("/api/v1/repos", json={"repo_url": "https://github.com/fastapi/fastapi"})
@@ -215,4 +221,12 @@ async def test_analysis_run_wall_clock_timeout_handling(monkeypatch):
 
         # Assert concurrency slot was released properly in finally block
         assert run_id not in analysis_concurrency_manager._active_runs
+
+        # 3. Assert a second run can immediately acquire the slot afterward
+        reg_info = analysis_concurrency_manager.register_run("second-run-id")
+        assert reg_info["status"] == "running"
+        await analysis_concurrency_manager.acquire_execution_slot("second-run-id")
+        assert "second-run-id" in analysis_concurrency_manager._active_runs
+        analysis_concurrency_manager.release_execution_slot("second-run-id")
+        assert "second-run-id" not in analysis_concurrency_manager._active_runs
 
