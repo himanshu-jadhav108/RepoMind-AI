@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     # Analysis Concurrency & Queue Limits
     MAX_CONCURRENT_ANALYSIS_RUNS: int = 1
     MAX_QUEUED_RUNS: int = 5
+    ANALYSIS_RUN_TIMEOUT_SECONDS: int = 480  # 8-minute overall analysis pipeline timeout
+    SYMBOL_PARSER_MAX_WORKERS: int = 8
 
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",

@@ -1,4 +1,4 @@
-export type RunStatus = "queued" | "running" | "completed" | "failed";
+export type RunStatus = "queued" | "running" | "completed" | "failed" | "timed_out";
 
 export type AgentStatusEnum = "queued" | "running" | "completed" | "failed" | "degraded";
 

@@ -305,3 +305,17 @@ def build_repomind_graph() -> StateGraph:
 
 # Compiled LangGraph app singleton
 repomind_app = build_repomind_graph().compile()
+
+
+async def invoke_repomind_pipeline(
+    initial_state: Dict[str, Any],
+    timeout_seconds: float | None = None,
+) -> Dict[str, Any]:
+    """
+    Executes the entire multi-agent LangGraph analysis pipeline wrapped with
+    a bounded wall-clock timeout to prevent indefinite hangs on large repositories.
+    """
+    from app.core.config import settings
+
+    timeout = float(timeout_seconds if timeout_seconds is not None else settings.ANALYSIS_RUN_TIMEOUT_SECONDS)
+    return await asyncio.wait_for(repomind_app.ainvoke(initial_state), timeout=timeout)

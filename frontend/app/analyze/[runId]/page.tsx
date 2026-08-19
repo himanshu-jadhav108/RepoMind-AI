@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Users, Compass, GitBranch, Layers, GraduationCap, Zap } from "lucide-react";
+import { ArrowLeft, Sparkles, Users, Compass, GitBranch, Layers, GraduationCap, Zap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AgentTimeline } from "@/features/agent-dashboard/AgentTimeline";
@@ -25,7 +25,7 @@ import {
   getHealthScore,
   getKnowledgeGraph,
 } from "@/lib/api-client";
-import { Finding, HealthScore, AgentStatus, KnowledgeGraphData } from "@/types";
+import { Finding, HealthScore, AgentStatus, KnowledgeGraphData, RunStatus } from "@/types";
 
 // Agents start as "queued" — SSE updates each to "running" then "completed" in real-time
 const INITIAL_AGENT_STATUSES: AgentStatus[] = [
@@ -172,6 +172,7 @@ export default function AnalyzeWorkspacePage({
   const runId = params.runId;
 
   const [agents, setAgents] = useState<AgentStatus[]>(INITIAL_AGENT_STATUSES);
+  const [runStatus, setRunStatus] = useState<RunStatus>("running");
   const [findings, setFindings] = useState<Finding[]>(DEMO_FINDINGS);
   const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
   const [graphData, setGraphData] = useState<KnowledgeGraphData | null>(null);
@@ -223,12 +224,16 @@ export default function AnalyzeWorkspacePage({
           const data = JSON.parse(event.data);
 
           if (data.event === "pipeline_complete") {
+            if (data.status) {
+              setRunStatus(data.status);
+            }
             fetchPostCompletionData();
             eventSource?.close();
             return;
           }
 
           if (data.event === "timeout") {
+            setRunStatus("timed_out");
             eventSource?.close();
             return;
           }
@@ -268,11 +273,16 @@ export default function AnalyzeWorkspacePage({
           getKnowledgeGraph(runId),
         ]);
 
-        if (statusData.status === "fulfilled" && statusData.value?.agents) {
-          setAgents(statusData.value.agents);
-        }
-        if (statusData.status === "fulfilled" && statusData.value?.execution_plan?.rationale) {
-          setPlannerRationale(statusData.value.execution_plan.rationale);
+        if (statusData.status === "fulfilled") {
+          if (statusData.value?.status) {
+            setRunStatus(statusData.value.status);
+          }
+          if (statusData.value?.agents) {
+            setAgents(statusData.value.agents);
+          }
+          if (statusData.value?.execution_plan?.rationale) {
+            setPlannerRationale(statusData.value.execution_plan.rationale);
+          }
         }
 
         if (graphResult.status === "fulfilled") {
@@ -394,6 +404,23 @@ export default function AnalyzeWorkspacePage({
           <ThemeToggle />
         </div>
       </div>
+
+      {/* Pipeline Timeout Warning Banner */}
+      {runStatus === "timed_out" && (
+        <div className="p-4 sm:p-5 rounded-xl border border-severity-warning/50 bg-severity-warning/10 text-foreground flex items-start gap-3 shadow-lg font-sans">
+          <div className="p-2 rounded-lg bg-severity-warning/20 border border-severity-warning/30 shrink-0">
+            <AlertTriangle className="w-5 h-5 text-severity-warning" />
+          </div>
+          <div className="space-y-1">
+            <div className="font-bold text-severity-warning font-display text-sm">
+              Analysis Run Timed Out
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              This analysis took longer than expected and was stopped. Large repositories may exceed what&apos;s possible on the current free-tier hosting — try a smaller repository or a specific subdirectory.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Feature 1: Engineering Review Meeting */}
       {activeTab === "meeting" && (

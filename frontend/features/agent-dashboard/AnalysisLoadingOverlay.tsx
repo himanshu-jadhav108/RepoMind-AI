@@ -14,7 +14,11 @@ import {
   Users,
   CheckCircle2,
   GitBranch,
+  AlertTriangle,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 import { getApiBase } from "@/lib/api-client";
 
@@ -130,6 +134,7 @@ export function AnalysisLoadingOverlay({
   const [completedCount, setCompletedCount] = useState(0);
   const [isAllDone, setIsAllDone] = useState(false);
   const [isColdStart, setIsColdStart] = useState(false);
+  const [isTimedOut, setIsTimedOut] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const repoName = repoUrl
@@ -166,6 +171,13 @@ export function AnalysisLoadingOverlay({
           const data = JSON.parse(event.data);
 
           if (data.event === "pipeline_complete") {
+            if (data.status === "timed_out") {
+              setIsTimedOut(true);
+              setRunningAgent(null);
+              es.close();
+              return;
+            }
+
             setAgentStates((prev) => {
               const next = { ...prev };
               AGENTS.forEach((a) => { next[a.key] = "complete"; });
@@ -177,6 +189,13 @@ export function AnalysisLoadingOverlay({
             es.close();
 
             setTimeout(() => onComplete(), 800);
+            return;
+          }
+
+          if (data.event === "timeout") {
+            setIsTimedOut(true);
+            setRunningAgent(null);
+            es.close();
             return;
           }
 
@@ -408,6 +427,46 @@ export function AnalysisLoadingOverlay({
                   <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                 </div>
                 <p className="text-sm font-mono text-emerald-400">Opening workspace...</p>
+              </motion.div>
+            )}
+
+            {isTimedOut && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="w-full max-w-2xl p-4 sm:p-5 rounded-xl border border-severity-warning/50 bg-graphite-panel/95 backdrop-blur-md shadow-2xl text-left space-y-3"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-severity-warning/15 border border-severity-warning/30 shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-severity-warning" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-white font-display">
+                      Analysis Pipeline Timed Out
+                    </h4>
+                    <p className="text-xs text-graphite-muted leading-relaxed font-mono">
+                      This analysis took longer than expected and was stopped. Large repositories may exceed what&apos;s possible on the current free-tier hosting — try a smaller repository or a specific subdirectory.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-graphite-border">
+                  <span className="text-[11px] font-mono text-graphite-muted">Run ID: {runId}</span>
+                  <div className="flex items-center gap-2">
+                    <Link href="/">
+                      <Button variant="outline" size="sm" className="text-xs font-mono gap-1.5 border-graphite-border">
+                        <ArrowLeft className="w-3.5 h-3.5" /> Return Home
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="gradient"
+                      size="sm"
+                      onClick={() => window.location.reload()}
+                      className="text-xs font-mono"
+                    >
+                      Retry Analysis
+                    </Button>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

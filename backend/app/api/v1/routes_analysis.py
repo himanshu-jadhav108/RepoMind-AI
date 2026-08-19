@@ -135,16 +135,37 @@ async def trigger_analysis_run(
 
             logger.info(f"Starting background LangGraph execution for run '{run_res.run_id}' ({repo_url})")
 
-            # Execute LangGraph pipeline
-            final_state = await repomind_app.ainvoke(
-                {
-                    "run_id": run_res.run_id,
-                    "repo_url": repo_url,
-                    "commit_sha": payload.commit_sha or "latest",
-                    "agent_statuses": {},
-                    "errors": [],
-                }
-            )
+            # Execute LangGraph pipeline with wall-clock timeout
+            try:
+                final_state = await asyncio.wait_for(
+                    repomind_app.ainvoke(
+                        {
+                            "run_id": run_res.run_id,
+                            "repo_url": repo_url,
+                            "commit_sha": payload.commit_sha or "latest",
+                            "agent_statuses": {},
+                            "errors": [],
+                        }
+                    ),
+                    timeout=float(settings.ANALYSIS_RUN_TIMEOUT_SECONDS),
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Analysis run '{run_res.run_id}' exceeded wall-clock timeout of {settings.ANALYSIS_RUN_TIMEOUT_SECONDS}s.")
+                existing_run = await analysis_service.analysis_repository.get_by_id(run_res.run_id)
+                if existing_run:
+                    await analysis_service.analysis_repository.update(
+                        run_res.run_id,
+                        {
+                            "status": RunStatus.TIMED_OUT.value,
+                            "completed_at": datetime.now(timezone.utc).isoformat(),
+                        },
+                    )
+                if run_res.run_id in _run_live_statuses:
+                    _run_live_statuses[run_res.run_id]["__timeout__"] = True
+                    _run_live_statuses[run_res.run_id]["__error__"] = (
+                        f"Analysis pipeline timed out after {settings.ANALYSIS_RUN_TIMEOUT_SECONDS} seconds."
+                    )
+                return
 
             # 1. Persist Findings
             raw_reviewed = final_state.get("reviewed_findings", [])
@@ -280,7 +301,7 @@ async def stream_analysis_updates(
 
     async def event_generator():
         seen_agents: set = set()
-        max_wait_seconds = 300  # 5-minute hard timeout
+        max_wait_seconds = float(settings.ANALYSIS_RUN_TIMEOUT_SECONDS + 60)
         elapsed = 0.0
         poll_interval = 1.5
 
@@ -303,17 +324,17 @@ async def stream_analysis_updates(
                     }
                     yield f"data: {json.dumps(event_data)}\n\n"
 
-            # Check persistent store for run completion
+            # Check persistent store for run completion or timeout
             try:
                 run_detail = await analysis_service.analysis_repository.get_by_id(run_id)
-                if run_detail and run_detail.status in (RunStatus.COMPLETED, RunStatus.FAILED):
+                if run_detail and run_detail.status in (RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.TIMED_OUT):
                     # Flush any remaining agent statuses
                     live_final = await analysis_service.analysis_repository.get_live_statuses(run_id)
                     for agent_name, agent_status in list(live_final.items()):
                         if not agent_name.startswith("__") and agent_name not in seen_agents:
                             seen_agents.add(agent_name)
                             yield f"data: {json.dumps({'agent': agent_name, 'status': agent_status, 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
-                    # Emit final pipeline_complete event
+                    # Emit final pipeline_complete event with the accurate terminal status
                     completion_event = {
                         "event": "pipeline_complete",
                         "status": run_detail.status.value,
