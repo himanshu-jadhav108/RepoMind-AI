@@ -142,13 +142,30 @@ export function AnalysisLoadingOverlay({
     .replace(".git", "");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (completedCount === 0 && !isAllDone) {
-        setIsColdStart(true);
+    try {
+      const isWarm = typeof window !== "undefined" && window.sessionStorage.getItem("repomind_backend_warm") === "true";
+      if (!isWarm) {
+        const timer = setTimeout(() => {
+          if (completedCount === 0 && !isAllDone) {
+            setIsColdStart(true);
+          }
+        }, 5000);
+        return () => clearTimeout(timer);
       }
-    }, 5000);
-    return () => clearTimeout(timer);
+    } catch {
+      // sessionStorage unavailable
+    }
   }, [completedCount, isAllDone]);
+
+  const recordSessionWarmth = () => {
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("repomind_backend_warm", "true");
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  };
 
   // Connect to SSE stream or run accelerated simulation for demo mode
   useEffect(() => {
@@ -168,6 +185,7 @@ export function AnalysisLoadingOverlay({
 
       es.onmessage = (event) => {
         try {
+          recordSessionWarmth();
           const data = JSON.parse(event.data);
 
           if (data.event === "pipeline_complete") {

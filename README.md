@@ -66,7 +66,7 @@ _Transform any GitHub repository into an interactive, 3D-visualized, fully audit
 | :---------------------: | :-----------------------------------------------: | :-------------------------------------------------------------------- |
 |   🤖 **10 AI Agents**   |            **LangGraph State Machine**            | Orchestrated execution loop with automated quality gate review        |
 |  🌌 **5 Graph Views**   |   **2D Tree, 3D WebGL, Physics, Orbit, Layers**   | Multi-perspective architectural topology visualization                |
-|  🧪 **26 / 26 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and symbol parser test suite            |
+|  🧪 **51 / 51 Tests**   |             **100% Pytest Pass Rate**             | Exhaustive unit, integration, and symbol parser test suite            |
 |  ⚡ **5 AI Providers**  | **Gemini, Groq, OpenAI, OpenRouter, HuggingFace** | Adaptive provider router with automatic failover & offline resilience |
 |  🛡️ **Explainability**  |           **Line-by-Line & Analogies**            | Every finding backed by source line evidence, confidence scores & analogies |
 | 📥 **3 Export Formats** |         **HTML, Markdown, Executive PDF**         | One-click production audit artifact downloads                         |
@@ -463,7 +463,7 @@ RepoMind-AI/
 │   │   ├── providers/         # ProviderInterface, ProviderRouter (Gemini, Groq, OpenAI, etc.)
 │   │   ├── repositories/      # Abstract Repositories & Supabase/InMemory implementations
 │   │   └── services/          # Business logic services (Ingestion, Analysis, Report)
-│   └── tests/                 # Comprehensive pytest test suite (38/38 passing)
+│   └── tests/                 # Comprehensive pytest test suite (51/51 passing)
 └── frontend/
     ├── package.json           # Next.js 14 dependencies & scripts
     ├── next.config.mjs        # Next.js config (standalone output & API rewrites)
@@ -580,7 +580,7 @@ npm run dev
 
 ## 🧪 Test Suite & Verification
 
-### Backend Test Suite (38/38 Passing Tests)
+### Backend Test Suite (51/51 Passing Tests)
 
 ```bash
 # Set PYTHONPATH and execute pytest suite
@@ -589,17 +589,18 @@ python -m pytest backend/tests -v
 ```
 
 ```text
-tests/test_agents.py ......................... [100%]
-tests/test_analysis_toolkit.py ....            [100%]
-tests/test_api_endpoints.py ....               [100%]
-tests/test_database.py ...                     [100%]
-tests/test_edge_cases.py ...                   [100%]
-tests/test_explainability_review_loop.py ..    [100%]
-tests/test_foundation.py ....                  [100%]
-tests/test_orchestration.py ...                [100%]
-tests/test_provider_failover_simulation.py ..  [100%]
-tests/test_provider_layer.py ....              [100%]
-================ 38 passed in 416s ================
+backend/tests/test_agents.py ..........                           [ 19%]
+backend/tests/test_analysis_toolkit.py ...........                 [ 41%]
+backend/tests/test_api_endpoints.py ......                        [ 52%]
+backend/tests/test_database.py ...                                [ 58%]
+backend/tests/test_edge_cases.py ...                              [ 64%]
+backend/tests/test_explainability_review_loop.py ...               [ 70%]
+backend/tests/test_foundation.py ....                             [ 78%]
+backend/tests/test_orchestration.py ...                           [ 84%]
+backend/tests/test_provider_failover_simulation.py ..             [ 88%]
+backend/tests/test_provider_layer.py ....                         [ 96%]
+backend/tests/test_rate_limiter.py ..                             [100%]
+======================= 51 passed in 35.64s =======================
 ```
 
 ### Frontend Typecheck & Lint Verification

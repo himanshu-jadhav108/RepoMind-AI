@@ -12,16 +12,38 @@ export function RepoInputForm() {
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [isColdStart, setIsColdStart] = useState(false);
+  const [isWarmSession, setIsWarmSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [activeRepoUrl, setActiveRepoUrl] = useState<string>("");
   const coldStartTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (loading) {
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage.getItem("repomind_backend_warm") === "true") {
+        setIsWarmSession(true);
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, []);
+
+  const markBackendWarm = () => {
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("repomind_backend_warm", "true");
+        setIsWarmSession(true);
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  };
+
+  useEffect(() => {
+    if (loading && !isWarmSession) {
       coldStartTimerRef.current = setTimeout(() => {
         setIsColdStart(true);
-      }, 5000);
+      }, 4000);
     } else {
       if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
       setIsColdStart(false);
@@ -29,7 +51,7 @@ export function RepoInputForm() {
     return () => {
       if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
     };
-  }, [loading]);
+  }, [loading, isWarmSession]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +65,7 @@ export function RepoInputForm() {
       const repo = await registerRepository(repoUrl.trim());
       // 2. Trigger multi-agent analysis run
       const run = await startAnalysisRun(repo.repo_id);
+      markBackendWarm();
       // 3. Show cinematic loading overlay — it drives SSE and navigates on completion
       setActiveRepoUrl(repoUrl.trim());
       setActiveRunId(run.run_id);
@@ -57,6 +80,7 @@ export function RepoInputForm() {
     setError(null);
     try {
       const demo = await startHackathonDemoRun();
+      markBackendWarm();
       const demoId = demo.run_id || `demo-hackathon-${Date.now()}`;
       setActiveRepoUrl("https://github.com/himanshu-jadhav108/RepoMind-AI (Hackathon Demo)");
       setActiveRunId(demoId);
@@ -73,6 +97,7 @@ export function RepoInputForm() {
     try {
       const repo = await registerRepository(sampleUrl);
       const run = await startAnalysisRun(repo.repo_id);
+      markBackendWarm();
       setActiveRepoUrl(sampleUrl);
       setActiveRunId(run.run_id);
     } catch (err: any) {
@@ -147,7 +172,7 @@ export function RepoInputForm() {
                 {loading && !activeRepoUrl.includes("Demo") ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing...</span>
+                    <span>{isColdStart && !isWarmSession ? "Waking engine..." : "Analyzing..."}</span>
                   </>
                 ) : (
                   <>
@@ -160,12 +185,18 @@ export function RepoInputForm() {
           </div>
         </form>
 
-        {/* Cold-Start Notice for Free-Tier Sleep */}
-        {isColdStart && loading && (
-          <div className="p-3.5 rounded-xl bg-card border border-copper/30 text-xs font-mono text-muted-foreground flex items-center gap-3 animate-in fade-in duration-300 shadow-lg">
+        {/* Low-key pre-submission cold-start advisory */}
+        <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-muted-foreground/80">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-copper/70 animate-pulse" />
+          <span>First request may take up to a minute while the backend wakes up</span>
+        </div>
+
+        {/* Cold-Start Notice for Free-Tier Sleep (First Request of Session) */}
+        {loading && !isWarmSession && (
+          <div className="p-3 rounded-xl bg-card border border-copper/30 text-xs font-mono text-muted-foreground flex items-center gap-3 animate-in fade-in duration-300 shadow-lg">
             <Info className="w-4 h-4 text-copper shrink-0" />
             <span>
-              <strong className="text-foreground">Waking up the analysis engine</strong> — this can take up to 30 seconds on the first request after a period of inactivity.
+              <strong className="text-foreground">First request of session</strong> — backend may take 30–60s to wake up on Render free tier. Subsequent requests will be fast.
             </span>
           </div>
         )}

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import time
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
@@ -10,12 +11,31 @@ from app.core.config import settings
 from app.core.exceptions import RepoMindException
 from app.core.logging import logger
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown execution.
+    Conditionally seeds demo workspace on backend startup only if SEED_DEMO_ON_STARTUP is enabled.
+    """
+    if settings.SEED_DEMO_ON_STARTUP:
+        try:
+            from app.db.seed import seed_demo_workspace_data
+            await seed_demo_workspace_data()
+        except Exception as e:
+            logger.warning(f"Could not execute startup demo seeding: {e}")
+    else:
+        logger.info("Startup demo seeding disabled (SEED_DEMO_ON_STARTUP=False). Run 'python -m app.db.seed' on demand.")
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS middleware configuration
@@ -123,21 +143,6 @@ async def root():
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@app.on_event("startup")
-async def seed_demo_workspace():
-    """
-    Conditionally seed a demo workspace on backend startup only if SEED_DEMO_ON_STARTUP is enabled.
-    """
-    if settings.SEED_DEMO_ON_STARTUP:
-        try:
-            from app.db.seed import seed_demo_workspace_data
-            await seed_demo_workspace_data()
-        except Exception as e:
-            logger.warning(f"Could not execute startup demo seeding: {e}")
-    else:
-        logger.info("Startup demo seeding disabled (SEED_DEMO_ON_STARTUP=False). Run 'python -m app.db.seed' on demand.")
 
 
 @app.get("/health", tags=["Health"])
