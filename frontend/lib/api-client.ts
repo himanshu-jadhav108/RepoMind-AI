@@ -2,7 +2,7 @@ import { Finding, HealthScore, RepoMetadata, KnowledgeGraphData, CodeExplanation
 
 export function getApiBase(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
   }
   if (typeof window !== "undefined") {
     // Client-side: use empty string so requests hit Next.js rewrites transparently

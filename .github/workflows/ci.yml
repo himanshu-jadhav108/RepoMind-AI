@@ -62,3 +62,6 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Run Next.js production build
+        run: npm run build
