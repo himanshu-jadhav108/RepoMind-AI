@@ -268,6 +268,7 @@ public class Service_{i} {{
     # (a) Assert equivalence: parallel parsing produces exact identical structure and content
     assert len(parallel_map) == 200
     assert parallel_map == sequential_map
+    assert seq_duration >= 0 and par_duration >= 0
 
     # Check specific symbol extractions
     assert "Controller_0" in parallel_map["module_0.py"]["classes"]

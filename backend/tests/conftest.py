@@ -8,5 +8,3 @@ which imports `starlette.testclient` backed by `httpx`.
 This is a known upstream transitive deprecation in Starlette/FastAPI currently being tracked
 upstream until FastAPI migrates its TestClient implementation.
 """
-
-import pytest
